@@ -57,7 +57,7 @@ public class PDEState implements IPDEBuildConstants, IXMLConstants {
 	}
 	
 	public boolean addBundle(Dictionary enhancedManifest, File bundleLocation) {
-//		updateVersionNumber(enhancedManifest);
+		updateVersionNumber(enhancedManifest);
 		try {
 			BundleDescription descriptor;
 			descriptor = factory.createBundleDescription(enhancedManifest, bundleLocation.getAbsolutePath(), getNextId());
@@ -122,7 +122,7 @@ public class PDEState implements IPDEBuildConstants, IXMLConstants {
 				newRequires,
 				descriptor.getHost(), 
 				descriptor.getPackages(), 
-				descriptor.getProvidedPackages());
+				descriptor.getProvidedPackages(), descriptor.isSingleton());
 		newDescription.setUserObject(descriptor.getUserObject());
 		state.removeBundle(descriptor);
 		state.addBundle(newDescription);
@@ -154,7 +154,7 @@ public class PDEState implements IPDEBuildConstants, IXMLConstants {
 		try {
 			URL manifestLocation = null;
 			if (bundleLocation.getName().endsWith("jar")) {
-				manifestLocation = new URL("jar:file" + bundleLocation + "!/" + JarFile.MANIFEST_NAME);
+				manifestLocation = new URL("jar:file:" + bundleLocation + "!/" + JarFile.MANIFEST_NAME);
 				manifestStream = manifestLocation.openStream();
 			} else {
 				manifestStream = new FileInputStream(new File(bundleLocation, JarFile.MANIFEST_NAME));

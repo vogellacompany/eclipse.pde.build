@@ -63,16 +63,8 @@ public class AssemblerTask extends Task {
 	 * @param baseLocation: a comma separated list of paths
 	 */
 	public void setBaseLocation(String baseLocation) throws BuildException {
-		try {
-			String[] locations = Utils.getArrayFromString(baseLocation);
-			URL[] urlLocations = new URL[locations.length];
-			for (int i = 0; i < locations.length; i++) {
-				urlLocations[i] = new URL("file:" + locations[i]); //$NON-NLS-1$
-			}
-			generator.setPluginPath(urlLocations);
-		} catch (MalformedURLException e) {
-			throw new BuildException(e);
-		}
+		String[] locations = Utils.getArrayFromString(baseLocation);
+		generator.setPluginPath(locations);
 	}
 
 	public void execute() throws BuildException {
