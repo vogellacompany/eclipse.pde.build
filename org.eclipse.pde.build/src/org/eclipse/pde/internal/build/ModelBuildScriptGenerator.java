@@ -42,6 +42,9 @@ public void generate() throws CoreException {
 	if (model == null)
 		throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, EXCEPTION_ELEMENT_MISSING, Policy.bind("error.missingElement"), null)); //$NON-NLS-1$
 
+	if (getPlugin(IPDEBuildConstants.PI_BOOT, null) == null || getPlugin(IPDEBuildConstants.PI_RUNTIME, null) == null)
+		throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, EXCEPTION_ELEMENT_MISSING, Policy.bind("error.missingBootOrRuntime"), null)); //$NON-NLS-1$
+	
 	try {
 		// if the model defines its own custom script, we do not generate a new one
 		// but we do try to update the version number

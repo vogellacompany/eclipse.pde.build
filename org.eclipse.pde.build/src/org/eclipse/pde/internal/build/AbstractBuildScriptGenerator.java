@@ -141,7 +141,11 @@ protected String getClasspath(PluginModel model, JAR jar) throws CoreException {
 protected void addSelf(PluginModel model, JAR jar, List classpath, String location, List pluginChain) throws CoreException {
 	// If model is a fragment, we need to add in the classpath the plugin to which it is related
 	if (model instanceof PluginFragmentModel) {
-		PluginModel plugin = getRegistry().getPlugin(((PluginFragmentModel) model).getPlugin());
+		String pluginId = ((PluginFragmentModel) model).getPlugin();
+		PluginModel plugin = getRegistry().getPlugin(pluginId);
+		if(plugin == null)
+			throw new CoreException(new Status(IStatus.ERROR, IPDEBuildConstants.PI_PDEBUILD, EXCEPTION_PLUGIN_MISSING, Policy.bind("exception.missingPlugin", pluginId), null)); //$NON-NLS-1$
+
 		addPluginAndPrerequisites(plugin, classpath, location, pluginChain);
 	}	
 	
@@ -264,23 +268,100 @@ private String computeExtraPath(String url, String location) throws CoreExceptio
 	return relativePath;
 }
 
+/*
+ * Use the matching rules in the given model object to find
+ * the correct plug-in in the registry. Return null if there is
+ * no plug-in version which satisfies the matching rules.
+ */
+private PluginModel internalGetPlugin(PluginPrerequisiteModel prereq) throws CoreException {
+	PluginModel result = null;
+	PluginDescriptorModel[] plugins = getRegistry().getPlugins(prereq.getPlugin());
+	PluginVersionIdentifier searchedVersion = new PluginVersionIdentifier(prereq.getVersion());
+	byte matchingRule = PluginPrerequisiteModel.PREREQ_MATCH_EQUIVALENT;
+	if (System.getProperty("pde.build.compileAgainstCompatibleOrGreater") != null)	//$NON-NLS-1$
+		matchingRule = prereq.getMatchByte();
+	
+	PluginVersionIdentifier foundVersion = new PluginVersionIdentifier("0.0.0"); //$NON-NLS-1$
+	
+	switch (matchingRule) {
+		case PluginPrerequisiteModel.PREREQ_MATCH_COMPATIBLE :
+			for (int i = 0; i < plugins.length; i++) {
+				PluginVersionIdentifier currentVersion = new PluginVersionIdentifier(plugins[i].getVersion());
+				if (currentVersion.isCompatibleWith(searchedVersion) && currentVersion.isGreaterThan(foundVersion)) {
+					result = plugins[i];
+					foundVersion = currentVersion;
+				}
+			}
+			break;
+		case PluginPrerequisiteModel.PREREQ_MATCH_EQUIVALENT :
+			for (int i = 0; i < plugins.length; i++) {
+				PluginVersionIdentifier currentVersion = new PluginVersionIdentifier(plugins[i].getVersion());
+				if (currentVersion.isEquivalentTo(searchedVersion) && currentVersion.isGreaterThan(foundVersion)) {
+					result = plugins[i];
+					foundVersion = currentVersion;
+				}
+			}
+			break;
+		case PluginPrerequisiteModel.PREREQ_MATCH_GREATER_OR_EQUAL :
+			for (int i = 0; i < plugins.length; i++) {
+				PluginVersionIdentifier currentVersion = new PluginVersionIdentifier(plugins[i].getVersion());
+				if (currentVersion.isGreaterOrEqualTo(searchedVersion) && currentVersion.isGreaterThan(foundVersion)) {
+					result = plugins[i];
+					foundVersion = currentVersion;
+				}
+			}
+			break;
+		default :
+			// result is null
+	}
+	return result;
+}
+
 /**
  * Return the plug-in model object from the plug-in registry for the given
- * plug-in identifier and version. If the plug-in is not in the registry then
+ * plug-in identifier and version. If the plug-in is not in the registry and it is not an optional plug-in then
  * throw an exception.
+ * Return null if the plug-in is not in the registry and is an optionally required.
  * 
  * @param id the plug-in identifier
  * @param version the plug-in version
- * @return PluginModel
+ * @return PluginModel, or null
  * @throws CoreException if the specified plug-in version does not exist in the registry
  */
-protected PluginModel getPlugin(String id, String version) throws CoreException {
-	PluginModel plugin = getRegistry().getPlugin(id, version);
-	if (plugin == null) {
-		String pluginName = (version == null) ? id : id + "_" + version; //$NON-NLS-1$
-		throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, IPDEBuildConstants.EXCEPTION_PLUGIN_MISSING, Policy.bind("exception.missingPlugin", pluginName), null)); //$NON-NLS-1$
+protected PluginModel getPlugin(String id, PluginPrerequisiteModel prereq) throws CoreException {
+	// If there are no pre-reqs specified then do a general look-up. To maintain backwards
+	// compatibility we assume optional inclusion is false and throw an exception if the
+	// plug-in is not found.
+	if (prereq == null) {
+		PluginModel plugin = getRegistry().getPlugin(id, null);
+		if (plugin == null)
+			throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, IPDEBuildConstants.EXCEPTION_PLUGIN_MISSING, Policy.bind("exception.missingPlugin", id), null)); //$NON-NLS-1$
+		else 
+			return plugin;
 	}
-	return plugin;
+
+	// Try to find the plug-in with the exact version as specified in the pre-req.
+	// If it is found then return.	
+	PluginModel plugin = getRegistry().getPlugin(id, prereq.getVersion());
+	if (plugin != null)
+		return plugin;
+	
+	// Look for the plugin using the matching criterias
+	plugin = internalGetPlugin(prereq);
+	
+	// If we found a plug-in, then return it. If we didn't but it was an optional
+	// pre-req, that's ok so return null. Otherwise tell the user that we have
+	// a problem by throwing an exception.
+	if (plugin == null) {
+		if (prereq.getOptional())
+			return null;
+		else {
+			String pluginName = (prereq.getVersion() == null) ? id : id + "_" + prereq.getVersion(); //$NON-NLS-1$
+			throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, IPDEBuildConstants.EXCEPTION_PLUGIN_MISSING, Policy.bind("exception.missingPlugin", pluginName), null)); //$NON-NLS-1$
+		}
+	} else {
+		return plugin;
+	}
 }
 
 /**
@@ -442,17 +523,17 @@ protected void addPluginAndPrerequisites(PluginModel target, List classpath, Str
 
 //Add the prerequisite of a given plugin (target)
 protected void addPrerequisites(PluginModel target, List classpath, String baseLocation, List pluginChain) throws CoreException {
-
+	PluginModel runtime = getPlugin(PI_RUNTIME, null);
 	if (pluginChain.contains(target)) {
-		if (target==getPlugin(PI_RUNTIME,null))
+		if (target==runtime)
 			return;
 		String message = Policy.bind("error.pluginCycle"); //$NON-NLS-1$
 		throw new CoreException(new Status(IStatus.ERROR, IPDEBuildConstants.PI_PDEBUILD, IPDEBuildConstants.EXCEPTION_CLASSPATH_CYCLE, message, null));
 	}
 	
 	//	The first prerequisite is ALWAYS runtime
-	 if (target != getPlugin(PI_RUNTIME, null))
-		 addPluginAndPrerequisites(getPlugin(PI_RUNTIME, null), classpath, baseLocation, pluginChain);
+	 if (target != runtime)
+		 addPluginAndPrerequisites(runtime, classpath, baseLocation, pluginChain);
 	
 	 // add libraries from pre-requisite plug-ins.  Don't worry about the export flag
 	 // as all required plugins may be required for compilation.
@@ -460,7 +541,7 @@ protected void addPrerequisites(PluginModel target, List classpath, String baseL
 	if (requires != null) {
 		pluginChain.add(target);
 	 	for (int i = 0; i < requires.length; i++) {
-			PluginModel plugin = getPlugin(requires[i].getPlugin(), requires[i].getVersion());
+			PluginModel plugin = getPlugin(requires[i].getPlugin(), requires[i]);
 			if (plugin != null)
 				addPluginAndPrerequisites(plugin, classpath, baseLocation, pluginChain);
 	 	}
@@ -784,26 +865,26 @@ protected PluginRegistryModel getRegistry() throws CoreException {
 private void setFragments() {
 	PluginFragmentModel[] fragments = registry.getFragments();
 	for (int i = 0; i < fragments.length; i++) {
-	    String pluginId = fragments[i].getPluginId();
-	    PluginDescriptorModel plugin = registry.getPlugin(pluginId);
-	    if (plugin==null) {     //fix for bug 39976
-	        Plugin self = Platform.getPlugin(IPDEBuildConstants.PI_PDEBUILD);
-	        if (self != null) {
-	            String message = Policy.bind("warning.missingPluginForFragment", pluginId, fragments[i].getId()); //$NON-NLS-1$
-	            IStatus status = new Status(IStatus.WARNING, IPDEBuildConstants.PI_PDEBUILD, IPDEBuildConstants.WARNING_MISSING_MATCHING_PLUGIN, message, null);
-	            self.getLog().log(status);
-	        }
-	        continue;
-	    }
-	    PluginFragmentModel[] existingFragments = plugin.getFragments();
-	    if (existingFragments == null)
-	        plugin.setFragments(new PluginFragmentModel[] { fragments[i] });
-	    else {
-	        PluginFragmentModel[] newFragments = new PluginFragmentModel[existingFragments.length + 1];
-	        System.arraycopy(existingFragments, 0, newFragments, 0, existingFragments.length);
-	        newFragments[newFragments.length - 1] = fragments[i];
-	        plugin.setFragments(newFragments);
-	    }
+		String pluginId = fragments[i].getPluginId();
+		PluginDescriptorModel plugin = registry.getPlugin(pluginId);
+		if (plugin==null) {     //fix for bug 39976
+			Plugin self = Platform.getPlugin(IPDEBuildConstants.PI_PDEBUILD);
+			if (self != null) {
+				String message = Policy.bind("warning.missingPluginForFragment", pluginId, fragments[i].getId()); //$NON-NLS-1$
+				IStatus status = new Status(IStatus.WARNING, IPDEBuildConstants.PI_PDEBUILD, IPDEBuildConstants.WARNING_MISSING_MATCHING_PLUGIN, message, null);
+				self.getLog().log(status);
+			}
+			continue;
+		}
+		PluginFragmentModel[] existingFragments = plugin.getFragments();
+		if (existingFragments == null)
+			plugin.setFragments(new PluginFragmentModel[] { fragments[i] });
+		else {
+			PluginFragmentModel[] newFragments = new PluginFragmentModel[existingFragments.length + 1];
+			System.arraycopy(existingFragments, 0, newFragments, 0, existingFragments.length);
+			newFragments[newFragments.length - 1] = fragments[i];
+			plugin.setFragments(newFragments);
+		}
 	}
 }
 

@@ -391,7 +391,9 @@ protected void generateAllPluginsTarget(AntScript script) throws CoreException {
 			PluginModel plugin = getRegistry().getPlugin(sortedPlugins[i]);
 			if (plugin==null)
 				plugin = getRegistry().getFragment(sortedPlugins[i]);
-			
+			if (plugin==null)
+				throw new CoreException(new Status(IStatus.ERROR, IPDEBuildConstants.PI_PDEBUILD, EXCEPTION_ELEMENT_MISSING, Policy.bind("exception.missingElement", sortedPlugins[i]), null)); //$NON-NLS-1$
+				
 			IPath location = Utils.makeRelative(new Path(getLocation(plugin)), new Path(getFeatureRootLocation()));
 			script.printAntTask(tab, buildScriptName, location.toString(), getPropertyFormat(PROPERTY_TARGET), null, null, null);
 		}
