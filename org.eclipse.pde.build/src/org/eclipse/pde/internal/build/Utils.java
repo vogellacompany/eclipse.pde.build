@@ -95,6 +95,20 @@ public final class Utils implements IPDEBuildConstants {
 		}
 	}
 
+	public static URL[] asURL(Collection target) throws CoreException {
+		if (target == null)
+			return null;
+		try {
+			URL[] result = new URL[target.size()];
+			int i = 0;
+			for (Iterator iter = target.iterator(); iter.hasNext();) {
+				result[i++] = ((File) iter.next()).toURL();
+			}
+			return result;
+		} catch (MalformedURLException e) {
+			throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, EXCEPTION_MALFORMED_URL, e.getMessage(), e));
+		}	
+	}
 	/**
 	 * Return a string which is a concatination of each member of the given collection,
 	 * separated by the given separator.

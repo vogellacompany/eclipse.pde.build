@@ -83,7 +83,7 @@ public class PluginRegistryConverter extends PDEState {
 	
 	public void addBundles(Collection bundles) {
 		try {
-			getPluginRegistry(Utils.asURL((String[]) bundles.toArray()));
+			getPluginRegistry(Utils.asURL(bundles));
 		} catch (CoreException e) {
 			IStatus status = new Status(IStatus.ERROR, IPDEBuildConstants.PI_PDEBUILD, EXCEPTION_STATE_PROBLEM, Policy.bind("exception.registryResolution"), e);
 			BundleHelper.getDefault().getLog().log(status);
