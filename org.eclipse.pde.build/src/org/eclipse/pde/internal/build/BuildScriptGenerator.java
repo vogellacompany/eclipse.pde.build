@@ -20,7 +20,10 @@ import org.eclipse.pde.internal.build.builder.ModelBuildScriptGenerator;
  * 
  */
 public class BuildScriptGenerator extends AbstractScriptGenerator {
-
+	/**
+	 * Indicates whether the assemble script should contain the archive generation statement.
+	 */
+	protected boolean generateArchive = true;
 	/**
 	 * Indicates whether scripts for a feature's children should be generated.
 	 */
@@ -114,11 +117,14 @@ public class BuildScriptGenerator extends AbstractScriptGenerator {
 			generator.setCompiledElements(generator.getCompiledElements());
 			generator.setBuildingOSGi(isBuildingOSGi());
 			generator.generate();
-			AssembleScriptGenerator assembler = new AssembleScriptGenerator(workingDirectory, assemblageInformation, featureId, null, outputFormat);
+			AssembleScriptGenerator assembler = new AssembleScriptGenerator(workingDirectory, assemblageInformation, featureId, null, outputFormat, generateArchive);
 			assembler.generate();
 		}
 	}
 
+	public void setGenerateArchive(boolean generateArchive) {
+		this.generateArchive = generateArchive;
+	}
 	/**
 	 * 
 	 * @param children

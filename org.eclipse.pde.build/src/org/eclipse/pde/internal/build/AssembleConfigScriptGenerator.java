@@ -35,6 +35,7 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 	protected Properties pluginsPostProcessingSteps;
 	protected Properties featuresPostProcessingSteps;
 	protected String outputFormat;
+	protected boolean generateArchive;
 	
 	private static final String PROPERTY_TMP_DIR = "assemblyTempDir"; //$NON-NLS-1$	
 	private static final String PROPERTY_SOURCE = "source"; //$NON-NLS-1$
@@ -53,12 +54,13 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 		super();
 	}
 
-	public void initialize(String directoryName, String scriptName, String feature, Config configurationInformation, Collection elementList, Collection featureList, boolean rootFileCopy, String outputFormat) throws CoreException {
+	public void initialize(String directoryName, String scriptName, String feature, Config configurationInformation, Collection elementList, Collection featureList, boolean rootFileCopy, String outputFormat, boolean generateArchive) throws CoreException {
 		this.directory = directoryName;
 		this.featureId = feature;
 		this.configInfo = configurationInformation;
 		this.copyRootFile = rootFileCopy;
 		this.outputFormat = outputFormat;
+		this.generateArchive = generateArchive;
 		
 		this.features = new IFeature[featureList.size()];
 		featureList.toArray(this.features);
@@ -89,14 +91,16 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 		generatePrologue();
 		generateInitializationSteps();
 		generateGatherBinPartsCalls();
-		if (configInfo.getOs().equalsIgnoreCase("macosx")) { //$NON-NLS-1$
-			generateTarTarget();
-			generateGZipTarget();
-		} else {
-			if(outputFormat.equalsIgnoreCase("zip"))
-				generateZipTarget();
-			else
-				generateAntZipTarget();
+		if (generateArchive) {
+			if (configInfo.getOs().equalsIgnoreCase("macosx")) { //$NON-NLS-1$
+				generateTarTarget();
+				generateGZipTarget();
+			} else {
+				if(outputFormat.equalsIgnoreCase("zip"))
+					generateZipTarget();
+				else
+					generateAntZipTarget();
+			}
 		}
 		generateEpilogue();
 	}

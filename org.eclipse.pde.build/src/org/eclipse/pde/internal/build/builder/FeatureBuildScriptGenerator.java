@@ -418,32 +418,34 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		String exclude = (String) getBuildProperties().get(PROPERTY_BIN_EXCLUDES);
 		String root = getPropertyFormat(PROPERTY_FEATURE_BASE) + '/' + featureFolderName; //$NON-NLS-1$
 		script.printMkdirTask(root);
-		if (include != null || exclude != null) {
-			FileSet fileSet = new FileSet(getPropertyFormat(PROPERTY_BASEDIR), null, include, null, exclude, null, null);
-			script.printCopyTask(null, root, new FileSet[]{fileSet}, true);
+		if (include != null) {
+			if (include != null || exclude != null) {
+				FileSet fileSet = new FileSet(getPropertyFormat(PROPERTY_BASEDIR), null, include, null, exclude, null, null);
+				script.printCopyTask(null, root, new FileSet[]{fileSet}, true);
+			}
+			// Generate the parameters for the Id Replacer.
+			String featureVersionInfo = ""; //$NON-NLS-1$
+			IIncludedFeatureReference[] includedFeatures = feature.getRawIncludedFeatureReferences();
+			for (int i = 0; i < includedFeatures.length; i++) {
+				IFeature includedFeature = getSite(false).findFeature(includedFeatures[i].getVersionedIdentifier().getIdentifier());
+				VersionedIdentifier includedFeatureVersionId = includedFeature.getVersionedIdentifier();
+				featureVersionInfo += (includedFeatureVersionId.getIdentifier() + "," + includedFeatureVersionId.getVersion().toString() + ","); //$NON-NLS-1$ //$NON-NLS-2$
+			}
+			String pluginVersionInfo = ""; //$NON-NLS-1$
+			IPluginEntry[] pluginsIncluded = feature.getRawPluginEntries();
+			for (int i = 0; i < pluginsIncluded.length; i++) {
+				VersionedIdentifier identifier = pluginsIncluded[i].getVersionedIdentifier();
+				BundleDescription model;
+				// If we ask for 0.0.0, the call to the registry must have null as a parameter
+				String versionRequested = identifier.getVersion().toString();
+				if (versionRequested.equals(GENERIC_VERSION_NUMBER))
+					versionRequested = null;
+				String entryIdentifier = identifier.getIdentifier();
+				model = getSite(false).getRegistry().getResolvedBundle(entryIdentifier, versionRequested);
+				pluginVersionInfo += (entryIdentifier + "," + model.getVersion() + ","); //$NON-NLS-1$ //$NON-NLS-2$
+			}
+			script.println("<eclipse.idReplacer featureFilePath=\"" + root + '/' + DEFAULT_FEATURE_FILENAME_DESCRIPTOR + "\" featureIds=\"" + featureVersionInfo + "\" pluginIds=\"" + pluginVersionInfo + "\"/>"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$
 		}
-		// Generate the parameters for the Id Replacer.
-		String featureVersionInfo = ""; //$NON-NLS-1$
-		IIncludedFeatureReference[] includedFeatures = feature.getRawIncludedFeatureReferences();
-		for (int i = 0; i < includedFeatures.length; i++) {
-			IFeature includedFeature = getSite(false).findFeature(includedFeatures[i].getVersionedIdentifier().getIdentifier());
-			VersionedIdentifier includedFeatureVersionId = includedFeature.getVersionedIdentifier();
-			featureVersionInfo += (includedFeatureVersionId.getIdentifier() + "," + includedFeatureVersionId.getVersion().toString() + ","); //$NON-NLS-1$ //$NON-NLS-2$
-		}
-		String pluginVersionInfo = ""; //$NON-NLS-1$
-		IPluginEntry[] pluginsIncluded = feature.getRawPluginEntries();
-		for (int i = 0; i < pluginsIncluded.length; i++) {
-			VersionedIdentifier identifier = pluginsIncluded[i].getVersionedIdentifier();
-			BundleDescription model;
-			// If we ask for 0.0.0, the call to the registry must have null as a parameter
-			String versionRequested = identifier.getVersion().toString();
-			if (versionRequested.equals(GENERIC_VERSION_NUMBER))
-				versionRequested = null;
-			String entryIdentifier = identifier.getIdentifier();
-			model = getSite(false).getRegistry().getResolvedBundle(entryIdentifier, versionRequested);
-			pluginVersionInfo += (entryIdentifier + "," + model.getVersion() + ","); //$NON-NLS-1$ //$NON-NLS-2$
-		}
-		script.println("<eclipse.idReplacer featureFilePath=\"" + root + '/' + DEFAULT_FEATURE_FILENAME_DESCRIPTOR + "\" featureIds=\"" + featureVersionInfo + "\" pluginIds=\"" + pluginVersionInfo + "\"/>"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$
 		generateRootFilesAndPermissionsCalls();
 		script.printTargetEnd();
 		generateRootFilesAndPermissions();
