@@ -278,6 +278,11 @@ private PluginModel internalGetPlugin(PluginPrerequisiteModel prereq) throws Cor
     // matter what the matching rules are so we will exit early with null
     if (prereq.getVersion() == null)
         return null;
+    
+    // Because earlier we did the equivalent of a perfect match, there is no use of redoing such a check. 
+    if (prereq.getMatchByte() == PluginPrerequisiteModel.PREREQ_MATCH_PERFECT)
+    	return null;
+    	
 	PluginModel result = null;
 	PluginDescriptorModel[] plugins = getRegistry().getPlugins(prereq.getPlugin());
 	PluginVersionIdentifier searchedVersion = new PluginVersionIdentifier(prereq.getVersion());
