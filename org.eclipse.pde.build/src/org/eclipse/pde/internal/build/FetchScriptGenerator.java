@@ -81,8 +81,11 @@ public class FetchScriptGenerator extends AbstractScriptGenerator {
 	 */
 	public void generate() throws CoreException {
 		mapInfos = processMapFileEntry(element);
-		if (mapInfos == null)
+		if (mapInfos == null) {
+			IStatus warning = new Status(IStatus.WARNING, PI_PDEBUILD, WARNING_ELEMENT_NOT_FETCHED, Policy.bind("warning.fetchingFailed", element),null);
+			BundleHelper.getDefault().getLog().log(warning);
 			return;
+		}
 
 		scriptName = FETCH_FILE_PREFIX + mapInfos.get(ELEMENT) + ".xml"; //$NON-NLS-1$
 		openScript(workingDirectory, scriptName);
