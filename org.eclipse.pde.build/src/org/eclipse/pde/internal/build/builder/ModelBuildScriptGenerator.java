@@ -90,7 +90,7 @@ public abstract class ModelBuildScriptGenerator extends AbstractBuildScriptGener
 
 		// If the the plugin we want to generate is a source plugin, and the feature that required the generation of this plugin is not being asked to build the source
 		// we want to leave. This is particularly usefull for the case of the pde.source building (at least for now since the source of pde is not in a feature)
-		if (featureGenerator.isSourceFeatureGeneration() == false && featureGenerator.getBuildProperties().containsKey(GENERATION_SOURCE_PLUGIN_PREFIX + model.getId()))
+		if (featureGenerator != null && featureGenerator.isSourceFeatureGeneration() == false && featureGenerator.getBuildProperties().containsKey(GENERATION_SOURCE_PLUGIN_PREFIX + model.getId()))
 			return;
 
 		initializeVariables();
