@@ -216,6 +216,10 @@ public class FeatureWriter extends XMLWriter implements IPDEBuildConstants {
 				String message = Policy.bind("exception.missingPlugin", plugins[i].getVersionedIdentifier().toString()); //$NON-NLS-1$
 				throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, EXCEPTION_PLUGIN_MISSING, message, null));
 			}
+			if (effectivePlugin == null) {
+				String message = Policy.bind("exception.missingPlugin", plugins[i].getVersionedIdentifier().toString()); //$NON-NLS-1$
+				throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, EXCEPTION_PLUGIN_MISSING, message, null));				
+			}
 			parameters.put("version", effectivePlugin.getVersion()); //$NON-NLS-1$
 			parameters.put("fragment", new Boolean(plugins[i].isFragment())); //$NON-NLS-1$
 			parameters.put("os", plugins[i].getOS()); //$NON-NLS-1$
