@@ -8,15 +8,18 @@ import org.eclipse.osgi.framework.log.FrameworkLog;
 import org.eclipse.osgi.framework.util.Headers;
 import org.eclipse.osgi.service.pluginconversion.PluginConverter;
 import org.eclipse.osgi.service.resolver.*;
+import org.eclipse.pde.internal.build.*;
+import org.eclipse.pde.internal.build.IPDEBuildConstants;
+import org.eclipse.pde.internal.build.Utils;
 import org.osgi.framework.*;
 
 // This class provides a higher level API on the state
-public class PDEState {
+public class PDEState implements IPDEBuildConstants, IXMLConstants {
 	static private BundleContext ctx;
 	private StateObjectFactory factory;
 	private State state;
 	private long id;
-	
+	private Properties repositoryVersions;
 	private ServiceReference logServiceReference;
 	private ServiceReference converterServiceReference;
 	
@@ -29,6 +32,7 @@ public class PDEState {
 		state = factory.createState();
 		state.setResolver(Platform.getPlatformAdmin().getResolver());
 		id = 0;
+		loadPluginVersionFile();
 	}
 	
 	public StateObjectFactory getFactory() {
@@ -53,59 +57,133 @@ public class PDEState {
 		return (PluginConverter) ctx.getService(converterServiceReference);
 	}
 	
-	public boolean addBundle(File bundleLocation) {
-		//TODO This code will have problem if we want to build out of jars
-		File manifestLocation = null;
-		if (bundleLocation.getName().equalsIgnoreCase("plugin.xml") || bundleLocation.getName().equalsIgnoreCase("fragment.xml")) {
-			manifestLocation = new File(bundleLocation.getParentFile(), "META-INF");
-			manifestLocation.mkdirs();
-			manifestLocation = new File(manifestLocation, "MANIFEST.MF");
-			PluginConverter converter;
-			try {
-				converter = acquirePluginConverter();
-				converter.convertManifest(bundleLocation, manifestLocation);	//TODO the generated manifest does not really need to be written to disk.
-				bundleLocation = manifestLocation;
-			} catch (Exception e) {
-				e.printStackTrace();
-				return false;
-			}
-		}
-		InputStream manifestStream = null;
+	public boolean addBundle(Dictionary enhancedManifest, URL bundleLocation) {
+		updateVersionNumber(enhancedManifest);
 		try {
-			manifestStream = new BufferedInputStream(new FileInputStream(bundleLocation));
-			Dictionary manifest = Headers.parseManifest(manifestStream);
-			Properties properties = manifestToDictionary(manifest);
-//			loadPropertyFileIn(properties, bundleLocation.getParentFile().getParentFile());
-			
-			if (((String) manifest.get(Constants.BUNDLE_SYMBOLICNAME)).equals("org.eclipse.osgi")) {	
-				//TODO We need to handle the special case of the osgi bundle for whom the bundle-classpath is specified in the eclipse.properties file in the osgi folder
-				manifest.put(Constants.BUNDLE_CLASSPATH, "core.jar, console.jar, osgi.jar, resolver.jar, defaultAdaptor.jar, eclipseAdaptor.jar");
-			}
-			BundleDescription descriptor = factory.createBundleDescription(manifest, "file:"+bundleLocation.getParentFile().getParent(), id++);	//FIXME This is dangereous
-			descriptor.setUserObject(manifest);
+			BundleDescription descriptor;
+			descriptor = factory.createBundleDescription(enhancedManifest, bundleLocation.toExternalForm(), getNextId());
+			descriptor.setUserObject(enhancedManifest);
 			state.addBundle(descriptor);
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			setExtraPrerequisites(descriptor, enhancedManifest);
+		} catch (BundleException e) {
+			//TODO Need to log
 			return false;
-		} catch (BundleException be) {
-			be.printStackTrace();
-			return false;
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} finally {
-			if (manifestStream != null)
-				try {
-					manifestStream.close();
-				} catch (IOException e1) {
-					//IGNORE
-				}
 		}
 		return true;
 	}
+
+	private void loadPluginVersionFile() {
+		repositoryVersions = new Properties();
+		FileInputStream input;
+		try {
+			input = new FileInputStream(AbstractScriptGenerator.getWorkingDirectory() + "/" + DEFAULT_PLUGIN_VERSION_FILENAME_DESCRIPTOR); //$NON-NLS-1$
+			repositoryVersions.load(input);
+		} catch (IOException e) {
+			//Ignore
+		}
+	}
+	private void updateVersionNumber(Dictionary manifest) {
+		String q = (String) manifest.get(PROPERTY_QUALIFIER);
+		if (q==null)
+			return;
+		String newQualifier = null;
+		if (q.equalsIgnoreCase(PROPERTY_CONTEXT)) {
+			newQualifier = (String) repositoryVersions.get(manifest.get(Constants.BUNDLE_SYMBOLICNAME));
+			if (newQualifier==null)
+				newQualifier = "" + Calendar.getInstance().get(Calendar.YEAR) + Calendar.getInstance().get(Calendar.MONTH) +Calendar.getInstance().get(Calendar.DAY_OF_MONTH);
+		} else {
+			newQualifier = q;
+		}
+		if (newQualifier==null)
+			return;
+		String oldVersion = (String) manifest.get(Constants.BUNDLE_VERSION);
+		manifest.put(Constants.BUNDLE_VERSION, oldVersion.replaceFirst(PROPERTY_QUALIFIER, newQualifier));
+	}
+
+	private void setExtraPrerequisites(BundleDescription descriptor, Dictionary manifest) {
+		String extraPrereqs = (String) manifest.get(PROPERTY_EXTRA_PREREQUISITES);
+		if (extraPrereqs==null)
+			return;
+
+		//Create the new prerequisite from the list
+		BundleSpecification[] oldRequires = descriptor.getRequiredBundles();
+		String[] extraPrereqsList = Utils.getArrayFromString(extraPrereqs);
+		int oldRequiresLength = oldRequires==null ? 0 : oldRequires.length; 
+		BundleSpecification[] newRequires = new BundleSpecification[oldRequiresLength + extraPrereqsList.length];
+		if (oldRequires != null)
+			System.arraycopy(oldRequires, 0, newRequires, 0, oldRequires.length);
+		for (int i = 0; i < extraPrereqsList.length; i++) {
+			BundleSpecification prereq = state.getFactory().createBundleSpecification(extraPrereqsList[i], null, VersionConstraint.NO_MATCH, false, false);
+			newRequires[oldRequiresLength + i] = prereq; 
+		}
+		BundleDescription newDescription = state.getFactory().createBundleDescription(getNextId(), 
+				descriptor.getUniqueId(), 
+				descriptor.getVersion(), 
+				descriptor.getLocation(), 
+				newRequires,
+				descriptor.getHost(), 
+				descriptor.getPackages(), 
+				descriptor.getProvidedPackages());
+		newDescription.setUserObject(descriptor.getUserObject());
+		state.removeBundle(descriptor);
+		state.addBundle(newDescription);
+	}
 	
-	public Properties manifestToDictionary(Dictionary d) {
+	
+	public boolean addBundle(URL bundleLocation) {
+		Properties manifest;
+		try {
+			manifest = loadManifest(bundleLocation);
+			loadPropertyFileIn(manifest, bundleLocation);
+			if (manifest.getProperty(Constants.BUNDLE_SYMBOLICNAME).equals("org.eclipse.osgi")) {	
+				//TODO We need to handle the special case of the osgi bundle for whom the bundle-classpath is specified in the eclipse.properties file in the osgi folder
+				manifest.put(Constants.BUNDLE_CLASSPATH, "core.jar, console.jar, osgi.jar, resolver.jar, defaultAdaptor.jar, eclipseAdaptor.jar");
+			}
+		} catch (IOException e) {
+			//TODO Need to log
+			return false;
+		}
+
+		return addBundle(manifest, bundleLocation);
+	}
+	
+	private Properties loadManifest(URL bundleLocation) throws IOException {
+		InputStream stream = null;
+		try {
+			URL tmpLocation = new URL(bundleLocation, "META-INF/MANIFEST.MF");
+			 stream = tmpLocation .openStream();
+		} catch (IOException e) {
+			//We do not do any manifest generation for jared plugin
+			if (bundleLocation.getProtocol().equalsIgnoreCase("jar"))
+				throw e; 	 
+		}
+		
+		if (stream == null) {
+			File manifestLocation = new File(bundleLocation.getFile(), "META-INF/MANIFEST.MF");
+			if (! manifestLocation.exists()) {
+				//TODO Here we should set a temporary location or maybe not even write the file to disk
+				PluginConverter converter;
+				try {
+					converter = acquirePluginConverter();
+					converter.convertManifest(new File(bundleLocation.getFile()), manifestLocation);
+				} catch (Exception e) {
+					e.printStackTrace(); 
+				}
+			}
+			stream = new BufferedInputStream(new FileInputStream(manifestLocation));
+		}
+		try {
+			Headers manifest = Headers.parseManifest(stream);
+			return manifestToDictionary(manifest);
+		} catch (BundleException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		return null;
+		
+	}
+
+	private Properties manifestToDictionary(Dictionary d) {
 		Enumeration enum = d.keys();
 		Properties result = new Properties();
 		while (enum.hasMoreElements()) {
@@ -114,18 +192,17 @@ public class PDEState {
 		}
 		return result;
 	}
+	
 	public void addBundles(URL[] bundles) {
 		for (int i = 0; i < bundles.length; i++) {
-			addBundle(new File(bundles[i].getFile())); //Need to report a better error message when the manifest is bogus
+			addBundle(bundles[i]); //Need to report a better error message when the manifest is bogus
 		}
 	}
 	
 	public void resolveState() {
 		state.resolve(false);
 	}
-	/**
-	 * @param ctx The ctx to set.
-	 */
+
 	public static void setCtx(BundleContext ctx) {
 		PDEState.ctx = ctx;
 	}
@@ -253,14 +330,13 @@ public class PDEState {
 		}
 	}
 	
-	public void loadPropertyFileIn(Properties toMerge, File location) {
-		Properties buildProperties = null;
+	public void loadPropertyFileIn(Properties toMerge, URL location) {
 		InputStream propertyStream = null;
 		try {
-			propertyStream = new URL(location + "/" + "build.properties").openStream();
-			buildProperties.load(propertyStream); //$NON-NLS-1$
+			propertyStream = new URL(location.toExternalForm()+ "/" + PROPERTIES_FILE).openStream();
+			toMerge.load(propertyStream); //$NON-NLS-1$
 		} catch (Exception e) {
-			buildProperties = new Properties();
+			//ignore because compiled plug-ins do not have such files
 		} finally {
 			try {
 				if (propertyStream != null)

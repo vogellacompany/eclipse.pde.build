@@ -24,7 +24,6 @@ public class PluginVersionReplaceTask extends Task {
 	private static final String ID = "id";//$NON-NLS-1$
 	private static final String VERSION = "version";//$NON-NLS-1$
 	private static final String BACKSLASH = "\""; //$NON-NLS-1$
-	private final static String GENERIC_VERSION_NUMBER = "QUALIFIER"; //$NON-NLS-1$
 	
 	
 	//Path of the file where we are replacing the values
@@ -69,17 +68,10 @@ public class PluginVersionReplaceTask extends Task {
 		//Extract the version id and replace it
 		int startVersionId = scan(buffer, versionAttr + 1, BACKSLASH);
 		int endVersionId = scan(buffer, startVersionId + 1, BACKSLASH);
-		char[] versionId = new char[endVersionId - startVersionId - 1];
-		buffer.getChars(startVersionId + 1, endVersionId, versionId, 0);
-		String version = new String(versionId);
-		if (!version.endsWith(GENERIC_VERSION_NUMBER)) {
-			return;
-		}
 		
 		startVersionId++;
-		String replacementVersion = version.substring(0, version.indexOf(GENERIC_VERSION_NUMBER)) + newVersion;
-		buffer.replace(startVersionId, startVersionId + version.length(), replacementVersion);
-
+		buffer.replace(startVersionId, endVersionId, newVersion);
+		
 		try {
 			transferStreams(new ByteArrayInputStream(buffer.toString().getBytes()), new FileOutputStream(pluginFilePath));
 		} catch (FileNotFoundException e) {

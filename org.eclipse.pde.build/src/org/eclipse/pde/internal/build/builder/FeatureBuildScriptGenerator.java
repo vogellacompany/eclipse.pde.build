@@ -1163,8 +1163,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 				assemblyData.addPlugin((Config) iter.next(), effectivePlugin);
 		}
 	}
-	// Create a feature object representing a source feature based on the
-	// featureExample
+	// Create a feature object representing a source feature based on the featureExample
 	private Feature createSourceFeature(Feature featureExample) throws CoreException {
 		Feature result = new Feature();
 		result.setFeatureIdentifier(computeSourceFeatureName(featureExample, false));

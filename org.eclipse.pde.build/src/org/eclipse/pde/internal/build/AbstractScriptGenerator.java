@@ -158,4 +158,7 @@ public abstract class AbstractScriptGenerator implements IXMLConstants, IPDEBuil
 	public static boolean isBuildingOSGi() {
 		return buildingOSGi;
 	}
+	public static String getWorkingDirectory() {
+		return workingDirectory;
+	}
 }

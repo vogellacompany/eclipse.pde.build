@@ -91,12 +91,12 @@ public class ManifestModifier extends Task {
 	}
 
 	private void changeValue(String key, String value) {
-		log("key : " + key + " becomes " + value, Project.MSG_VERBOSE);
+//		log("key : " + key + " becomes " + value, Project.MSG_VERBOSE);
 		manifest.getMainAttributes().put(new Attributes.Name(key), value);
 	}
 
 	private void removeAttribute(String key) {
-		log("key : " + key + " removed", Project.MSG_VERBOSE);
+//		log("key : " + key + " removed", Project.MSG_VERBOSE);
 		manifest.getMainAttributes().remove(new Attributes.Name(key));
 	}
 

@@ -81,7 +81,7 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	private String propertiesFileName = PROPERTIES_FILE;
 	private String buildScriptFileName = DEFAULT_BUILD_SCRIPT_FILENAME;
 
-	private boolean compile21 = false;
+	private boolean compile21 = isBuildingOSGi();
 
 	/**
 	 * @see AbstractScriptGenerator#generate()
@@ -99,9 +99,10 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 			return;
 
 		if (compile21)
-			checkBootAndRuntime();	//FIXME This need to be made optional.	If running for 2.1
+			checkBootAndRuntime();
 		
 		initializeVariables();
+		System.out.println("generating " + model.getUniqueId());	//TODO Need to put that into a log
 
 		String custom = (String) getBuildProperties().get(PROPERTY_CUSTOM);
 		if (custom != null && custom.equalsIgnoreCase("true")) { //$NON-NLS-1$
@@ -324,19 +325,15 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 			script.printCopyTask(null, root, new FileSet[] { fileSet });
 		}
 		generatePermissionProperties(root);
-		genarateIdReplacementCall();
+		genarateIdReplacementCall(destination.toString());
 		script.printTargetEnd();
 	}
 
-	private void genarateIdReplacementCall() throws CoreException {
-		String qualifier = (String) getBuildProperties().get("qualifier");
-		if (qualifier == null || qualifier.equalsIgnoreCase("NONE"))
+	private void genarateIdReplacementCall(String location) throws CoreException {
+		String qualifier = getBuildProperties().getProperty(PROPERTY_QUALIFIER);
+		if (qualifier == null || qualifier.equalsIgnoreCase(PROPERTY_NONE))
 			return;
-		if (qualifier.equalsIgnoreCase("context")) {
-			
-		}
-			
-		script.print("<eclipse.PluginVersionReplacer pluginFilePath=\"asdasdasd\" versionNumber=\"foo\"/>");
+		script.print("<eclipse.versionReplacer path=\"" +location + "\" version=\"" + model.getVersion() + "\"/>");	
 	}
 
 	private void generatePermissionProperties(String directory) throws CoreException {
@@ -751,10 +748,7 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	}
 
 	protected Properties getBuildProperties() throws CoreException {
-		if (buildProperties == null)
-			buildProperties = readProperties(getLocation(model), propertiesFileName);
-
-		return buildProperties;
+		return (Properties) model.getUserObject();
 	}
 
 	/**

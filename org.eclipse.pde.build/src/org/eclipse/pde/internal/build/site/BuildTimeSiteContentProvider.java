@@ -11,6 +11,7 @@
 package org.eclipse.pde.internal.build.site;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
@@ -47,7 +48,7 @@ public class BuildTimeSiteContentProvider extends SiteContentProvider implements
 			System.arraycopy(installedPlugins, 0, pluginsAndBase, pluginsToCompile.length, installedPlugins.length);
 			return pluginsAndBase;
 		} else {
-			return pluginsToCompile;
+			return pluginsToCompile;	//TODO Need to add back the management of the installBaseURL
 		}
 	}
 
@@ -56,22 +57,41 @@ public class BuildTimeSiteContentProvider extends SiteContentProvider implements
 	}
 
 	private URL[] findPluginXML(URL[] location) {
+		
+		
 		Collection collectedElements = new ArrayList(10);
 		for (int i = 0; i < location.length; i++) {
-			Collection foundPlugins = Utils.findFiles(location[i].getFile(), DEFAULT_PLUGIN_LOCATION, DEFAULT_PLUGIN_FILENAME_DESCRIPTOR);
-			if (foundPlugins != null)
-				collectedElements.addAll(foundPlugins);
+			File f = new File(location[i].getFile(), DEFAULT_PLUGIN_LOCATION);
+			collectedElements.addAll(Arrays.asList(f.listFiles(new FileFilter() {
+				public boolean accept(File pathname) {
+					if (pathname.isDirectory())
+						return true;
+					return false;
+				}
+			})));
 		}
-		for (int i = 0; i < location.length; i++) {
-			Collection foundFragments = Utils.findFiles(location[i].getFile(), DEFAULT_PLUGIN_LOCATION, DEFAULT_FRAGMENT_FILENAME_DESCRIPTOR);
-			if (foundFragments != null)
-				collectedElements.addAll(foundFragments);
-		}
-		for (int i = 0; i < location.length; i++) {
-			Collection foundFragments = Utils.findFiles(location[i].getFile(), DEFAULT_PLUGIN_LOCATION, "MANIFEST.MF");
-			if (foundFragments != null)
-				collectedElements.addAll(foundFragments);
-		}		
+//			f = new File(location[i].getFile(), DEFAULT_"META-INF");
+//			foundPlugins.addAll(Arrays.asList(f.listFiles(new FileFilter() {
+//				public boolean accept(File pathname) {
+//					if (pathname.isDirectory())
+//						return true;
+//				}
+//			})));
+//			Collection foundPlugins = new File(location[i].getFile());//, DEFAULT_PLUGIN_LOCATION, DEFAULT_PLUGIN_FILENAME_DESCRIPTOR);
+			
+//			if (foundPlugins != null)
+//				collectedElements.addAll(foundPlugins);
+//		}
+//		for (int i = 0; i < location.length; i++) {
+//			Collection foundFragments = Utils.findFiles(location[i].getFile(), DEFAULT_PLUGIN_LOCATION, DEFAULT_FRAGMENT_FILENAME_DESCRIPTOR);
+//			if (foundFragments != null)
+//				collectedElements.addAll(foundFragments);
+//		}
+//		for (int i = 0; i < location.length; i++) {
+//			Collection foundFragments = Utils.findFiles(location[i].getFile(), DEFAULT_PLUGIN_LOCATION, "MANIFEST.MF");
+//			if (foundFragments != null)
+//				collectedElements.addAll(foundFragments);
+//		}		
 		URL[] pluginURLs = new URL[collectedElements.size()];
 		int i = 0;
 		for (Iterator iter = collectedElements.iterator(); iter.hasNext();) {

@@ -63,7 +63,8 @@ public interface IPDEBuildConstants {
 	public final static String DEFAULT_SOURCE_PLUGIN_SUFFIX = "source"; //$NON-NLS-1$
 	public final static String DEFAULT_PACKAGER_DIRECTORY_FILENAME_DESCRIPTOR = "packager.directory.txt"; //$NON-NLS-1$
 	public final static String DEFAULT_UNZIPPER_FILENAME_DESCRIPTOR = "unzipper.xml"; //$NON-NLS-1$
-
+	public final static String DEFAULT_PLUGIN_VERSION_FILENAME_DESCRIPTOR = "pluginVersions.properties"; //$NON-NLS-1$
+	
 	//permission prefixes
 	public final static String PERMISSIONS = "permissions"; //$NON-NLS-1$
 	public final static String LINK = "link"; //$NON-NLS-1$

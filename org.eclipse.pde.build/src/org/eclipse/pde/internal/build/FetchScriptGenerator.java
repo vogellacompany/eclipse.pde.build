@@ -48,7 +48,9 @@ public class FetchScriptGenerator extends AbstractScriptGenerator {
 	protected Properties featureProperties;
 	// Variables to control is a mkdir to a specific folder was already.
 	protected List mkdirLocations = new ArrayList(5);
-
+	// A property table containing the association between the plugins and the version from the map  
+	protected Properties repositoryVersions = new Properties();
+	
 	public static final String FEATURE_ONLY = "featureOnly"; //$NON-NLS-1$
 	public static final String FEATURE_AND_PLUGINS = "featureAndPlugins"; //$NON-NLS-1$
 	public static final String FEATURES_RECURSIVELY = "featuresRecursively"; //$NON-NLS-1$
@@ -86,6 +88,45 @@ public class FetchScriptGenerator extends AbstractScriptGenerator {
 
 		if (recursiveGeneration && mapInfos.get("type").equals("feature")) //$NON-NLS-1$ 	//$NON-NLS-2$
 			generateFetchFilesForIncludedFeatures();
+		
+		saveRepositoryVersions();
+	}
+
+	private void saveRepositoryVersions() throws CoreException {
+		FileInputStream fis = null;
+		try {
+			fis = new FileInputStream(workingDirectory + "/" + DEFAULT_PLUGIN_VERSION_FILENAME_DESCRIPTOR); //$NON-NLS-1$
+			InputStream is = new BufferedInputStream(fis);
+			repositoryVersions.load(is);
+		} catch (IOException e) {
+			//ignore the exception, the same may not exist
+		} finally {
+			if(fis != null)
+				try {
+					fis.close();
+				} catch (IOException e1) {
+					// ignore
+				}
+		}
+		
+		FileOutputStream fos = null;
+		try {
+			fos = new FileOutputStream(workingDirectory + "/"  + DEFAULT_PLUGIN_VERSION_FILENAME_DESCRIPTOR);//$NON-NLS-1$
+			OutputStream os = new BufferedOutputStream(fos);
+			repositoryVersions.store(os,null);
+		} catch (IOException e) {
+			String message = Policy.bind("exception.writingFile", directoryLocation + "/" + DEFAULT_PLUGIN_VERSION_FILENAME_DESCRIPTOR); //$NON-NLS-1$ //$NON-NLS-2$
+			throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, EXCEPTION_WRITING_FILE, message, null));
+		} finally {
+			if (fos != null) {
+				try {
+					fos.close();
+				} catch (IOException e1) {
+					//Ignore
+				}
+			}
+		}
+		
 	}
 
 	/**
@@ -104,6 +145,7 @@ public class FetchScriptGenerator extends AbstractScriptGenerator {
 			generator.setCvsPassFileLocation(cvsPassFileLocation);
 			generator.setRecursiveGeneration(recursiveGeneration);
 			generator.setFetchTag(fetchTag);
+			generator.repositoryVersions = repositoryVersions;
 			generator.generate();
 		}
 	}
@@ -241,16 +283,19 @@ public class FetchScriptGenerator extends AbstractScriptGenerator {
 			fullLocation = location + "/" + (String) mapFileEntry.get("element") + "/" + DEFAULT_PLUGIN_FILENAME_DESCRIPTOR; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 			params.put("fileToCheck", fullLocation); //$NON-NLS-1$
 			cvsPackage += xmlFileOnly ? "/" + DEFAULT_PLUGIN_FILENAME_DESCRIPTOR : ""; //$NON-NLS-1$ //$NON-NLS-2$
+			repositoryVersions.put(mapFileEntry.get("element"), mapFileEntry.get("tag"));
 		} else if (type.equals("fragment")) { //$NON-NLS-1$
 			fullLocation = location + "/" + (String) mapFileEntry.get("element") + "/" + DEFAULT_FRAGMENT_FILENAME_DESCRIPTOR; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 			params.put("fileToCheck", fullLocation); //$NON-NLS-1$
 			cvsPackage += xmlFileOnly ? "/" + DEFAULT_FRAGMENT_FILENAME_DESCRIPTOR : ""; //$NON-NLS-1$ //$NON-NLS-2$
+			repositoryVersions.put(mapFileEntry.get("element"), mapFileEntry.get("tag"));
 		}
 		params.put("package", cvsPackage); //$NON-NLS-1$
 
 		// This call create a new property for every feature, plugins or fragments that we must check the existence of 
 		script.printAvailableTask(fullLocation, fullLocation);
 		script.printAntTask("../" + scriptName, "${buildDirectory}/" + (type.equals("feature") ? DEFAULT_FEATURE_LOCATION : DEFAULT_PLUGIN_LOCATION), TARGET_GET_FROM_CVS, null, null, params); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+		
 	}
 
 	protected void generateGetFromCVSTarget() {

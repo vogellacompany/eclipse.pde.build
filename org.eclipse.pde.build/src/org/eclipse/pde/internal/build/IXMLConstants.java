@@ -86,6 +86,10 @@ public interface IXMLConstants {
 	public static final String PROPERTY_FEATURE_VERSION_SUFFIX = "feature.version.suffix"; //$NON-NLS-1$
 	public static final String PROPERTY_FULL_NAME = "full.name"; //$NON-NLS-1$
 	public static final String PROPERTY_INCLUDE_CHILDREN = "include.children"; //$NON-NLS-1$
+	public static final String PROPERTY_QUALIFIER = "qualifier"; //$NON-NLS-1$
+	public static final String PROPERTY_NONE = "none"; //$NON-NLS-1$
+	public static final String PROPERTY_CONTEXT = "context"; //$NON-NLS-1$
+	
 	//public static final String PROPERTY_INSTALL = "install"; //$NON-NLS-1$
 	public static final String PROPERTY_JAR_EXTRA_CLASSPATH = "jars.extra.classpath"; //$NON-NLS-1$
 	public static final String PROPERTY_JAR_ORDER = "jars.compile.order"; //$NON-NLS-1$

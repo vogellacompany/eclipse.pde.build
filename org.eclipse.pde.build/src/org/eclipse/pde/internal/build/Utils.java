@@ -396,7 +396,7 @@ public final class Utils implements IPDEBuildConstants {
 		}
 		return collectedElements;
 	}
-
+	
 	public static boolean isIn(IPluginEntry[] array, IPluginEntry element) {
 		for (int i = 0; i < array.length; i++) {
 			if (array[i].getVersionedIdentifier().equals(element.getVersionedIdentifier()))
