@@ -39,7 +39,7 @@ public class PluginRegistryConverter {
 		PluginFragmentModel[] fragments = registry.getFragments();
 		
 		for (int i = 0; i < plugins.length; i++) {		
-			BundleDescription bd = state.getFactory().createBundleDescription(state.getNextId(), plugins[i].getPluginId(), new Version(plugins[i].getVersion()), plugins[i].getLocation(), createBundleSpecification(plugins[i].getRequires(), state) , null, null, null, true);
+			BundleDescription bd = state.getFactory().createBundleDescription(state.getNextId(), plugins[i].getPluginId(), new Version(plugins[i].getVersion()), plugins[i].getLocation(), createBundleSpecification(plugins[i].getRequires(), state) , (HostSpecification[]) null, null, null, true);
 			String libs = createClasspath(plugins[i].getRuntime());
 			Properties manifest = new Properties();
 			if(libs != null)
