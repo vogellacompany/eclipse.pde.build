@@ -336,7 +336,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	private void generateZipIndividualTarget(String zipName, String source) throws CoreException {
 		script.println();
 		script.printTargetDeclaration(zipName, TARGET_INIT, null, null, null);
-		script.printZipTask(getPropertyFormat(PROPERTY_BASEDIR) + '/' + zipName, getPropertyFormat(PROPERTY_BASEDIR) + '/' + source, false, null); //$NON-NLS-1$ //$NON-NLS-2$
+		script.printZipTask(getPropertyFormat(PROPERTY_BASEDIR) + '/' + zipName, getPropertyFormat(PROPERTY_BASEDIR) + '/' + source, false, false, null); //$NON-NLS-1$ //$NON-NLS-2$
 		script.printTargetEnd();
 	}
 	/**
@@ -376,7 +376,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		params.put(PROPERTY_DESTINATION_TEMP_FOLDER, new Path(featureTempFolder).append(DEFAULT_PLUGIN_LOCATION).toString()); //$NON-NLS-1$
 		script.printAntCallTask(TARGET_ALL_CHILDREN, "false", params); //$NON-NLS-1$
 		IPath destination = new Path(getPropertyFormat(PROPERTY_FEATURE_DESTINATION)).append(featureFullName + ".log.zip"); //$NON-NLS-1$
-		script.printZipTask(destination.toString(), featureTempFolder, true, null);
+		script.printZipTask(destination.toString(), featureTempFolder, true, false, null);
 		script.printDeleteTask(featureTempFolder, null, null);
 		script.printTargetEnd();
 	}
@@ -396,7 +396,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		params.put(PROPERTY_TARGET, TARGET_GATHER_SOURCES);
 		params.put(PROPERTY_DESTINATION_TEMP_FOLDER, featureTempFolder + '/' + DEFAULT_PLUGIN_LOCATION + '/' + sourceFeatureFullNameVersionned + '/' + "src"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$
 		script.printAntCallTask(TARGET_ALL_CHILDREN, null, params);
-		script.printZipTask(getPropertyFormat(PROPERTY_FEATURE_DESTINATION) + '/' + featureFullName + ".src.zip", featureTempFolder, true, null); //$NON-NLS-1$ //$NON-NLS-2$
+		script.printZipTask(getPropertyFormat(PROPERTY_FEATURE_DESTINATION) + '/' + featureFullName + ".src.zip", featureTempFolder, true, false, null); //$NON-NLS-1$ //$NON-NLS-2$
 		script.printDeleteTask(featureTempFolder, null, null);
 		script.printTargetEnd();
 	}
@@ -587,7 +587,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		params.put(PROPERTY_ARCH, feature.getOSArch() == null ? Config.ANY : feature.getOSArch());
 		params.put(PROPERTY_NL, feature.getNL() == null ? Config.ANY : feature.getNL());
 		script.printAntCallTask(TARGET_GATHER_BIN_PARTS, null, params);
-		script.printZipTask(getPropertyFormat(PROPERTY_FEATURE_DESTINATION) + '/' + featureFullName + ".bin.dist.zip", featureTempFolder, false, null); //$NON-NLS-1$ //$NON-NLS-2$
+		script.printZipTask(getPropertyFormat(PROPERTY_FEATURE_DESTINATION) + '/' + featureFullName + ".bin.dist.zip", featureTempFolder, false, false, null); //$NON-NLS-1$ //$NON-NLS-2$
 		script.printDeleteTask(featureTempFolder, null, null);
 		script.printTargetEnd();
 	}

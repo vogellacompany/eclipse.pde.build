@@ -252,7 +252,7 @@ public class PDEState implements IPDEBuildConstants, IBuildPropertiesConstants {
 		BundleDescription[] imported = getImportedBundles(root);
 		BundleDescription[] importedByFragments = getImportedByFragments(root);
 		BundleDescription[] required = getRequiredBundles(root);
-		BundleDescription[] requiredByFragments = getRequiredBundles(root);
+		BundleDescription[] requiredByFragments = getRequiredByFragments(root);
 		BundleDescription[] dependents = new BundleDescription[imported.length + importedByFragments.length + required.length + requiredByFragments.length];
 		System.arraycopy(imported, 0, dependents, 0, imported.length);
 		System.arraycopy(importedByFragments, 0, dependents, imported.length, importedByFragments.length);
@@ -305,5 +305,8 @@ public class PDEState implements IPDEBuildConstants, IBuildPropertiesConstants {
 	}
 	public HashMap getExtraData() {
 		return bundleClasspaths;
+	}
+	public List getSortedBundles() {
+		return Utils.computePrerequisiteOrder(Arrays.asList(getState().getResolvedBundles()));
 	}
 }

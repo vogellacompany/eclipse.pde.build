@@ -155,20 +155,22 @@ public class AntScript {
 	/**
 	 * Print a <code>zip</code> task to this script.
 	 * 
-	 * @param tab the number of tabs to indent
 	 * @param zipfile the destination file name
 	 * @param basedir the source directory to start the zip
 	 * @param filesOnly <code>true</code> if the resulting zip file should contain
-	 *   only files and not directories
+ *   only files and not directories
+	 * @param update TODO
 	 * @param fileSets the inclusion/exclusion rules to use when zipping
+	 * @param tab the number of tabs to indent
 	 */
-	public void printZipTask(String zipfile, String basedir, boolean filesOnly, FileSet[] fileSets) {
+	public void printZipTask(String zipfile, String basedir, boolean filesOnly, boolean update, FileSet[] fileSets) {
 		printTab();
 		output.print("<zip"); //$NON-NLS-1$
 		printAttribute("zipfile", zipfile, true); //$NON-NLS-1$
 		printAttribute("basedir", basedir, false); //$NON-NLS-1$
 		printAttribute("filesonly", filesOnly ? "true" : "false", true); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 		printAttribute("whenempty", "skip", true);  //$NON-NLS-1$//$NON-NLS-2$
+		printAttribute("update", update ? "true" : "false", true); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 		if (fileSets == null)
 			output.println("/>"); //$NON-NLS-1$
 		else {

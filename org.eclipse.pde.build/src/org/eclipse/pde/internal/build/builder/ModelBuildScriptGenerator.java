@@ -291,7 +291,7 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		script.println();
 		script.printTargetDeclaration(zipName, TARGET_INIT, null, null, null);
 		IPath root = new Path(getPropertyFormat(IXMLConstants.PROPERTY_BASEDIR));
-		script.printZipTask(root.append(zipName).toString(), root.append(source).toString(), false, null);
+		script.printZipTask(root.append(zipName).toString(), root.append(source).toString(), false, false, null);
 		script.printTargetEnd();
 	}
 
@@ -432,7 +432,7 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		script.printAntCallTask(TARGET_GATHER_SOURCES, null, params);
 		FileSet fileSet = new FileSet(getPropertyFormat(PROPERTY_TEMP_FOLDER), null, "**/*.bin.log", null, null, null, null); //$NON-NLS-1$
 		script.printDeleteTask(null, null, new FileSet[] { fileSet });
-		script.printZipTask(pluginZipDestination, getPropertyFormat(PROPERTY_TEMP_FOLDER), true, null);
+		script.printZipTask(pluginZipDestination, getPropertyFormat(PROPERTY_TEMP_FOLDER), true, false, null);
 		script.printDeleteTask(getPropertyFormat(PROPERTY_TEMP_FOLDER), null, null);
 		script.printTargetEnd();
 	}
@@ -451,7 +451,7 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		Map params = new HashMap(1);
 		params.put(PROPERTY_DESTINATION_TEMP_FOLDER, getPropertyFormat(PROPERTY_TEMP_FOLDER) + '/'); //$NON-NLS-1$
 		script.printAntCallTask(TARGET_GATHER_BIN_PARTS, null, params);
-		script.printZipTask(pluginUpdateJarDestination, getPropertyFormat(PROPERTY_TEMP_FOLDER) + '/' + fullName, false, null); //$NON-NLS-1$
+		script.printZipTask(pluginUpdateJarDestination, getPropertyFormat(PROPERTY_TEMP_FOLDER) + '/' + fullName, false, false, null); //$NON-NLS-1$
 		script.printDeleteTask(getPropertyFormat(PROPERTY_TEMP_FOLDER), null, null);
 		script.printTargetEnd();
 	}
@@ -496,8 +496,8 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		script.printProperty(PROPERTY_JAVAC_FAIL_ON_ERROR, "false"); //$NON-NLS-1$
 		script.printProperty(PROPERTY_JAVAC_DEBUG_INFO, "on"); //$NON-NLS-1$
 		script.printProperty(PROPERTY_JAVAC_VERBOSE, "true"); //$NON-NLS-1$
-		script.printProperty(PROPERTY_JAVAC_SOURCE, "1.3"); //$NON-NLS-1$
-		script.printProperty(PROPERTY_JAVAC_TARGET, "1.1"); //$NON-NLS-1$  
+		script.printProperty(PROPERTY_JAVAC_SOURCE, "1.4"); //$NON-NLS-1$
+		script.printProperty(PROPERTY_JAVAC_TARGET, "1.4"); //$NON-NLS-1$  
 
 		script.println();
 		script.printTargetDeclaration(TARGET_INIT, TARGET_PROPERTIES, null, null, null);
@@ -743,7 +743,7 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		script.printMkdirTask(new Path(srcLocation).removeLastSegments(1).toString());
 
 		if (count!=0)			
-			script.printZipTask(srcLocation, null, false, fileSets);
+			script.printZipTask(srcLocation, null, false, false, fileSets);
 
 		script.printTargetEnd();
 	}
