@@ -475,7 +475,7 @@ public class FetchScriptGenerator extends AbstractScriptGenerator {
 	 */
 	protected String getCVSInfo(String elementName) throws CoreException {
 		if (directory == null)
-			directory = readProperties(directoryLocation, ""); //$NON-NLS-1$
+			directory = readProperties(directoryLocation, "", IStatus.ERROR); //$NON-NLS-1$
 		return directory.getProperty(elementName);
 	}
 

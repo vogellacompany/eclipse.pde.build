@@ -784,7 +784,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	 */
 	protected Properties getBuildProperties() throws CoreException {
 		if (buildProperties == null)
-			buildProperties = readProperties(featureRootLocation, PROPERTIES_FILE);
+			buildProperties = readProperties(featureRootLocation, PROPERTIES_FILE, IStatus.WARNING);
 		return buildProperties;
 	}
 	/**

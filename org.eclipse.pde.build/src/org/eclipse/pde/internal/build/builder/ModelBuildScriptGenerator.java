@@ -424,7 +424,7 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 
 	protected Properties getPermissionProperties() throws CoreException {
 		if (permissionProperties == null) {
-			permissionProperties = readProperties(getLocation(model), PERMISSIONS_FILE);
+			permissionProperties = readProperties(getLocation(model), PERMISSIONS_FILE, IStatus.INFO);
 		}
 		return permissionProperties;
 	}
@@ -823,7 +823,7 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	
 	protected Properties getBuildProperties() throws CoreException {
 		if (buildProperties == null)
-			return buildProperties = readProperties(model.getLocation(), propertiesFileName);
+			return buildProperties = readProperties(model.getLocation(), propertiesFileName, IStatus.WARNING);
 		
 		return buildProperties;
 	}

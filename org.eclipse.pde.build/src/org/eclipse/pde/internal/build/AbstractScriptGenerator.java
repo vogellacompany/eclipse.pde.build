@@ -103,7 +103,7 @@ public abstract class AbstractScriptGenerator implements IXMLConstants, IPDEBuil
 		return model.getLocation();		
 	}
 
-	public static Properties readProperties(String location, String fileName) throws CoreException {
+	public static Properties readProperties(String location, String fileName, int errorLevel) throws CoreException {
 		Properties result = new Properties();
 		File file = new File(location, fileName);
 		try {
@@ -115,7 +115,7 @@ public abstract class AbstractScriptGenerator implements IXMLConstants, IPDEBuil
 			}
 		} catch (FileNotFoundException e) {
 			String message = Policy.bind("exception.missingFile", file.toString()); //$NON-NLS-1$
-			BundleHelper.getDefault().getLog().log(new Status(IStatus.WARNING, PI_PDEBUILD, EXCEPTION_READING_FILE, message, null));
+			BundleHelper.getDefault().getLog().log(new Status(errorLevel, PI_PDEBUILD, EXCEPTION_READING_FILE, message, null));
 		} catch (IOException e) {
 			String message = Policy.bind("exception.readingFile", file.toString()); //$NON-NLS-1$
 			throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, EXCEPTION_READING_FILE, message, e));

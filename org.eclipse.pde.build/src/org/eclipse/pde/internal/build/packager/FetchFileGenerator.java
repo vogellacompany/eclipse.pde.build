@@ -103,7 +103,7 @@ public class FetchFileGenerator extends AbstractScriptGenerator {
 		final int DIRECTORY = 2;
 		final int FILTERS = 3;
 		
-		mapContent = readProperties(mapLocation, ""); //$NON-NLS-1$
+		mapContent = readProperties(mapLocation, "", IStatus.ERROR); //$NON-NLS-1$
 
 		for (Iterator iter = mapContent.entrySet().iterator(); iter.hasNext();) {
 			Map.Entry mapEntry = (Map.Entry) iter.next();
