@@ -42,6 +42,7 @@ public class BuildScriptGenerator extends AbstractScriptGenerator {
 
 	protected boolean recursiveGeneration = true;
 
+	protected String outputFormat = "zip";
 	/**
 	 * 
 	 * @throws CoreException
@@ -112,7 +113,7 @@ public class BuildScriptGenerator extends AbstractScriptGenerator {
 			generator.setCompiledElements(generator.getCompiledElements());
 			generator.setBuildingOSGi(isBuildingOSGi());
 			generator.generate();
-			AssembleScriptGenerator assembler = new AssembleScriptGenerator(workingDirectory, assemblageInformation, featureId, null);
+			AssembleScriptGenerator assembler = new AssembleScriptGenerator(workingDirectory, assemblageInformation, featureId, null, outputFormat);
 			assembler.generate();
 		}
 	}
@@ -153,4 +154,11 @@ public class BuildScriptGenerator extends AbstractScriptGenerator {
 		this.recursiveGeneration = recursiveGeneration;
 	}
 
+	/**
+	 * Indicates the output format of the resulting files. Supports "zip", "antzip"
+	 * @param outputFormat
+	 */
+	public void setOutputFormat(String outputFormat) {
+		this.outputFormat = outputFormat;
+	}
 }

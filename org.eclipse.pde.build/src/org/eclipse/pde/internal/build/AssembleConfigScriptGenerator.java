@@ -34,6 +34,7 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 	protected boolean copyRootFile;
 	protected Properties pluginsPostProcessingSteps;
 	protected Properties featuresPostProcessingSteps;
+	protected String outputFormat;
 	
 	private static final String PROPERTY_TMP_DIR = "tmp_dir"; //$NON-NLS-1$	
 	private static final String PROPERTY_SOURCE = "source"; //$NON-NLS-1$
@@ -52,11 +53,12 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 		super();
 	}
 
-	public void initialize(String directoryName, String scriptName, String feature, Config configurationInformation, Collection elementList, Collection featureList, boolean rootFileCopy) throws CoreException {
+	public void initialize(String directoryName, String scriptName, String feature, Config configurationInformation, Collection elementList, Collection featureList, boolean rootFileCopy, String outputFormat) throws CoreException {
 		this.directory = directoryName;
 		this.featureId = feature;
 		this.configInfo = configurationInformation;
 		this.copyRootFile = rootFileCopy;
+		this.outputFormat = outputFormat;
 		
 		this.features = new IFeature[featureList.size()];
 		featureList.toArray(this.features);
@@ -91,8 +93,10 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 			generateTarTarget();
 			generateGZipTarget();
 		} else {
-			generateAntZipTarget();
-//			generateZipTarget();
+			if(outputFormat.equalsIgnoreCase("zip"))
+				generateZipTarget();
+			else
+				generateAntZipTarget();
 		}
 		generateEpilogue();
 	}
@@ -306,7 +310,6 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 //		<zipfileset file="d:/tmp/platform/tmp/eclipse/plugins/org.eclipse.core.runtime_3.0.0.jar" fullpath="eclipse/plugins/org.eclipse.core.runtime_3.0.0.jar"/>
 // </zip>
 	public void generateAntZipTarget() {
-		script.printEchoTask("ECLIPSE BASE ${eclipse.base} COLLPLACE ${collPlace}--END");
 		FileSet[] filesPlugins = new FileSet[plugins.length];
 		for (int i = 0; i < plugins.length; i++) {
 			Object[] shape = getFinalShape(plugins[i].getUniqueId(), plugins[i].getVersion().toString(), BUNDLE);
