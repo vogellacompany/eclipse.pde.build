@@ -1,32 +1,14 @@
 package org.eclipse.pde.internal.build.site;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URL;
 import java.util.*;
-import java.util.ArrayList;
-import java.util.Dictionary;
-import java.util.jar.Attributes;
-import java.util.jar.Manifest;
-
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.osgi.framework.log.FrameworkLog;
 import org.eclipse.osgi.framework.util.Headers;
 import org.eclipse.osgi.service.pluginconversion.PluginConverter;
-import org.eclipse.osgi.service.resolver.BundleDescription;
-import org.eclipse.osgi.service.resolver.BundleSpecification;
-import org.eclipse.osgi.service.resolver.PackageSpecification;
-import org.eclipse.osgi.service.resolver.State;
-import org.eclipse.osgi.service.resolver.StateObjectFactory;
-import org.eclipse.osgi.service.resolver.Version;
+import org.eclipse.osgi.service.resolver.*;
 import org.osgi.framework.*;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.BundleException;
-import org.osgi.framework.ServiceReference;
 
 // This class provides a higher level API on the state
 public class PDEState {
@@ -119,7 +101,6 @@ public class PDEState {
 		return result;
 	}
 	public void addBundles(URL[] bundles) {
-		//TODO Need to add system bundles
 		for (int i = 0; i < bundles.length; i++) {
 			addBundle(new File(bundles[i].getFile())); //Need to report a better error message when the manifest is bogus
 		}
@@ -185,6 +166,8 @@ public class PDEState {
 	}
 	
 	public BundleDescription getResolvedBundle(String bundleId, String version) {
+		if (version == null)
+			return getResolvedBundle(bundleId);
 		BundleDescription description = getState().getBundle(bundleId, new Version(version));
 		if (description.isResolved())
 			return description;
@@ -212,4 +195,47 @@ public class PDEState {
 		return dependents;
 	}
 
+	public static BundleDescription[] getDependentBundlesWithFragments(BundleDescription root) {
+		BundleDescription[] imported = getImportedBundles(root);
+		BundleDescription[] importedByFragments = getImportedByFragments(root);
+		BundleDescription[] required = getRequiredBundles(root);
+		BundleDescription[] requiredByFragments = getRequiredBundles(root);
+		BundleDescription[] dependents = new BundleDescription[imported.length + importedByFragments.length + required.length + requiredByFragments.length];
+		System.arraycopy(imported, 0, dependents, 0, imported.length);
+		System.arraycopy(importedByFragments, 0, dependents, imported.length, importedByFragments.length);
+		System.arraycopy(required, 0, dependents, imported.length + importedByFragments.length, required.length);
+		System.arraycopy(requiredByFragments, 0, dependents, imported.length + importedByFragments.length + required.length, requiredByFragments.length);
+		return dependents;
+	}
+	
+	public static BundleDescription[] getImportedByFragments(BundleDescription root) {
+		BundleDescription[] fragments = root.getFragments();
+		List importedByFragments = new ArrayList();
+		for (int i = 0; i < fragments.length; i++) {
+			if (!fragments[i].isResolved())
+				continue;
+			merge(importedByFragments, getImportedBundles(fragments[i]));
+		}
+		BundleDescription[] result = new BundleDescription[importedByFragments.size()];
+		return (BundleDescription[]) importedByFragments.toArray(result);
+	}
+	
+	public static BundleDescription[] getRequiredByFragments(BundleDescription root) {
+		BundleDescription[] fragments = root.getFragments();
+		List importedByFragments = new ArrayList();
+		for (int i = 0; i < fragments.length; i++) {
+			if (!fragments[i].isResolved())
+				continue;
+			merge(importedByFragments, getRequiredBundles(fragments[i]));
+		}
+		BundleDescription[] result = new BundleDescription[importedByFragments.size()];
+		return (BundleDescription[]) importedByFragments.toArray(result);
+	}
+		
+	public static void merge(List source, BundleDescription[] toAdd) {
+		for (int i = 0; i < toAdd.length; i++) {
+			if(! source.contains(toAdd[i]))
+				source.add(toAdd[i]);
+		}
+	}
 }

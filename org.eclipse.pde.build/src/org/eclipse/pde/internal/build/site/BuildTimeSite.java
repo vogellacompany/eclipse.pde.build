@@ -45,7 +45,7 @@ public class BuildTimeSite extends Site implements ISite, IPDEBuildConstants, IX
 				if (! allBundles[i].isResolved()) {
 					VersionConstraint[] unsatisfiedConstraint = allBundles[i].getUnsatisfiedConstraints();
 					for (int j = 0; j < unsatisfiedConstraint.length; j++) {
-						System.out.println(unsatisfiedConstraint[i].getName());
+						System.out.println(unsatisfiedConstraint[j].getName());
 					}	
 				}
 			}

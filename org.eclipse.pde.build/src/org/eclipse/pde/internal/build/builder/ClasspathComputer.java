@@ -177,7 +177,7 @@ public class ClasspathComputer implements IPDEBuildConstants, IXMLConstants {
 		// If model is a fragment, we need to add in the classpath the plugin to which it is related
 		HostSpecification host = model.getHost();
 		if (host != null) {
-			addPluginAndPrerequisites(host.getBundle(), classpath, location, pluginChain);
+			addPluginAndPrerequisites(host.getSupplier(), classpath, location, pluginChain);
 		}
 
 		// Add the libraries

@@ -165,78 +165,40 @@ public final class Utils implements IPDEBuildConstants {
 				fragments.add(current);
 				continue;
 			}
-			boolean boot = false;
-			boolean runtime = false;
 			boolean found = false;
 			
 			BundleDescription[] prereqList = PDEState.getDependentBundles(current);
-			if (prereqList != null) {
-				for (int j = 0; j < prereqList.length; j++) {
-					// ensure that we only include values from the original set.
-					String prereq = prereqList[j].getUniqueId();
-					boot = boot || prereq.equals(Platform.PI_BOOT);
-					runtime = runtime || prereq.equals(Platform.PI_RUNTIME);
-					if (plugins.contains(prereq)) {
-						found = true;
-						prereqs.add(new String[] { current.getUniqueId(), prereq });	
-					}
-					// If the prereq is a plugin, then add a dependency between the given plugin and the fragments of the prereq 
-//					if (prereqIndex != -1 && prereqIndex < plugins.length) {
-//						PluginFragmentModel[] prereqsFragments = ((PluginDescriptorModel) plugins[prereqIndex]).getFragments();
-//						if (prereqsFragments==null)
-//						  continue;
-//						for (int k = 0; k < prereqsFragments.length; k++) {
-//							prereqs.add(new String[] { plugins[i].getId(), prereqsFragments[k].getId()});	
-//						}
-//					}
+			for (int j = 0; j < prereqList.length; j++) {
+				// ensure that we only include values from the original set.
+				if (plugins.contains(prereqList[j])) {
+					found = true;
+					prereqs.add(new String[] { current.getUniqueId(), prereqList[j].getUniqueId() });	
 				}
 			}
+
 			
 			// if we didn't find any prereqs for this plugin, add a null prereq
 			// to ensure the value is in the output	
 			if (!found)
 				prereqs.add(new String[] { current.getUniqueId(), null });
-
-			// if we didn't find the boot or runtime plugins as prereqs and they are in the list
-			// of plugins to build, add prereq relations for them.  This is required since the 
-			// boot and runtime are implicitly added to a plugin's requires list by the platform runtime.
-			// Note that we should skip the xerces plugin as this would cause a circularity.
-			if (current.getUniqueId().equals("org.apache.xerces")) //$NON-NLS-1$
-				continue;
-			if (buildingOSGi && ( current.getUniqueId().startsWith("org.eclipse.osgi") || current.getUniqueId().equals("org.eclipse.core.runtime") || current.getUniqueId().equals("org.eclipse.core.runtime.compatibility") || current.getUniqueId().equals("org.eclipse.update.configurator") )) //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$
-				continue;
-		
-			if (!buildingOSGi || buildingOSGi && !new File(current.getLocation(), MANIFEST_FOLDER + "/" + MANIFEST).exists()) { //$NON-NLS-1$
-				if (!boot && plugins.contains(Platform.PI_BOOT) && !current.getUniqueId().equals(Platform.PI_BOOT))
-					prereqs.add(new String[] { current.getUniqueId(), Platform.PI_BOOT });
-				if (!runtime && plugins.contains(Platform.PI_RUNTIME) && !current.getUniqueId().equals(Platform.PI_RUNTIME) && !current.getUniqueId().equals(Platform.PI_BOOT) && !current.getUniqueId().equals("org.eclipse.core.runtime.compatibility"))
-					prereqs.add(new String[] { current.getUniqueId(), "org.eclipse.core.runtime.compatibility" });
-			}
 		}
 
-		//The fragments needs to added relatively to their own prerequisite but also relatively to their host (bug #43244) 
+		//The fragments needs to added relatively to their host and to their own prerequisite (bug #43244) 
 		for (Iterator iter = fragments.iterator(); iter.hasNext();) {
 			BundleDescription current = (BundleDescription) iter.next();
-			boolean found = false;
-			BundleDescription[] prereqList = PDEState.getDependentBundles(current);
-			if (prereqList != null) {
-				for (int j = 0; j < prereqList.length; j++) {
-					// ensure that we only include values from the original set.
-					String prereq = prereqList[j].getUniqueId();
-					if (plugins.contains(prereq)) {
-						found = true;
-						prereqs.add(new String[] { current.getUniqueId(), prereq });
-					}
-				}
-			}
-			if (plugins.contains(current.getHost().getBundle())) {
-				found = true;
+			
+			if (plugins.contains(current.getHost().getBundle()))
 				prereqs.add(new String[] {current.getUniqueId(), current.getHost().getSupplier().getUniqueId() });
-			}
-				
-			if (!found)
-				prereqs.add(new String[] { current.getUniqueId(), null });
-		
+			else 
+				System.out.println("Host not found for this fragment");	//TODO This should not happen since we only build things that are resolved
+			
+			BundleDescription[] prereqList = PDEState.getDependentBundles(current);
+			for (int j = 0; j < prereqList.length; j++) {
+				// ensure that we only include values from the original set.
+				if (plugins.contains(prereqList[j])) {
+					prereqs.add(new String[] { current.getUniqueId(), prereqList[j].getUniqueId() });
+				}
+			}		
 		}
 
 		// do a topological sort, insert the fragments into the sorted elements
@@ -263,9 +225,6 @@ public final class Utils implements IPDEBuildConstants {
 		}
 		String[] result = new String[nodes.size()];
 		nodes.toArray(result);
-
-		//We can get rid of this because counts is always empty since we iterate until it is empty. 
-		//result[1] = (String[]) counts.keySet().toArray(new String[counts.size()]);
 
 		return result;
 	}
