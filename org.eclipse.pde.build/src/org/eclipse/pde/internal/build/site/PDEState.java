@@ -3,21 +3,22 @@ import java.io.*;
 import java.net.URL;
 import java.util.*;
 import java.util.jar.*;
+import org.eclipse.core.runtime.*;
+import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Platform;
-import org.eclipse.osgi.framework.log.FrameworkLog;
 import org.eclipse.osgi.service.pluginconversion.PluginConverter;
 import org.eclipse.osgi.service.resolver.*;
 import org.eclipse.osgi.util.ManifestElement;
 import org.eclipse.pde.internal.build.*;
 import org.osgi.framework.*;
+
 // This class provides a higher level API on the state
-public class PDEState implements IPDEBuildConstants, IXMLConstants {
-	static private BundleContext ctx;
+public class PDEState implements IPDEBuildConstants, IBuildPropertiesConstants {
 	private StateObjectFactory factory;
-	private State state;
+	protected State state;
 	private long id;
 	private Properties repositoryVersions;
-	private ServiceReference logServiceReference;
+
 	private ServiceReference converterServiceReference;
 	private HashMap bundleClasspaths;
 	protected long getNextId() {
@@ -31,24 +32,20 @@ public class PDEState implements IPDEBuildConstants, IXMLConstants {
 		bundleClasspaths = new HashMap();
 		loadPluginVersionFile();
 	}
+	
 	public StateObjectFactory getFactory() {
 		return factory;
 	}
+	
 	public void addBundleDescription(BundleDescription toAdd) {
 		state.addBundle(toAdd);
 	}
-	private FrameworkLog acquireFrameworkLogService() throws Exception {
-		logServiceReference = ctx.getServiceReference(FrameworkLog.class.getName());
-		if (logServiceReference == null)
-			return null;
-		return (FrameworkLog) ctx.getService(logServiceReference);
-	}
+	
 	private PluginConverter acquirePluginConverter() throws Exception {
-		converterServiceReference = ctx.getServiceReference(PluginConverter.class.getName());
-		if (converterServiceReference == null)
-			return null;
-		return (PluginConverter) ctx.getService(converterServiceReference);
+		return (PluginConverter) BundleHelper.getDefault().acquireService(PluginConverter.class.getName());
 	}
+	
+	//Add a bundle to the state, updating the version number 
 	public boolean addBundle(Dictionary enhancedManifest, File bundleLocation) {
 		updateVersionNumber(enhancedManifest);
 		try {
@@ -57,11 +54,13 @@ public class PDEState implements IPDEBuildConstants, IXMLConstants {
 			bundleClasspaths.put(new Long(descriptor.getBundleId()), getClasspath(enhancedManifest));
 			state.addBundle(descriptor);
 		} catch (BundleException e) {
-			//TODO Need to log
+			IStatus status = new Status(IStatus.WARNING,IPDEBuildConstants.PI_PDEBUILD,  IPDEBuildConstants.EXCEPTION_STATE_PROBLEM, Policy.bind("exception.stateAddition",  (String) enhancedManifest.get(Constants.BUNDLE_NAME)),e);//$NON-NLS-1$
+			BundleHelper.getDefault().getLog().log(status); 
 			return false;
 		}
 		return true;
 	}
+	
 	private String[] getClasspath(Dictionary manifest) {
 		String fullClasspath = (String) manifest.get(Constants.BUNDLE_CLASSPATH);
 		String[] result = new String[0];
@@ -114,7 +113,7 @@ public class PDEState implements IPDEBuildConstants, IXMLConstants {
 		}
 		if (manifest.get(Constants.BUNDLE_SYMBOLICNAME).equals("org.eclipse.osgi")) {
 			//TODO We need to handle the special case of the osgi bundle for
-			// whom the bundle-classpath is specified in the eclipse.properties
+			// whose bundle-classpath is specified in the eclipse.properties
 			// file in the osgi folder
 			manifest.put(Constants.BUNDLE_CLASSPATH, "core.jar, console.jar, osgi.jar, resolver.jar, defaultAdaptor.jar, eclipseAdaptor.jar");
 		}
@@ -147,7 +146,6 @@ public class PDEState implements IPDEBuildConstants, IXMLConstants {
 			Manifest m = new Manifest(manifestStream);
 			return manifestToProperties(m.getMainAttributes());
 		} catch (IOException e) {
-			//TODO Log the exception
 			return null;
 		} finally {
 			try {
@@ -174,9 +172,6 @@ public class PDEState implements IPDEBuildConstants, IXMLConstants {
 	}
 	public void resolveState() {
 		state.resolve(false);
-	}
-	public static void setCtx(BundleContext ctx) {
-		PDEState.ctx = ctx;
 	}
 	public State getState() {
 		return state;
@@ -297,7 +292,7 @@ public class PDEState implements IPDEBuildConstants, IXMLConstants {
 		InputStream propertyStream = null;
 		try {
 			propertyStream = new BufferedInputStream(new FileInputStream(new File(location, PROPERTIES_FILE)));
-			result.load(propertyStream); //$NON-NLS-1$
+			result.load(propertyStream);
 		} catch (Exception e) {
 			//ignore because compiled plug-ins do not have such files
 		} finally {

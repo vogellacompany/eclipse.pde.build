@@ -56,19 +56,14 @@ public class BuildTimeSiteFactory extends BaseSiteFactory implements ISiteFactor
 		// If an installed base is provided we need to look at it
 		String installedBaseURL = null;
 		if (installedBaseLocation != null && !installedBaseLocation.equals("")) { //$NON-NLS-1$
-//			try {
-				if (!new File(installedBaseLocation).exists()) {
-					String message = Policy.bind("error.incorrectDirectoryEntry", installedBaseLocation); //$NON-NLS-1$
-					throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, EXCEPTION_READ_DIRECTORY, message, null));
-				}
-				installedBaseURL = installedBaseLocation; //$NON-NLS-1$
-				Collection installedFeatures = Utils.findFiles(installedBaseLocation, DEFAULT_FEATURE_LOCATION, DEFAULT_FEATURE_FILENAME_DESCRIPTOR);
-				if (installedFeatures != null)
-					featureXMLs.addAll(installedFeatures);
-//			} catch (MalformedURLException e) {
-//				String message = Policy.bind("error.incorrectDirectoryEntry", installedBaseURL); //$NON-NLS-1$
-//				throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, EXCEPTION_READ_DIRECTORY, message, null));
-//			}
+			if (!new File(installedBaseLocation).exists()) {
+				String message = Policy.bind("error.incorrectDirectoryEntry", installedBaseLocation); //$NON-NLS-1$
+				throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, EXCEPTION_READ_DIRECTORY, message, null));
+			}
+			installedBaseURL = installedBaseLocation; //$NON-NLS-1$
+			Collection installedFeatures = Utils.findFiles(installedBaseLocation, DEFAULT_FEATURE_LOCATION, DEFAULT_FEATURE_FILENAME_DESCRIPTOR);
+			if (installedFeatures != null)
+				featureXMLs.addAll(installedFeatures);
 		}
 
 		URL featureURL;

@@ -134,16 +134,13 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	private void collectSourcePlugins(IPluginEntry pluginEntry, BundleDescription model) {
 		if (!sourceFeatureGeneration)
 			return;
-		// The generic entry may not be part of the configuration we are
-		// building however,
-		// the code for a non platform specific plugin still needs to go into a
-		// generic source plugin
+		// The generic entry may not be part of the configuration we are building however,
+		// the code for a non platform specific plugin still needs to go into a generic source plugin
 		if (pluginEntry.getOS() == null && pluginEntry.getWS() == null && pluginEntry.getOSArch() == null) {
 			sourceToGather.addElementEntry(Config.genericConfig(), model);
 			return;
 		}
-		// Here we fan the plugins into the source fragment where they should
-		// go
+		// Here we fan the plugins into the source fragment where they should go
 		List correctConfigs = selectConfigs(pluginEntry);
 		for (Iterator iter = correctConfigs.iterator(); iter.hasNext();) {
 			sourceToGather.addElementEntry((Config) iter.next(), model);
@@ -173,7 +170,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		// new one
 		// but we do try to update the version number
 		String custom = (String) getBuildProperties().get(PROPERTY_CUSTOM);
-		if ("true".equalsIgnoreCase(custom)) { //$NON-NLS-1$
+		if (VALUE_TRUE.equalsIgnoreCase(custom)) { //$NON-NLS-1$
 			File buildFile = new File(featureRootLocation, DEFAULT_BUILD_SCRIPT_FILENAME);
 			try {
 				updateVersion(buildFile, PROPERTY_FEATURE_VERSION_SUFFIX, feature.getVersionedIdentifier().getVersion().toString());
@@ -184,7 +181,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 			return;
 		}
 		if (sourceFeatureGeneration)
-			generateSourceFeature(); //TODO Unchecked
+			generateSourceFeature();
 		if (analysePlugins)
 			generateChildrenScripts();
 		if (sourceFeatureGeneration) {
@@ -213,11 +210,8 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		IIncludedFeatureReference[] referencedFeatures = feature.getIncludedFeatureReferences();
 		for (int i = 0; i < referencedFeatures.length; i++) {
 			String featureId = ((IncludedFeatureReferenceModel) referencedFeatures[i]).getFeatureIdentifier();
-			//If the feature which is included is a source feature, then
-			// instead of calling the generation of the featureID we are
-			// calling the generation
-			// of the corresponding binary feature but without generating the
-			// scripts (set binaryFeatureGeneration to false)
+			//If the feature which is included is a source feature, then instead of calling the generation of the featureID we are
+			// calling the generation of the corresponding binary feature but without generating the  scripts (set binaryFeatureGeneration to false)
 			boolean doSourceFeatureGeneration = getBuildProperties().containsKey(GENERATION_SOURCE_FEATURE_PREFIX + featureId);
 			FeatureBuildScriptGenerator generator = new FeatureBuildScriptGenerator(doSourceFeatureGeneration == true ? Utils.getArrayFromString(getBuildProperties().getProperty(GENERATION_SOURCE_FEATURE_PREFIX + featureId))[0] : featureId, assemblyData);
 			//If we are  generating a  source  feature we don't  want to go recursively
@@ -450,9 +444,6 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 				versionRequested = null;
 			String entryIdentifier = identifier.getIdentifier();
 			model = getSite(false).getRegistry().getResolvedBundle(entryIdentifier, versionRequested);
-			//TODO Here we should not always look in the registry, because the
-			// plugin may have not been dl because we know its number from the
-			// feature.xml
 			pluginVersionInfo += (entryIdentifier + "," + model.getVersion() + ","); //$NON-NLS-1$ //$NON-NLS-2$
 		}
 		script.println("<eclipse.idReplacer featureFilePath=\"" + root + '/' + DEFAULT_FEATURE_FILENAME_DESCRIPTOR + "\" featureIds=\"" + featureVersionInfo + "\" pluginIds=\"" + pluginVersionInfo + "\"/>"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$
@@ -464,7 +455,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	 *  
 	 */
 	private void generateRootFilesAndPermissionsCalls() {
-		script.printAntCallTask("ROOTFILES" + getPropertyFormat(PROPERTY_OS) + "_" + getPropertyFormat(PROPERTY_WS) + "_" + getPropertyFormat(PROPERTY_ARCH), null, null); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+		script.printAntCallTask(TARGET_ROOTFILES_PREFIX + getPropertyFormat(PROPERTY_OS) + "_" + getPropertyFormat(PROPERTY_WS) + "_" + getPropertyFormat(PROPERTY_ARCH), null, null); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 	}
 	/**
 	 *  
@@ -472,7 +463,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	private void generateRootFilesAndPermissions() throws CoreException {
 		for (Iterator iter = getConfigInfos().iterator(); iter.hasNext();) {
 			Config aConfig = (Config) iter.next();
-			script.printTargetDeclaration("ROOTFILES" + aConfig.toString("_"), null, null, null, null); //$NON-NLS-1$ //$NON-NLS-2$
+			script.printTargetDeclaration(TARGET_ROOTFILES_PREFIX + aConfig.toString("_"), null, null, null, null); //$NON-NLS-1$ //$NON-NLS-2$
 			generateCopyRootFiles(aConfig);
 			generatePermissions(aConfig);
 			script.printTargetEnd();
@@ -480,8 +471,8 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	}
 	private void generateCopyRootFiles(Config aConfig) throws CoreException {
 		String configName;
-		String baseList = getBuildProperties().getProperty("root", ""); //$NON-NLS-1$ //$NON-NLS-2$
-		String fileList = getBuildProperties().getProperty("root." + aConfig.toString("."), ""); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+		String baseList = getBuildProperties().getProperty(ROOT, ""); //$NON-NLS-1$ //$NON-NLS-2$
+		String fileList = getBuildProperties().getProperty(ROOT_PREFIX + aConfig.toString("."), ""); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 		fileList = (fileList.length() == 0 ? "" : fileList + ",") + baseList; //$NON-NLS-1$ //$NON-NLS-2$
 		if (fileList.equals("")) //$NON-NLS-1$
 			return;
@@ -500,15 +491,15 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 				fileSet[i] = new FileSet(fromDir + file, null, "**", null, null, null, null); //$NON-NLS-1$
 			}
 		}
-		script.printCopyTask(null, getPropertyFormat(PROPERTY_FEATURE_BASE) + '/' + configName + '/' + getPropertyFormat(PROPERTY_COLLECTING_PLACE), fileSet, true); //$NON-NLS-1$ //$NON-NLS-2$
+		script.printCopyTask(null, getPropertyFormat(PROPERTY_FEATURE_BASE) + '/' + configName + '/' + getPropertyFormat(PROPERTY_COLLECTING_PLACE), fileSet, true);
 	}
 	private void generatePermissions(Config aConfig) throws CoreException {
 		String configInfix = aConfig.toString("."); //$NON-NLS-1$
 		Properties featureProperties = getBuildProperties();
-		String prefixPermissions = "root." + configInfix + "." + PERMISSIONS + "."; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-		String prefixLinks = "root." + configInfix + "." + LINK; //$NON-NLS-1$ //$NON-NLS-2$
-		String commonPermissions = "root." + PERMISSIONS + "."; //$NON-NLS-1$ //$NON-NLS-2$
-		String commonLinks = "root." + LINK; //$NON-NLS-1$
+		String prefixPermissions = ROOT_PREFIX + configInfix + "." + PERMISSIONS + "."; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+		String prefixLinks = ROOT_PREFIX + configInfix + "." + LINK; //$NON-NLS-1$ //$NON-NLS-2$
+		String commonPermissions = ROOT_PREFIX + PERMISSIONS + "."; //$NON-NLS-1$ //$NON-NLS-2$
+		String commonLinks = ROOT_PREFIX + LINK; //$NON-NLS-1$
 		for (Iterator iter = featureProperties.entrySet().iterator(); iter.hasNext();) {
 			Map.Entry permission = (Map.Entry) iter.next();
 			String instruction = (String) permission.getKey();
@@ -518,21 +509,20 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 				continue;
 			}
 			if (instruction.startsWith(prefixLinks)) {
-				generateLinkInstruction(getPropertyFormat(PROPERTY_FEATURE_BASE) + '/' + configInfix + '/' + getPropertyFormat(PROPERTY_COLLECTING_PLACE), parameters); //$NON-NLS-1$ //$NON-NLS-2$
+				generateLinkInstruction(getPropertyFormat(PROPERTY_FEATURE_BASE) + '/' + configInfix + '/' + getPropertyFormat(PROPERTY_COLLECTING_PLACE), parameters);
 				continue;
 			}
 			if (instruction.startsWith(commonPermissions)) {
-				generateChmodInstruction(getPropertyFormat(PROPERTY_FEATURE_BASE) + '/' + configInfix + '/' + getPropertyFormat(PROPERTY_COLLECTING_PLACE), instruction.substring(commonPermissions.length()), parameters); //$NON-NLS-1$ //$NON-NLS-2$
+				generateChmodInstruction(getPropertyFormat(PROPERTY_FEATURE_BASE) + '/' + configInfix + '/' + getPropertyFormat(PROPERTY_COLLECTING_PLACE), instruction.substring(commonPermissions.length()), parameters);
 				continue;
 			}
 			if (instruction.startsWith(commonLinks)) {
-				generateLinkInstruction(getPropertyFormat(PROPERTY_FEATURE_BASE) + '/' + configInfix + '/' + getPropertyFormat(PROPERTY_COLLECTING_PLACE), parameters); //$NON-NLS-1$ //$NON-NLS-2$
+				generateLinkInstruction(getPropertyFormat(PROPERTY_FEATURE_BASE) + '/' + configInfix + '/' + getPropertyFormat(PROPERTY_COLLECTING_PLACE), parameters);
 				continue;
 			}
 		}
 	}
 	private void generateChmodInstruction(String dir, String rights, String files) {
-		// TODO Check if we want to consider rights specified with numbers
 		if (rights.equals(EXECUTABLE)) {
 			rights = "755"; //$NON-NLS-1$
 		}
@@ -593,7 +583,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		script.printMkdirTask(featureTempFolder);
 		Map params = new HashMap(1);
 		params.put(PROPERTY_FEATURE_BASE, featureTempFolder);
-		params.put(PROPERTY_INCLUDE_CHILDREN, "true"); //$NON-NLS-1$
+		params.put(PROPERTY_INCLUDE_CHILDREN, VALUE_TRUE); //$NON-NLS-1$
 		params.put(PROPERTY_OS, feature.getOS() == null ? Config.ANY : feature.getOS());
 		params.put(PROPERTY_WS, feature.getWS() == null ? Config.ANY : feature.getWS());
 		params.put(PROPERTY_ARCH, feature.getOSArch() == null ? Config.ANY : feature.getOSArch());
@@ -963,16 +953,20 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		IPath sourcePluginDirURL = new Path(workingDirectory + '/' + DEFAULT_PLUGIN_LOCATION + '/' + getSourcePluginName(result, false)); //$NON-NLS-1$ //$NON-NLS-2$
 		File sourcePluginDir = sourcePluginDirURL.toFile();
 		sourcePluginDir.mkdir();
+		
 		// Create the plugin.xml
 		StringBuffer buffer;
-		String templatePluginXML = "templates/plugin/" + DEFAULT_PLUGIN_FILENAME_DESCRIPTOR; //$NON-NLS-1$
-		URL templatePluginURL = Platform.getPlugin(PI_PDEBUILD).find(new Path(templatePluginXML));
-		if (templatePluginURL == null)
-			return null; //TODO log an error or throws an exception
+		Path templatePluginXML = new Path("templates/plugin/" + DEFAULT_PLUGIN_FILENAME_DESCRIPTOR); //$NON-NLS-1$
+		URL templatePluginURL = Platform.getPlugin(PI_PDEBUILD).find(templatePluginXML);
+		if (templatePluginURL == null) {
+			IStatus status = new Status(IStatus.WARNING, PI_PDEBUILD, IPDEBuildConstants.EXCEPTION_READING_FILE, Policy.bind("error.readingDirectory", templatePluginURL.toExternalForm()), null); //$NON-NLS-1$
+			BundleHelper.getDefault().getLog().log(status);
+			return null;
+		}
 		try {
 			buffer = readFile(templatePluginURL.openStream()); //$NON-NLS-1$
 		} catch (IOException e1) {
-			String message = Policy.bind("exception.readingFile", templatePluginXML); //$NON-NLS-1$
+			String message = Policy.bind("exception.readingFile", templatePluginURL.toExternalForm()); //$NON-NLS-1$
 			throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, EXCEPTION_READING_FILE, message, e1));
 		}
 		int beginId = scan(buffer, 0, REPLACED_PLUGIN_ID);
@@ -983,28 +977,14 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		try {
 			Utils.transferStreams(new ByteArrayInputStream(buffer.toString().getBytes()), new FileOutputStream(sourcePluginDirURL.append(DEFAULT_PLUGIN_FILENAME_DESCRIPTOR).toOSString()));
 		} catch (IOException e1) {
-			String message = Policy.bind("exception.readingFile", templatePluginXML); //$NON-NLS-1$
+			String message = Policy.bind("exception.readingFile",  templatePluginURL.toExternalForm()); //$NON-NLS-1$
 			throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, EXCEPTION_READING_FILE, message, e1));
 		}
 		Collection copiedFiles = Utils.copyFiles(featureRootLocation + '/' + "sourceTemplatePlugin", sourcePluginDir.getAbsolutePath()); //$NON-NLS-1$ //$NON-NLS-2$
-		//	If a build.properties file already exist then we use it supposing it
-		// is correct.
+		//	If a build.properties file already exist then we use it supposing it is correct.
 		File buildProperty = sourcePluginDirURL.append(PROPERTIES_FILE).toFile();
 		if (!buildProperty.exists()) {
-			copiedFiles.add(DEFAULT_PLUGIN_FILENAME_DESCRIPTOR); //Because
-																												// the
-																												// plugin.xml
-																												// is
-																												// not
-																												// copied,
-																												// we
-																												// need
-																												// to
-																												// add
-																												// it
-																												// to
-																												// the
-																												// file
+			copiedFiles.add(DEFAULT_PLUGIN_FILENAME_DESCRIPTOR); //Because the plugin.xml is not copied, we need to add it to the file
 			copiedFiles.add("src/**/*.zip"); //$NON-NLS-1$
 			Properties sourceBuildProperties = new Properties();
 			sourceBuildProperties.put(PROPERTY_BIN_INCLUDES, Utils.getStringFromCollection(copiedFiles, ",")); //$NON-NLS-1$
@@ -1033,10 +1013,14 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		sourceFragmentDir.mkdir();
 		try {
 			// read the content of the template file
-			URL templateLocation = Platform.getPlugin(PI_PDEBUILD).find(new Path("templates/fragment/" + DEFAULT_FRAGMENT_FILENAME_DESCRIPTOR)); //$NON-NLS-1$
-			if (templateLocation == null) //TODO here we
-														  // should log
+			Path fragmentPath = new Path("templates/fragment/" + DEFAULT_FRAGMENT_FILENAME_DESCRIPTOR);//$NON-NLS-1$
+			URL templateLocation = BundleHelper.getDefault().find(fragmentPath); 
+			if (templateLocation == null) {
+				IStatus status = new Status(IStatus.WARNING, PI_PDEBUILD, IPDEBuildConstants.EXCEPTION_READING_FILE, Policy.bind("error.readingDirectory", fragmentPath.toString()), null); //$NON-NLS-1$
+				BundleHelper.getDefault().getLog().log(status);
 				return;
+			}
+				
 			StringBuffer buffer = readFile(templateLocation.openStream()); //$NON-NLS-1$
 			//Set the Id of the fragment
 			int beginId = scan(buffer, 0, REPLACED_FRAGMENT_ID);
@@ -1054,25 +1038,8 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 			Utils.transferStreams(new ByteArrayInputStream(buffer.toString().getBytes()), new FileOutputStream(sourceFragmentDirURL.append(DEFAULT_FRAGMENT_FILENAME_DESCRIPTOR).toOSString()));
 			Collection copiedFiles = Utils.copyFiles(featureRootLocation + '/' + "sourceTemplateFragment", sourceFragmentDir.getAbsolutePath()); //$NON-NLS-1$ //$NON-NLS-2$
 			File buildProperty = sourceFragmentDirURL.append(PROPERTIES_FILE).toFile();
-			if (!buildProperty.exists()) { //If a
-														 // build.properties
-														 // file already exist
-														 // then we don't
-														 // override it.
-				copiedFiles.add(DEFAULT_FRAGMENT_FILENAME_DESCRIPTOR); //Because
-																														  // the
-																														  // fragment.xml
-																														  // is
-																														  // not
-																														  // copied,
-																														  // we
-																														  // need
-																														  // to
-																														  // add
-																														  // it
-																														  // to
-																														  // the
-																														  // file
+			if (!buildProperty.exists()) { //If a build.properties file already exist  then we don't override it.
+				copiedFiles.add(DEFAULT_FRAGMENT_FILENAME_DESCRIPTOR); //Because the fragment.xml is not copied, we need to add it to the file
 				copiedFiles.add("src/**"); //$NON-NLS-1$
 				Properties sourceBuildProperties = new Properties();
 				sourceBuildProperties.put(PROPERTY_BIN_INCLUDES, Utils.getStringFromCollection(copiedFiles, ",")); //$NON-NLS-1$
@@ -1197,19 +1164,23 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		}
 		Collection copiedFiles = Utils.copyFiles(featureRootLocation + '/' + "sourceTemplateFeature", sourceFeatureDir); //$NON-NLS-1$ //$NON-NLS-2$
 		File buildProperty = new File(sourceFeatureDir + '/' + PROPERTIES_FILE); //$NON-NLS-1$
-		if (buildProperty.exists()) //If a build.properties file
-												 // already exist then we don't
-												 // override it.
+		if (buildProperty.exists()) //If a build.properties file already exist then we don't override it.
 			return;
 		copiedFiles.add(DEFAULT_FEATURE_FILENAME_DESCRIPTOR); //Because the feature.xml is not copied, we need to add it to the file
 		Properties sourceBuildProperties = new Properties();
 		sourceBuildProperties.put(PROPERTY_BIN_INCLUDES, Utils.getStringFromCollection(copiedFiles, ",")); //$NON-NLS-1$
+		OutputStream output = null;
 		try {
-			sourceBuildProperties.store(new FileOutputStream(buildProperty), null); //$NON-NLS-1$
+			output = new FileOutputStream(buildProperty);
+			try {
+				sourceBuildProperties.store(output, null); //$NON-NLS-1$
+			} finally {
+				output.close();
+			}
 		} catch (FileNotFoundException e) {
 			String message = Policy.bind("exception.writingFile", buildProperty.getAbsolutePath()); //$NON-NLS-1$ //$NON-NLS-2$
 			throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, EXCEPTION_WRITING_FILE, message, e));
-		} catch (IOException e) {
+		} catch (IOException e) {			
 			String message = Policy.bind("exception.writingFile", buildProperty.getAbsolutePath()); //$NON-NLS-1$ //$NON-NLS-2$
 			throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, EXCEPTION_WRITING_FILE, message, e));
 		}

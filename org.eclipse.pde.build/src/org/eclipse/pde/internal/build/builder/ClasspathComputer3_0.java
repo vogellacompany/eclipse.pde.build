@@ -23,7 +23,7 @@ import org.eclipse.osgi.service.resolver.HostSpecification;
 import org.eclipse.pde.internal.build.*;
 import org.eclipse.pde.internal.build.site.PDEState;
 
-public class ClasspathComputer3_0 implements IClasspathComputer, IPDEBuildConstants, IXMLConstants {
+public class ClasspathComputer3_0 implements IClasspathComputer, IPDEBuildConstants, IXMLConstants, IBuildPropertiesConstants {
 	private ModelBuildScriptGenerator generator;
 
 	public ClasspathComputer3_0(ModelBuildScriptGenerator modelGenerator) {

@@ -242,7 +242,7 @@ public class FetchScriptGenerator extends AbstractScriptGenerator {
 	protected void generateFetchRecusivelyTarget() throws CoreException {
 		script.printTargetDeclaration(TARGET_FETCH_RECURSIVELY, null, FEATURES_RECURSIVELY, null, null);
 
-		IIncludedFeatureReference[] compiledFeatures = ((Feature) feature).getFeatureIncluded(); //TODO Check if the features can be selected on the config
+		IIncludedFeatureReference[] compiledFeatures = ((Feature) feature).getFeatureIncluded();
 		for (int i = 0; i < compiledFeatures.length; i++) {
 			String featureId = compiledFeatures[i].getVersionedIdentifier().getIdentifier();
 			if (featureProperties.containsKey(GENERATION_SOURCE_FEATURE_PREFIX + featureId)) {
@@ -393,8 +393,6 @@ public class FetchScriptGenerator extends AbstractScriptGenerator {
 				retrieve.printCVSTask("export -r " + tag + " " + moduleFeatureFile.toString(), cvsRoot, null, null, null, "true", null); //$NON-NLS-1$//$NON-NLS-2$//$NON-NLS-3$
 				retrieve.printCVSTask("export -r " + tag + " " + moduleFeatureProperties.toString(), cvsRoot, null, null, null, "true", null); //$NON-NLS-1$//$NON-NLS-2$//$NON-NLS-3$
 
-				//	retrieve.printCVSTask(0, null, cvsRoot, null, moduleFeatureFile.toString(), tag, "true", cvsPassFileLocation); //$NON-NLS-1$
-				//retrieve.printCVSTask(0, null, cvsRoot, null, moduleFeatureProperties.toString(), tag, "true", cvsPassFileLocation ); //$NON-NLS-1$
 				retrieve.printTargetEnd();
 				retrieve.printProjectEnd();
 			} finally {

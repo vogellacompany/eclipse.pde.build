@@ -16,6 +16,7 @@ import org.eclipse.core.runtime.*;
 import org.eclipse.osgi.service.resolver.BundleDescription;
 import org.eclipse.pde.internal.build.ant.AntScript;
 import org.eclipse.update.core.IFeature;
+import org.eclipse.update.core.IPluginEntry;
 
 /**
  * Generate an assemble script for a given feature and a given config. It
@@ -36,8 +37,8 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 	private static final String PROPERTY_SOURCE = "source"; //$NON-NLS-1$
 	private static final String PROPERTY_ELEMENT_NAME = "elementName"; //$NON-NLS-1$
 	
-	private static final String updateJar = "updateJar";	//$NON-NLS-1$
-	private static final String flat = "flat";	//$NON-NLS-1$
+	private static final String UPDATEJAR = "updateJar";	//$NON-NLS-1$
+	private static final String FLAT = "flat";	//$NON-NLS-1$
 	
 	private static final byte BUNDLE = 0;  
 	private static final byte FEATURE =  1;
@@ -72,9 +73,13 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 		}
 		loadPostProcessingSteps();
 	}
-	private void loadPostProcessingSteps() {
-		pluginsPostProcessingSteps = loadPropertyFile(AbstractScriptGenerator.getWorkingDirectory() + '/' + DEFAULT_FEATURES_POSTPROCESSINGSTEPS_FILENAME_DESCRIPTOR, null);
-		featuresPostProcessingSteps = loadPropertyFile(AbstractScriptGenerator.getWorkingDirectory() + '/' + DEFAULT_FEATURES_POSTPROCESSINGSTEPS_FILENAME_DESCRIPTOR, null);
+	private void loadPostProcessingSteps() throws CoreException {
+		try {
+			pluginsPostProcessingSteps = readProperties(AbstractScriptGenerator.getWorkingDirectory(), DEFAULT_PLUGINS_POSTPROCESSINGSTEPS_FILENAME_DESCRIPTOR);
+			featuresPostProcessingSteps = readProperties(AbstractScriptGenerator.getWorkingDirectory(), DEFAULT_FEATURES_POSTPROCESSINGSTEPS_FILENAME_DESCRIPTOR);
+		} catch(CoreException e) {
+			//Ignore
+		}
 	}
 	public void generate() throws CoreException {
 		generatePrologue();
@@ -158,29 +163,45 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 
 	//generate the appropriate postProcessingCall, and return a flag indicating the shape of the result, after processing 
 	private void generatePostProcessingSteps(String name, String version, byte type) {
+		String style = getPluginUnpackClause(name, version);
 		Properties currentProperties = type==BUNDLE ? pluginsPostProcessingSteps : featuresPostProcessingSteps;
-		String style = currentProperties.getProperty(name);
-		if(style==null)
-			return;
+		String styleFromFile = currentProperties.getProperty(name);
+		if(styleFromFile!=null)	//The info from the file override the one from the feaature
+			style = styleFromFile;
 			
-		if (flat.equalsIgnoreCase(style)) {
+		if (FLAT.equalsIgnoreCase(style)) {
 			//do nothing
 			return;
 		}
-		if (updateJar.equalsIgnoreCase(style)) {
+		if (UPDATEJAR.equalsIgnoreCase(style)) {
 			generateJarUpCall(name, version);
 			return;
 		}
 	}
 
+	private String getPluginUnpackClause(String name, String version) {
+		for (int i = 0; i < features.length; i++) {
+			IPluginEntry[] entries = features[i].getRawPluginEntries();
+			for (int j = 0; j < entries.length; j++) {
+				if (entries[j].getVersionedIdentifier().getIdentifier().equals(name))
+					return ((org.eclipse.update.core.PluginEntry) entries[j]).isUnpack() ? FLAT : UPDATEJAR;
+			}
+		}
+		return FLAT;
+	}
+	
 	private byte getFinalShape(String name, String version, byte type) {
+		String style = getPluginUnpackClause(name, version);
 		Properties currentProperties = type==BUNDLE ? pluginsPostProcessingSteps : featuresPostProcessingSteps;
-		String style = currentProperties.getProperty(name);
-		if (flat.equalsIgnoreCase(style)) {
+		String styleFromFile = currentProperties.getProperty(name);
+		if (styleFromFile != null)
+			style = styleFromFile;
+		
+		if (FLAT.equalsIgnoreCase(style)) {
 			//do nothing
 			return FOLDER;
 		}
-		if (updateJar.equalsIgnoreCase(style)) {
+		if (UPDATEJAR.equalsIgnoreCase(style)) {
 			return FILE;
 		}
 		return FOLDER;
@@ -211,7 +232,7 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 		final int parameterSize = 15;
 		List parameters = new ArrayList(parameterSize + 1);
 		for (int i = 0; i < plugins.length; i++) {
-			parameters.add(getPropertyFormat(PROPERTY_COLLECTING_PLACE) + '/' + DEFAULT_PLUGIN_LOCATION + '/' + plugins[i].getUniqueId() + '_' + plugins[i].getVersion() + (getFinalShape(plugins[i].getUniqueId(), plugins[i].getVersion().toString(), BUNDLE) == FOLDER ? "/" : "")); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+			parameters.add(getPropertyFormat(PROPERTY_COLLECTING_PLACE) + '/' + DEFAULT_PLUGIN_LOCATION + '/' + plugins[i].getUniqueId() + '_' + plugins[i].getVersion() + (getFinalShape(plugins[i].getUniqueId(), plugins[i].getVersion().toString(), BUNDLE) == FOLDER ? '*': '*'));
 			if (i % parameterSize == 0) {
 				createZipExecCommand(parameters);
 				parameters.clear();
@@ -228,7 +249,7 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 		}
 
 		for (int i = 0; i < features.length; i++) {
-			parameters.add(getPropertyFormat(PROPERTY_COLLECTING_PLACE) + '/' + DEFAULT_FEATURE_LOCATION + '/' + features[i].getVersionedIdentifier().toString() +  (getFinalShape(plugins[i].getUniqueId(), plugins[i].getVersion().toString(), BUNDLE) == FOLDER ? "/" : "")); //$NON-NLS-1$ //$NON-NLS-2$
+			parameters.add(getPropertyFormat(PROPERTY_COLLECTING_PLACE) + '/' + DEFAULT_FEATURE_LOCATION + '/' + features[i].getVersionedIdentifier().toString() +  (getFinalShape(plugins[i].getUniqueId(), plugins[i].getVersion().toString(), BUNDLE) == FOLDER ? '/' : '*'));
 			if (i % parameterSize == 0) {
 				createZipExecCommand(parameters);
 				parameters.clear();

@@ -21,7 +21,7 @@ import org.eclipse.update.core.SiteManager;
  * Generic super-class for all script generator classes. 
  * It contains basic informations like the script, the configurations, and a location 
  */
-public abstract class AbstractScriptGenerator implements IXMLConstants, IPDEBuildConstants {
+public abstract class AbstractScriptGenerator implements IXMLConstants, IPDEBuildConstants, IBuildPropertiesConstants {
 
 	private static List configInfos;
 	protected static String workingDirectory;
@@ -103,7 +103,7 @@ public abstract class AbstractScriptGenerator implements IXMLConstants, IPDEBuil
 		Properties result = new Properties();
 		File file = new File(location, fileName);
 		try {
-			InputStream input = new FileInputStream(file);
+			InputStream input = new BufferedInputStream(new FileInputStream(file));
 			try {
 				result.load(input);
 			} finally {
@@ -154,25 +154,5 @@ public abstract class AbstractScriptGenerator implements IXMLConstants, IPDEBuil
 	public static String getWorkingDirectory() {
 		return workingDirectory;
 	}
-	
-	// load the given File into the properties passed as a parameter. If null is passed, a new property is returned.
-	public Properties loadPropertyFile(String inputFile, Properties properties) {
-		Properties result = properties;
-		if (result == null)
-			result = new Properties(); 
-			
-		FileInputStream input = null;
-		try {
-			input = new FileInputStream(inputFile);
-			result.load(input);
-		} catch (IOException e) {
-			if (input != null)
-				try {
-					input.close();
-				} catch (IOException e1) {
-					//Ignore
-				}
-		}
-		return result;
-	}
+
 }

@@ -18,6 +18,8 @@ import org.eclipse.core.runtime.*;
 import org.eclipse.pde.internal.build.*;
 
 public class FetchFileGenerator extends AbstractScriptGenerator {
+	private static final String CONTENT_FILTER_SEPARATOR = "&";  //$NON-NLS-1$
+	
 	private Config config;
 	private String[] filters;
 	private String mapLocation;
@@ -61,13 +63,14 @@ public class FetchFileGenerator extends AbstractScriptGenerator {
 			login = login_password[0];
 			password = login_password[1];
 		} else {
-			//TODO Log an warning if the size is 1 
+			IStatus status = new Status(IStatus.WARNING, PI_PDEBUILD, 1, Policy.bind("warning.missingPassword", fileName), null); //$NON-NLS-1$
+			BundleHelper.getDefault().getLog().log(status);
 		}
-		script.printGet(baseurl + fileName, getPropertyFormat(PROPERTY_DOWNLOAD_DIRECTORY) + '/' + fileName, login, password, true); //$NON-NLS-1$
+		script.printGet(baseurl + fileName, getPropertyFormat(PROPERTY_DOWNLOAD_DIRECTORY) + '/' + fileName, login, password, true);
 	}
 
 	public void setContentFilter(String filters) {
-		this.filters = Utils.getArrayFromStringWithBlank(filters, "&"); //$NON-NLS-1$
+		this.filters = Utils.getArrayFromStringWithBlank(filters, CONTENT_FILTER_SEPARATOR); //$NON-NLS-1$
 	}
 
 	public void setMapLocation(String mapLocation) {
@@ -124,7 +127,8 @@ public class FetchFileGenerator extends AbstractScriptGenerator {
 				generateFetchFileFor(fileName, fileDescription[URL], userInfos);
 				collectedFiles += fileName + ", " + (fileDescription[DIRECTORY].equals("") ? "." : fileDescription[DIRECTORY]) + " & "; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$				
 			} else {
-				//TODO Write something into a log
+				IStatus status = new Status(IStatus.INFO, PI_PDEBUILD, EXCEPTION_GENERIC, Policy.bind("warning.fetchingFile", fileDescription[DIRECTORY]), null); //$NON-NLS-1$
+				BundleHelper.getDefault().getLog().log(status);
 			} 
 		}
 	}
@@ -150,7 +154,7 @@ public class FetchFileGenerator extends AbstractScriptGenerator {
 
 	//Return true, if the entryConfigs match the config we are packaging
 	private boolean filterByConfig(String entryConfigString) {
-		String[] entryConfigs = Utils.getArrayFromStringWithBlank(entryConfigString, "&"); //$NON-NLS-1$
+		String[] entryConfigs = Utils.getArrayFromStringWithBlank(entryConfigString, CONTENT_FILTER_SEPARATOR); //$NON-NLS-1$
 		if (entryConfigs.length == 0 || config.equals(Config.genericConfig()))
 			return true;
 			

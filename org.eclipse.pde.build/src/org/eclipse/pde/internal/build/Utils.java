@@ -355,7 +355,7 @@ public final class Utils implements IPDEBuildConstants {
 			if (plugins.contains(current.getHost().getBundle()))
 				prereqs.add(new Relation(current, current.getHost().getSupplier()));
 			else 
-				System.out.println("Host not found for this fragment");	//TODO This should not happen since we only build things that are resolved
+				System.out.println("Host not found for this fragment");	//This should not happen since we only build things that are resolved
 			
 			BundleDescription[] prereqList = PDEState.getDependentBundles(current);
 			for (int j = 0; j < prereqList.length; j++) {

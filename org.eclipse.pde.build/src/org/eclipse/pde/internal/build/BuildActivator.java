@@ -10,15 +10,14 @@
  **********************************************************************/
 package org.eclipse.pde.internal.build;
 
-import org.eclipse.pde.internal.build.site.PDEState;
-import org.osgi.framework.BundleActivator;
+import org.eclipse.core.runtime.Plugin;
 import org.osgi.framework.BundleContext;
 
-public class BuildActivator implements BundleActivator {
+public class BuildActivator extends Plugin {
 	public void start(BundleContext ctx) throws Exception {
-		PDEState.setCtx(ctx);
+		new BundleHelper(ctx);
 	}
 	public void stop(BundleContext ctx) throws Exception {
-		PDEState.setCtx(null);
+		BundleHelper.close();
 	}
 }

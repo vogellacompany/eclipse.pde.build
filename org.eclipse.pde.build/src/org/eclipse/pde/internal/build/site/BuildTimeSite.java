@@ -10,11 +10,10 @@
  **********************************************************************/
 package org.eclipse.pde.internal.build.site;
 
-import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.*;
 import org.eclipse.osgi.service.resolver.BundleDescription;
 import org.eclipse.osgi.service.resolver.VersionConstraint;
-import org.eclipse.pde.internal.build.IPDEBuildConstants;
-import org.eclipse.pde.internal.build.IXMLConstants;
+import org.eclipse.pde.internal.build.*;
 import org.eclipse.update.core.*;
 
 /**
@@ -31,13 +30,13 @@ public class BuildTimeSite extends Site implements ISite, IPDEBuildConstants, IX
 		if (state == null) {
 			// create the registry according to the site where the code to compile is, and a existing installation of eclipse 
 			BuildTimeSiteContentProvider contentProvider = (BuildTimeSiteContentProvider) getSiteContentProvider();
-			state = new PDEState();
 			
-			if (compile21) //TODO Need to filter the features that could be included 
-				new PluginRegistryConverter(contentProvider.getPluginPaths()).addRegistryToState(state);
-			else 
-				state.addBundles(contentProvider.getPluginPaths());
-			
+			if(compile21)
+				state = new PluginRegistryConverter();
+			else
+				state = new PDEState();
+			state.addBundles(contentProvider.getPluginPaths());
+
 			state.resolveState();
 			BundleDescription[] allBundles = state.getState().getBundles();
 			BundleDescription[] resolvedBundles = state.getState().getResolvedBundles();
@@ -45,14 +44,16 @@ public class BuildTimeSite extends Site implements ISite, IPDEBuildConstants, IX
 				return state;
 			
 			//display a report of the unresolved constraints
-			//TODO Need to connect that with the debug option of ant and some PDE-build debug options
 			for (int i = 0; i < allBundles.length; i++) {
+				BundleHelper.getDefault().getLog();
 				if (! allBundles[i].isResolved()) {
-					System.out.println(">>>" + allBundles[i].getUniqueId());
+					String message = "Bundle: " + allBundles[i].getUniqueId() + '\n'; //$NON-NLS-1$
 					VersionConstraint[] unsatisfiedConstraint = allBundles[i].getUnsatisfiedConstraints();
 					for (int j = 0; j < unsatisfiedConstraint.length; j++) {
-						System.out.println(unsatisfiedConstraint[j].getName());
-					}	
+						message += '\t' + unsatisfiedConstraint[j].toString() + '\n';
+					}
+					IStatus status = new Status(IStatus.WARNING, IPDEBuildConstants.PI_PDEBUILD,  IPDEBuildConstants.EXCEPTION_STATE_PROBLEM, Policy.bind("exception.registryResolution", message), null);//$NON-NLS-1$
+					BundleHelper.getDefault().getLog().log(status);	
 				}
 			}
 		}

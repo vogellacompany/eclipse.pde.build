@@ -10,7 +10,6 @@
  **********************************************************************/
 package org.eclipse.pde.internal.build.builder;
 
-import java.io.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
@@ -26,7 +25,6 @@ import org.osgi.framework.Constants;
  * Generic class for generating scripts for plug-ins and fragments.
  */
 public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
-
 	/**
 	 * Represents a entry that must be compiled and which is listed in the build.properties file.
 	 */
@@ -110,6 +108,7 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 			checkBootAndRuntime();
 		
 		initializeVariables();
+		
 		System.out.println("generating " + model.getUniqueId());	//TODO Need to put that into a log
 
 		String custom = (String) getBuildProperties().get(PROPERTY_CUSTOM);
@@ -175,7 +174,7 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		generateBuildUpdateJarTarget();
 		generateGatherBinPartsTarget();
 
-		if (getBuildProperties().getProperty("sourcePlugin", null) == null) { //$NON-NLS-1$
+		if (getBuildProperties().getProperty(SOURCE_PLUGIN, null) == null) { //$NON-NLS-1$
 			generateBuildJarsTarget(model);
 		} else {
 			generateBuildJarsTargetForSourceGathering();
@@ -793,12 +792,10 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		return (String[]) getSite(false).getRegistry().getExtraData().get(new Long(lookedUpModel.getBundleId()));
 	}
 	
-	protected Properties getBuildProperties() {
-		if (buildProperties != null) {
-			return buildProperties;
-		}
+	protected Properties getBuildProperties() throws CoreException {
+		if (buildProperties == null)
+			return buildProperties = readProperties(model.getLocation(), propertiesFileName);
 		
-		buildProperties = loadPropertyFile(new File(model.getLocation(), propertiesFileName).getAbsolutePath(), null);
 		return buildProperties;
 	}
 
@@ -812,7 +809,7 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		if (jarName.endsWith(".jar")) {
 			return jarName.substring(0, jarName.length()-4) + ".src.zip";
 		}
-		return jarName.replace('/','.') + ".src.zip"; //$NON-NLS-1$ //TODO Need to fix so the right thing is returned for folders
+		return jarName.replace('/','.') + ".src.zip"; //$NON-NLS-1$
 	}
 
 	/**

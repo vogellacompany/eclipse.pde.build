@@ -2,25 +2,23 @@
 package org.eclipse.pde.internal.build.site;
 
 import java.io.File;
+import java.net.URL;
+import java.util.*;
 import java.util.Collection;
 import java.util.Properties;
 import org.eclipse.core.runtime.*;
 import org.eclipse.core.runtime.model.*;
 import org.eclipse.osgi.service.resolver.*;
+import org.eclipse.pde.internal.build.*;
 import org.eclipse.pde.internal.build.IPDEBuildConstants;
 import org.eclipse.pde.internal.build.Policy;
 import org.osgi.framework.Constants;
 
-public class PluginRegistryConverter {
+public class PluginRegistryConverter extends PDEState {
 	private PluginRegistryModel registry;
-	private Collection files;
+
 	
-	public PluginRegistryConverter(Collection files) throws CoreException {
-		this.files = files;
-		registry = getPluginRegistry();
-	}
-	
-	public PluginRegistryModel getPluginRegistry() throws CoreException {
+	private PluginRegistryModel getPluginRegistry(URL[] files) throws CoreException {
 		if (registry == null) {
 			// create the registry according to the site where the code to compile is, and a existing installation of eclipse 
 			MultiStatus problems = new MultiStatus(IPDEBuildConstants.PI_PDEBUILD, IPDEBuildConstants.EXCEPTION_MODEL_PARSE, Policy.bind("exception.pluginParse"), null); //$NON-NLS-1$
@@ -34,35 +32,35 @@ public class PluginRegistryConverter {
 		return registry;
 	}
 	
-	public void addRegistryToState(PDEState state) {
+	public void addRegistryToState() {
 		PluginModel[] plugins = registry.getPlugins();
 		PluginFragmentModel[] fragments = registry.getFragments();
 		
 		for (int i = 0; i < plugins.length; i++) {		
-			BundleDescription bd = state.getFactory().createBundleDescription(state.getNextId(), plugins[i].getPluginId(), new Version(plugins[i].getVersion()), plugins[i].getLocation(), createBundleSpecification(plugins[i].getRequires(), state) , (HostSpecification[]) null, null, null, true);
+			BundleDescription bd = state.getFactory().createBundleDescription(getNextId(), plugins[i].getPluginId(), new Version(plugins[i].getVersion()), plugins[i].getLocation(), createBundleSpecification(plugins[i].getRequires()) , (HostSpecification[]) null, null, null, true);
 			String libs = createClasspath(plugins[i].getRuntime());
 			Properties manifest = new Properties();
 			if(libs != null)
 				manifest.put(Constants.BUNDLE_CLASSPATH, libs);
-			state.loadPropertyFileIn(manifest, new File(fragments[i].getLocation()));
+			loadPropertyFileIn(manifest, new File(fragments[i].getLocation()));
 			bd.setUserObject(manifest);
-			state.addBundleDescription(bd);
+			addBundleDescription(bd);
 		}
 	
 		for (int i = 0; i < fragments.length; i++) {
 			HostSpecification host = state.getFactory().createHostSpecification(fragments[i].getPluginId(), new Version(fragments[i].getPluginVersion()), fragments[i].getMatch(), false);
-			BundleDescription bd = state.getFactory().createBundleDescription(state.getNextId(), fragments[i].getId(), new Version(fragments[i].getVersion()), fragments[i].getLocation(), createBundleSpecification(fragments[i].getRequires(), state) , host, null, null, true);
+			BundleDescription bd = state.getFactory().createBundleDescription(getNextId(), fragments[i].getId(), new Version(fragments[i].getVersion()), fragments[i].getLocation(), createBundleSpecification(fragments[i].getRequires()) , new HostSpecification[] {host}, null, null, true);
 			String libs = createClasspath(fragments[i].getRuntime());
 			Properties manifest = new Properties();
 			if(libs != null)
 				manifest.put(Constants.BUNDLE_CLASSPATH, libs);
-			state.loadPropertyFileIn(manifest, new File(fragments[i].getLocation()));
+			loadPropertyFileIn(manifest, new File(fragments[i].getLocation()));
 			bd.setUserObject(manifest);
-			state.addBundleDescription(bd);
+			addBundleDescription(bd);
 		}
 	}
 	
-	private BundleSpecification[] createBundleSpecification(PluginPrerequisiteModel[] prereqs, PDEState state) {
+	protected BundleSpecification[] createBundleSpecification(PluginPrerequisiteModel[] prereqs) {
 		if (prereqs == null)
 			return new BundleSpecification[0];
 		BundleSpecification[] specs = new BundleSpecification[prereqs.length];
@@ -81,5 +79,18 @@ public class PluginRegistryConverter {
 			result += libs[i].getName() + (i == libs.length-1 ? "" : ","); 
 		}
 		return result;
+	}
+	
+	public void addBundles(Collection bundles) {
+		try {
+			getPluginRegistry(Utils.asURL((String[]) bundles.toArray()));
+		} catch (CoreException e) {
+			IStatus status = new Status(IStatus.ERROR, IPDEBuildConstants.PI_PDEBUILD, IPDEBuildConstants.EXCEPTION_STATE_PROBLEM, Policy.bind("exception.registryResolution"), e);
+			BundleHelper.getDefault().getLog().log(status);
+		}
+		for (Iterator iter = bundles.iterator(); iter.hasNext();) {
+			File bundle = (File) iter.next();
+			addBundle(bundle);
+		}
 	}
 }
