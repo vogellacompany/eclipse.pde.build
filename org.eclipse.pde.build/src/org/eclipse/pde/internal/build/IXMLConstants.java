@@ -99,6 +99,7 @@ public interface IXMLConstants {
 	public static final String PROPERTY_JAVAC_VERBOSE = "javacVerbose"; //$NON-NLS-1$
 	public static final String PROPERTY_JAVAC_SOURCE = "javacSource"; //$NON-NLS-1$
 	public static final String PROPERTY_JAVAC_TARGET = "javacTarget"; //$NON-NLS-1$
+	public static final String PROPERTY_JAVAC_COMPILEARGS = "compileArgs"; //$NON-NLS-1$
 	public static final String PROPERTY_ARCHIVE_PREFIX = "archivePrefix"; //$NON-NLS-1$
 	public static final String PROPERTY_COLLECTING_FOLDER = "collectingFolder"; //$NON-NLS-1$
 	public static final String PROPERTY_ARCHIVE_FULLPATH = "archiveFullPath";  //$NON-NLS-1$

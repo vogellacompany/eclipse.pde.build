@@ -689,6 +689,7 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		javac.setIncludeAntRuntime("no"); //$NON-NLS-1$
 		javac.setSource(getPropertyFormat(PROPERTY_JAVAC_SOURCE));
 		javac.setTarget(getPropertyFormat(PROPERTY_JAVAC_TARGET));
+		javac.setCompileArgs(new String[] { getPropertyFormat(PROPERTY_JAVAC_COMPILEARGS )});
 		String[] sources = entry.getSource();
 		javac.setSrcdir(sources);
 		script.print(javac);

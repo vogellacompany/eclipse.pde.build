@@ -29,6 +29,8 @@ public class JavacTask implements ITask {
 	protected String debug;
 	protected String source;
 	protected String target;
+	protected String[] compileArgs;
+	
 	/**
 	 * Default constructor for the class.
 	 */
@@ -54,6 +56,18 @@ public class JavacTask implements ITask {
 		script.println(">"); //$NON-NLS-1$
 		
 		script.indent++;
+		
+		if (compileArgs != null) {
+			script.printStartTag("compileArgs");
+			script.indent++;
+			for (int i = 0; i < compileArgs.length; i++) {
+				script.println("<arg line=\"" + compileArgs[i] + "\"/>");
+			}
+			script.indent--;
+			script.printEndTag("compileArgs");	
+		}
+		
+		
 		script.printStartTag("classpath");		
 		script.indent++;
 		for (Iterator iter = classpath.iterator(); iter.hasNext();) {
@@ -73,8 +87,8 @@ public class JavacTask implements ITask {
 			script.printQuotes(srcdir[i]);
 			script.println("/>"); //$NON-NLS-1$
 		}
-		script.indent--;
 		script.printEndTag("javac"); //$NON-NLS-1$
+		script.indent--;
 	}
 
 	/**
@@ -179,5 +193,9 @@ public class JavacTask implements ITask {
 	 */
 	public void setTarget(String target) {
 		this.target = target;
+	}
+	
+	public void setCompileArgs(String[] args) {
+		this.compileArgs = args;
 	}
 }
