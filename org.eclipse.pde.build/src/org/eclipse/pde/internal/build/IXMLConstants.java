@@ -110,4 +110,5 @@ public interface IXMLConstants {
 	public static final String PROPERTY_PLUGIN_TEMP = "pluginTemp"; //$NON-NLS-1$
 	public static final String PROPERTY_BUILD_TEMP = "buildTempFolder"; //$NON-NLS-1$
 
+	public static final String PROPERTY_ASSEMBLY_TMP = "assemblyTempDir"; //$NON-NLS-1$
 }

@@ -34,8 +34,7 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 	protected boolean copyRootFile;
 	protected Properties pluginsPostProcessingSteps;
 	protected Properties featuresPostProcessingSteps;
-	
-	private static final String PROPERTY_ASSEMBLY_TMP = "assemblyTempDir"; //$NON-NLS-1$	
+		
 	private static final String PROPERTY_SOURCE = "source"; //$NON-NLS-1$
 	private static final String PROPERTY_ELEMENT_NAME = "elementName"; //$NON-NLS-1$
 	
