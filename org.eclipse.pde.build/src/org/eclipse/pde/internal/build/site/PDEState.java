@@ -82,7 +82,7 @@ public class PDEState implements IPDEBuildConstants, IXMLConstants {
 		repositoryVersions = new Properties();
 		FileInputStream input;
 		try {
-			input = new FileInputStream(AbstractScriptGenerator.getWorkingDirectory() + "/" + DEFAULT_PLUGIN_VERSION_FILENAME_DESCRIPTOR); //$NON-NLS-1$
+			input = new FileInputStream(AbstractScriptGenerator.getWorkingDirectory() + '/' + DEFAULT_PLUGIN_VERSION_FILENAME_DESCRIPTOR); //$NON-NLS-1$
 			repositoryVersions.load(input);
 		} catch (IOException e) {
 			//Ignore

@@ -27,7 +27,7 @@ public class AssembleScriptGenerator extends AbstractScriptGenerator {
 		this.assemblageInformation = assemblageInformation;
 		this.featureId = featureId;
 
-		String filename = directory + "/" + (scriptFilename == null ? (DEFAULT_ASSEMBLE_NAME + "." + featureId + "." + DEFAULT_ASSEMBLE_ALL) : scriptFilename); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+		String filename = directory + '/' + (scriptFilename == null ? (DEFAULT_ASSEMBLE_NAME + "." + featureId + "." + DEFAULT_ASSEMBLE_ALL) : scriptFilename); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 		try {
 			// FIXME: THE FILE management can cause problem if an error occur when setting other params
 			script = new AntScript(new FileOutputStream(filename));

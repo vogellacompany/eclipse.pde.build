@@ -142,8 +142,8 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 
 	private void initializeVariables() throws CoreException {
 		fullName = model.getUniqueId() + "_" + model.getVersion(); //$NON-NLS-1$
-		pluginZipDestination = PLUGIN_DESTINATION + "/" + fullName + ".zip"; //$NON-NLS-1$ //$NON-NLS-2$
-		pluginUpdateJarDestination = PLUGIN_DESTINATION + "/" + fullName + ".jar"; //$NON-NLS-1$ //$NON-NLS-2$
+		pluginZipDestination = PLUGIN_DESTINATION + '/' + fullName + ".zip"; //$NON-NLS-1$ //$NON-NLS-2$
+		pluginUpdateJarDestination = PLUGIN_DESTINATION + '/' + fullName + ".jar"; //$NON-NLS-1$ //$NON-NLS-2$
 		if (".".equals(getBuildProperties().getProperty(Constants.BUNDLE_CLASSPATH))) {
 			getBuildProperties().setProperty(Constants.BUNDLE_CLASSPATH, "@dot");
 			getBuildProperties().setProperty("source.@dot", getBuildProperties().getProperty("source.."));
@@ -427,7 +427,7 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		script.printAntCallTask(TARGET_BUILD_JARS, null, null);
 		script.printAntCallTask(TARGET_BUILD_SOURCES, null, null);
 		Map params = new HashMap(1);
-		params.put(PROPERTY_DESTINATION_TEMP_FOLDER, getPropertyFormat(PROPERTY_TEMP_FOLDER) + "/"); //$NON-NLS-1$
+		params.put(PROPERTY_DESTINATION_TEMP_FOLDER, getPropertyFormat(PROPERTY_TEMP_FOLDER) + '/'); //$NON-NLS-1$
 		script.printAntCallTask(TARGET_GATHER_BIN_PARTS, null, params);
 		script.printAntCallTask(TARGET_GATHER_SOURCES, null, params);
 		FileSet fileSet = new FileSet(getPropertyFormat(PROPERTY_TEMP_FOLDER), null, "**/*.bin.log", null, null, null, null); //$NON-NLS-1$
@@ -449,9 +449,9 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		script.printMkdirTask(getPropertyFormat(PROPERTY_TEMP_FOLDER));
 		script.printAntCallTask(TARGET_BUILD_JARS, null, null);
 		Map params = new HashMap(1);
-		params.put(PROPERTY_DESTINATION_TEMP_FOLDER, getPropertyFormat(PROPERTY_TEMP_FOLDER) + "/"); //$NON-NLS-1$
+		params.put(PROPERTY_DESTINATION_TEMP_FOLDER, getPropertyFormat(PROPERTY_TEMP_FOLDER) + '/'); //$NON-NLS-1$
 		script.printAntCallTask(TARGET_GATHER_BIN_PARTS, null, params);
-		script.printZipTask(pluginUpdateJarDestination, getPropertyFormat(PROPERTY_TEMP_FOLDER) + "/" + fullName, false, null); //$NON-NLS-1$
+		script.printZipTask(pluginUpdateJarDestination, getPropertyFormat(PROPERTY_TEMP_FOLDER) + '/' + fullName, false, null); //$NON-NLS-1$
 		script.printDeleteTask(getPropertyFormat(PROPERTY_TEMP_FOLDER), null, null);
 		script.printTargetEnd();
 	}
@@ -501,7 +501,7 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 
 		script.println();
 		script.printTargetDeclaration(TARGET_INIT, TARGET_PROPERTIES, null, null, null);
-		script.printProperty(PROPERTY_TEMP_FOLDER, getPropertyFormat(PROPERTY_BASEDIR) + "/" + PROPERTY_TEMP_FOLDER); //$NON-NLS-1$
+		script.printProperty(PROPERTY_TEMP_FOLDER, getPropertyFormat(PROPERTY_BASEDIR) + '/' + PROPERTY_TEMP_FOLDER); //$NON-NLS-1$
 		script.printProperty(PROPERTY_PLUGIN_DESTINATION, getPropertyFormat(PROPERTY_BASEDIR));
 		script.printProperty(PROPERTY_BUILD_RESULT_FOLDER, getPropertyFormat(PROPERTY_BASEDIR));
 		script.printTargetEnd();
@@ -798,21 +798,7 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 			return buildProperties;
 		}
 		
-		buildProperties = new Properties();
-		InputStream propertyStream = null;
-		try {
-			propertyStream = new BufferedInputStream(new FileInputStream(new File(model.getLocation(), propertiesFileName)));
-			buildProperties.load(propertyStream); //$NON-NLS-1$
-		} catch (Exception e) {
-			//ignore because compiled plug-ins do not have such files
-		} finally {
-			try {
-				if (propertyStream != null)
-					propertyStream.close();
-			} catch (IOException e1) {
-				//Ignore
-			}
-		}
+		buildProperties = loadPropertyFile(new File(model.getLocation(), propertiesFileName).getAbsolutePath(), null);
 		return buildProperties;
 	}
 
@@ -891,7 +877,7 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	
 	public boolean hasManifest() {
 		try {
-			return new File(getLocation(model), MANIFEST_FOLDER + "/" + MANIFEST ).exists(); //$NON-NLS-1$
+			return new File(getLocation(model), MANIFEST_FOLDER + '/' + MANIFEST ).exists(); //$NON-NLS-1$
 		} catch (CoreException e) {
 			// Ignore the exception and return false
 			return false;

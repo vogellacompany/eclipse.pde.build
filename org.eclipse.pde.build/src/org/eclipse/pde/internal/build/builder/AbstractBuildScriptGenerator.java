@@ -12,7 +12,6 @@ package org.eclipse.pde.internal.build.builder;
 
 import java.io.*;
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.*;
 import org.eclipse.core.runtime.*;
 import org.eclipse.pde.internal.build.*;
@@ -181,7 +180,10 @@ public abstract class AbstractBuildScriptGenerator extends AbstractScriptGenerat
 	 * @param version
 	 * @throws CoreException
 	 * @throws IOException
+	 *
 	 */
+	
+	//TODO Need to check what should happen when QUALIFIER is used
 	protected void updateVersion(File buildFile, String propertyName, String version) throws CoreException, IOException {
 		StringBuffer buffer = readFile(buildFile);
 		int pos = scan(buffer, 0, propertyName);

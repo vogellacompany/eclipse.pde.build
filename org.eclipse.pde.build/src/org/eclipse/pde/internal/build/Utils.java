@@ -238,7 +238,7 @@ public final class Utils implements IPDEBuildConstants {
 			return coll;
 		}
 
-		String featureDirectory = from + "/" + foldername; //$NON-NLS-1$
+		String featureDirectory = from + '/' + foldername; //$NON-NLS-1$
 		Collection collectedElements = new ArrayList(10);
 
 		File[] featureDirectoryContent = new File(featureDirectory).listFiles();
@@ -287,7 +287,7 @@ public final class Utils implements IPDEBuildConstants {
 						throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, EXCEPTION_READING_FILE, message, e));
 					}
 
-					String fileToCopy = toDir + "/" + files[i].getName(); //$NON-NLS-1$
+					String fileToCopy = toDir + '/' + files[i].getName(); //$NON-NLS-1$
 					try {
 						outputStream = new FileOutputStream(fileToCopy);
 					} catch (FileNotFoundException e) {

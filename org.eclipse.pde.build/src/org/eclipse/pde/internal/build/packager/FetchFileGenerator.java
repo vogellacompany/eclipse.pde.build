@@ -63,7 +63,7 @@ public class FetchFileGenerator extends AbstractScriptGenerator {
 		} else {
 			//TODO Log an warning if the size is 1 
 		}
-		script.printGet(baseurl + fileName, getPropertyFormat(PROPERTY_DOWNLOAD_DIRECTORY) + "/" + fileName, login, password, true); //$NON-NLS-1$
+		script.printGet(baseurl + fileName, getPropertyFormat(PROPERTY_DOWNLOAD_DIRECTORY) + '/' + fileName, login, password, true); //$NON-NLS-1$
 	}
 
 	public void setContentFilter(String filters) {
@@ -79,17 +79,17 @@ public class FetchFileGenerator extends AbstractScriptGenerator {
 		selectedFiles.put(config.toString(","), collectedFiles); //$NON-NLS-1$
 
 		try {
-			OutputStream stream = new BufferedOutputStream(new FileOutputStream(workingDirectory + "/" + DEFAULT_PACKAGER_DIRECTORY_FILENAME_DESCRIPTOR)); //$NON-NLS-1$
+			OutputStream stream = new BufferedOutputStream(new FileOutputStream(workingDirectory + '/' + DEFAULT_PACKAGER_DIRECTORY_FILENAME_DESCRIPTOR)); //$NON-NLS-1$
 			try {
 				selectedFiles.store(stream, null);
 			} finally {
 				stream.close();
 			}
 		} catch (FileNotFoundException e) {
-			String message = Policy.bind("exception.writingFile", workingDirectory + "/" + DEFAULT_PACKAGER_DIRECTORY_FILENAME_DESCRIPTOR); //$NON-NLS-1$ //$NON-NLS-2$
+			String message = Policy.bind("exception.writingFile", workingDirectory + '/' + DEFAULT_PACKAGER_DIRECTORY_FILENAME_DESCRIPTOR); //$NON-NLS-1$ //$NON-NLS-2$
 			throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, EXCEPTION_WRITING_FILE, message, e));
 		} catch (IOException e) {
-			String message = Policy.bind("exception.writingFile", workingDirectory + "/" + DEFAULT_PACKAGER_DIRECTORY_FILENAME_DESCRIPTOR); //$NON-NLS-1$ //$NON-NLS-2$
+			String message = Policy.bind("exception.writingFile", workingDirectory + '/' + DEFAULT_PACKAGER_DIRECTORY_FILENAME_DESCRIPTOR); //$NON-NLS-1$ //$NON-NLS-2$
 			throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, EXCEPTION_WRITING_FILE, message, e));
 		}
 	}

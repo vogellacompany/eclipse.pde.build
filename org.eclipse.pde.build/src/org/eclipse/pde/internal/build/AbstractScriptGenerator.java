@@ -11,8 +11,6 @@
 package org.eclipse.pde.internal.build;
 
 import java.io.*;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.*;
 import org.eclipse.core.runtime.*;
 import org.eclipse.osgi.service.resolver.BundleDescription;
@@ -125,20 +123,20 @@ public abstract class AbstractScriptGenerator implements IXMLConstants, IPDEBuil
 			return;
 
 		try {
-			OutputStream scriptStream = new BufferedOutputStream(new FileOutputStream(scriptLocation + "/" + scriptName)); //$NON-NLS-1$
+			OutputStream scriptStream = new BufferedOutputStream(new FileOutputStream(scriptLocation + '/' + scriptName)); //$NON-NLS-1$
 			try {
 				script = new AntScript(scriptStream);
 			} catch (IOException e) {
 				try {
 					scriptStream.close();
-					String message = Policy.bind("exception.writingFile", scriptLocation + "/" + scriptName); //$NON-NLS-1$ //$NON-NLS-2$
+					String message = Policy.bind("exception.writingFile", scriptLocation + '/' + scriptName); //$NON-NLS-1$ //$NON-NLS-2$
 					throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, EXCEPTION_WRITING_FILE, message, e));
 				} catch (IOException e1) {
 					// Ignored		
 				}
 			}
 		} catch (FileNotFoundException e) {
-			String message = Policy.bind("exception.writingFile", scriptLocation + "/" + scriptName); //$NON-NLS-1$ //$NON-NLS-2$
+			String message = Policy.bind("exception.writingFile", scriptLocation + '/' + scriptName); //$NON-NLS-1$ //$NON-NLS-2$
 			throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, EXCEPTION_WRITING_FILE, message, e));
 		}
 	}
@@ -155,5 +153,26 @@ public abstract class AbstractScriptGenerator implements IXMLConstants, IPDEBuil
 	}
 	public static String getWorkingDirectory() {
 		return workingDirectory;
+	}
+	
+	// load the given File into the properties passed as a parameter. If null is passed, a new property is returned.
+	public Properties loadPropertyFile(String inputFile, Properties properties) {
+		Properties result = properties;
+		if (result == null)
+			result = new Properties(); 
+			
+		FileInputStream input = null;
+		try {
+			input = new FileInputStream(inputFile);
+			result.load(input);
+		} catch (IOException e) {
+			if (input != null)
+				try {
+					input.close();
+				} catch (IOException e1) {
+					//Ignore
+				}
+		}
+		return result;
 	}
 }

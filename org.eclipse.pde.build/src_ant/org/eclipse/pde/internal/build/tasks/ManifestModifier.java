@@ -1,13 +1,9 @@
 package org.eclipse.pde.internal.build.tasks;
 
 import java.io.*;
-import java.io.FileInputStream;
 import java.util.*;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
-import org.apache.tools.ant.*;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
 

@@ -10,10 +10,10 @@
  **********************************************************************/
 package org.eclipse.pde.internal.build;
 
-import java.net.URL;
 import java.util.*;
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.pde.internal.build.builder.*;
+import org.eclipse.pde.internal.build.builder.FeatureBuildScriptGenerator;
+import org.eclipse.pde.internal.build.builder.ModelBuildScriptGenerator;
 
 /**
  * 

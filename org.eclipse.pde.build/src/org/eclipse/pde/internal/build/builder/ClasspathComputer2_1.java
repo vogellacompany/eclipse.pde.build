@@ -248,7 +248,7 @@ public class ClasspathComputer2_1 implements IClasspathComputer, IPDEBuildConsta
 	private String computeExtraPath(String url, String location) throws CoreException {
 		String relativePath = null;
 
-		String[] urlfragments = Utils.getArrayFromString(url, "/"); //$NON-NLS-1$
+		String[] urlfragments = Utils.getArrayFromString(url,"/"); //$NON-NLS-1$
 
 		// A valid platform url for a plugin has a leat 3 segments.
 		if (urlfragments.length > 2 && urlfragments[0].equals(PlatformURLHandler.PROTOCOL + PlatformURLHandler.PROTOCOL_SEPARATOR)) {
@@ -268,7 +268,7 @@ public class ClasspathComputer2_1 implements IClasspathComputer, IPDEBuildConsta
 					if (i == 3)
 						modelLocation += urlfragments[i];
 					else
-						modelLocation += "/" + urlfragments[i]; //$NON-NLS-1$
+						modelLocation += '/' + urlfragments[i]; //$NON-NLS-1$
 				}
 				return relativePath = Utils.makeRelative(new Path(modelLocation), new Path(location)).toOSString();
 			}

@@ -47,8 +47,8 @@ public class PackagingConfigScriptGenerator extends AssembleConfigScriptGenerato
 		args.add("-R"); //$NON-NLS-1$
 		args.add("700"); //$NON-NLS-1$
 		args.add("."); //$NON-NLS-1$
-		script.printExecTask("chmod", getPropertyFormat("tempDirectory") + "/" + getPropertyFormat(PROPERTY_COLLECTING_BASE) + "/" + getPropertyFormat(PROPERTY_COLLECTING_PLACE), args, "Linux"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$
-		script.printDeleteTask(getPropertyFormat("tempDirectory") + "/" + getPropertyFormat(PROPERTY_COLLECTING_BASE) + "/" + getPropertyFormat(PROPERTY_COLLECTING_PLACE), "**/*", null); //$NON-NLS-1$//$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+		script.printExecTask("chmod", getPropertyFormat("tempDirectory") + '/' + getPropertyFormat(PROPERTY_COLLECTING_BASE) + '/' + getPropertyFormat(PROPERTY_COLLECTING_PLACE), args, "Linux"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$
+		script.printDeleteTask(getPropertyFormat("tempDirectory") + '/' + getPropertyFormat(PROPERTY_COLLECTING_BASE) + '/' + getPropertyFormat(PROPERTY_COLLECTING_PLACE), "**/*", null); //$NON-NLS-1$//$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
 		script.printTargetEnd();
 	}
 
@@ -65,7 +65,7 @@ public class PackagingConfigScriptGenerator extends AssembleConfigScriptGenerato
 				IPath target = new Path(file.substring(5));
 				file = target.removeLastSegments(1).toOSString();
 			}
-			parameters.add(getPropertyFormat(PROPERTY_COLLECTING_PLACE) + "/" + file); //$NON-NLS-1$
+			parameters.add(getPropertyFormat(PROPERTY_COLLECTING_PLACE) + '/' + file); //$NON-NLS-1$
 			createZipExecCommand(parameters);
 			parameters.clear();
 		}
@@ -75,7 +75,7 @@ public class PackagingConfigScriptGenerator extends AssembleConfigScriptGenerato
 		final int parameterSize = 15;
 		List parameters = new ArrayList(parameterSize + 1);
 		for (int i = 0; i < plugins.length; i++) {
-			parameters.add(getPropertyFormat(PROPERTY_COLLECTING_PLACE) + "/" + DEFAULT_PLUGIN_LOCATION + "/" + plugins[i].getUniqueId() + "_" + plugins[i].getVersion()); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+			parameters.add(getPropertyFormat(PROPERTY_COLLECTING_PLACE) + '/' + DEFAULT_PLUGIN_LOCATION + '/' + plugins[i].getUniqueId() + "_" + plugins[i].getVersion()); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 			if (i % parameterSize == 0) {
 				createZipExecCommand(parameters);
 				parameters.clear();
@@ -92,7 +92,7 @@ public class PackagingConfigScriptGenerator extends AssembleConfigScriptGenerato
 		}
 
 		for (int i = 0; i < features.length; i++) {
-			parameters.add(getPropertyFormat(PROPERTY_COLLECTING_PLACE) + "/" + DEFAULT_FEATURE_LOCATION + "/" + features[i].getVersionedIdentifier().toString()); //$NON-NLS-1$ //$NON-NLS-2$
+			parameters.add(getPropertyFormat(PROPERTY_COLLECTING_PLACE) + '/' + DEFAULT_FEATURE_LOCATION + '/' + features[i].getVersionedIdentifier().toString()); //$NON-NLS-1$ //$NON-NLS-2$
 			if (i % parameterSize == 0) {
 				createZipExecCommand(parameters);
 				parameters.clear();
@@ -106,7 +106,7 @@ public class PackagingConfigScriptGenerator extends AssembleConfigScriptGenerato
 
 	private void createZipExecCommand(List parameters) {
 		parameters.add(0, "-r -q " + getPropertyFormat(PROPERTY_ZIP_ARGS) + " " + getPropertyFormat(PROPERTY_ARCHIVE_NAME)); //$NON-NLS-1$ //$NON-NLS-2$
-		script.printExecTask("zip", getPropertyFormat("tempDirectory") + "/" + getPropertyFormat(PROPERTY_COLLECTING_BASE), parameters, null); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+		script.printExecTask("zip", getPropertyFormat("tempDirectory") + '/' + getPropertyFormat(PROPERTY_COLLECTING_BASE), parameters, null); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 	}
 
 	private void generateEpilogue() {

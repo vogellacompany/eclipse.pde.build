@@ -11,7 +11,6 @@
 package org.eclipse.pde.internal.build.tasks;
 
 import java.net.MalformedURLException;
-import java.net.URL;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
 import org.eclipse.core.runtime.CoreException;
