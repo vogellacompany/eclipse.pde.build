@@ -508,9 +508,9 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	private void generatePermissions(Config aConfig) throws CoreException {
 		String configInfix = aConfig.toString("."); //$NON-NLS-1$
 		Properties featureProperties = getBuildProperties();
-		String prefixPermissions = ROOT_PREFIX + configInfix + ',' + PERMISSIONS + ',';
-		String prefixLinks = ROOT_PREFIX + configInfix + ',' + LINK;
-		String commonPermissions = ROOT_PREFIX + PERMISSIONS + ',';
+		String prefixPermissions = ROOT_PREFIX + configInfix + '.' + PERMISSIONS + '.';
+		String prefixLinks = ROOT_PREFIX + configInfix + '.' + LINK;
+		String commonPermissions = ROOT_PREFIX + PERMISSIONS + '.';
 		String commonLinks = ROOT_PREFIX + LINK;
 		for (Iterator iter = featureProperties.entrySet().iterator(); iter.hasNext();) {
 			Map.Entry permission = (Map.Entry) iter.next();
