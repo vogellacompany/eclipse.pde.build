@@ -10,6 +10,9 @@
  **********************************************************************/
 package org.eclipse.pde.internal.build.site;
 
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
 import org.eclipse.core.runtime.*;
 import org.eclipse.osgi.service.resolver.BundleDescription;
 import org.eclipse.osgi.service.resolver.VersionConstraint;
@@ -57,6 +60,8 @@ public class BuildTimeSite extends Site implements ISite, IPDEBuildConstants, IX
 				}
 			}
 		}
+		if (! state.getState().isResolved())
+			state.state.resolve(true);
 		return state;
 	}
 
@@ -68,5 +73,23 @@ public class BuildTimeSite extends Site implements ISite, IPDEBuildConstants, IX
 		}
 		return null;
 	}
-
+	
+	public void addFeatureReferenceModel(File featureXML) {
+		URL featureURL;
+		SiteFeatureReferenceModel featureRef;
+		if (featureXML.exists()) {
+			// Here we could not use toURL() on currentFeatureDir, because the URL has a slash after the colons (file:/c:/foo) whereas the plugins don't
+			// have it (file:d:/eclipse/plugins) and this causes problems later to compare URLs... and compute relative paths
+			try {
+				featureURL = new URL("file:" + featureXML.getAbsolutePath() + '/'); //$NON-NLS-1$
+				featureRef = new SiteFeatureReference();
+				featureRef.setSiteModel(this);
+				featureRef.setURLString(featureURL.toExternalForm());
+				featureRef.setType(BuildTimeFeatureFactory.BUILDTIME_FEATURE_FACTORY_ID);
+				addFeatureReferenceModel(featureRef);
+			} catch (MalformedURLException e) {
+				Platform.getPlugin(PI_PDEBUILD).getLog().log(new Status(IStatus.WARNING, PI_PDEBUILD, WARNING_MISSING_SOURCE, Policy.bind("warning.cannotLocateSource", featureXML.getAbsolutePath()), e)); //$NON-NLS-1$
+			}		
+		}
+	}
 }

@@ -97,7 +97,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 			model = getSite(false).getRegistry().getResolvedBundle(identifier.getIdentifier(), versionRequested);
 			if (model == null && getBuildProperties().containsKey(GENERATION_SOURCE_PLUGIN_PREFIX + identifier.getIdentifier())) {
 				generateEmbeddedSource(identifier.getIdentifier());
-				model = getSite(true).getRegistry().getResolvedBundle(identifier.getIdentifier(), versionRequested);
+				model = getSite(false).getRegistry().getResolvedBundle(identifier.getIdentifier(), versionRequested);
 			}
 			if (model == null) {
 				String message = Policy.bind("exception.missingPlugin", entry.getVersionedIdentifier().toString()); //$NON-NLS-1$
@@ -186,7 +186,6 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		if (sourceFeatureGeneration) {
 			addSourceFragmentsToFeature();
 			writeSourceFeature();
-			getSite(true);
 		}
 		if (!sourcePluginOnly)
 			collectElementToAssemble(getSite(false).findFeature(feature.getVersionedIdentifier().getIdentifier()));
@@ -242,7 +241,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	 * @throws CoreException
 	 */
 	private void generateBuildScript() throws CoreException {
-		getSite(true);
+		System.out.println("Generating feature " + featureFullName);//TODO put a message into the console
 		generatePrologue();
 		generateAllPluginsTarget();
 		generateAllFeaturesTarget();
@@ -846,10 +845,8 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	private void generateSourceFeature() throws CoreException {
 		Feature featureExample = (Feature) feature;
 		sourceFeature = createSourceFeature(featureExample);
-		associateExtraPlugins();
 		sourcePlugin = createSourcePlugin();
 		generateSourceFragment();
-		getSite(true);	//TODO Here we should add the new plugin to the state directly
 	}
 	private void generateSourceFragment() throws CoreException {
 		Map fragments = sourceToGather.getElementEntries();
@@ -866,10 +863,8 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 			sourceFragment.setWS(configInfo.getWs());
 			sourceFragment.setArch(configInfo.getArch());
 			sourceFragment.isFragment(true);
-			//sourceFeature.addPluginEntryModel(sourceFragment);
 			createSourceFragment(sourceFragment, sourcePlugin);
 		}
-		getSite(true);
 	}
 	//Add the relevant source fragments to the source feature
 	private void addSourceFragmentsToFeature() throws CoreException {
@@ -891,9 +886,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 			sourceFragment.setArch(configInfo.getArch());
 			sourceFragment.isFragment(true);
 			sourceFeature.addPluginEntryModel(sourceFragment);
-			//createSourceFragment(sourceFragment, sourcePlugin);
 		}
-		getSite(true);
 	}
 	private void generateSourceFeatureScripts() throws CoreException {
 		FeatureBuildScriptGenerator sourceScriptGenerator = new FeatureBuildScriptGenerator(sourceFeatureFullName, assemblyData);
@@ -911,33 +904,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		sourceScriptGenerator.setBuildingOSGi(isBuildingOSGi());
 		sourceScriptGenerator.generate();
 	}
-	// Add extra plugins into the given feature.
-	private void associateExtraPlugins() throws CoreException {
-		//UNCOMMENT ME
-		//		for (int i = 1; i < extraPlugins.length; i++) {
-		//			BundleDescription model;
-		//			// see if we have a plug-in or a fragment
-		//			if (extraPlugins[i].startsWith("plugin@")) //$NON-NLS-1$
-		//				model =
-		// getSite(false).getRegistry().getBundle(extraPlugins[i].substring(7));
-		//			else
-		//				model =
-		// getSite(false).getRegistry().getFragment(extraPlugins[i].substring(8));
-		//
-		//			if (model == null) {
-		//				String message = Policy.bind("exception.missingPlugin",
-		// extraPlugins[i]); //$NON-NLS-1$
-		//				Platform.getPlugin(PI_PDEBUILD).getLog().log(new
-		// Status(IStatus.WARNING, extraPlugins[i], EXCEPTION_PLUGIN_MISSING,
-		// message, null));
-		//			}
-		//
-		//			PluginEntry entry = new PluginEntry();
-		//			entry.setPluginIdentifier(model.getUniqueId());
-		//			entry.setPluginVersion(model.getVersion());
-		//			sourceFeature.addPluginEntryModel(entry);
-		//		}
-	}
+
 	/**
 	 * Method createSourcePlugin.
 	 */
@@ -1003,6 +970,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 				throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, EXCEPTION_WRITING_FILE, message, e));
 			}
 		}
+		getSite(false).getRegistry().addBundle(sourcePluginDir);
 		return result;
 	}
 	private void createSourceFragment(PluginEntry fragment, PluginEntry plugin) throws CoreException {
@@ -1030,8 +998,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 			// Set the Id of the plugin for the fragment
 			beginId = scan(buffer, beginId, REPLACED_PLUGIN_ID);
 			buffer.replace(beginId, beginId + REPLACED_PLUGIN_ID.length(), plugin.getPluginIdentifier());
-			//		set the version number of the plugin to which the fragment is
-			// attached to
+			//		set the version number of the plugin to which the fragment is attached to
 			beginId = scan(buffer, beginId, REPLACED_PLUGIN_VERSION);
 			buffer.replace(beginId, beginId + REPLACED_PLUGIN_VERSION.length(), plugin.getPluginVersion());
 			Utils.transferStreams(new ByteArrayInputStream(buffer.toString().getBytes()), new FileOutputStream(sourceFragmentDirURL.append(DEFAULT_FRAGMENT_FILENAME_DESCRIPTOR).toOSString()));
@@ -1062,6 +1029,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 			String message = Policy.bind("exception.writingFile", sourceFragmentDir.getName()); //$NON-NLS-1$	
 			throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, EXCEPTION_WRITING_FILE, message, null));
 		}
+		getSite(false).getRegistry().addBundle(sourceFragmentDir);
 	}
 	public String getSourcePluginName(PluginEntry plugin, boolean versionSuffix) {
 		return plugin.getPluginIdentifier() + (versionSuffix ? "_" + plugin.getPluginVersion() : ""); //$NON-NLS-1$	//$NON-NLS-2$
@@ -1163,8 +1131,10 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		}
 		Collection copiedFiles = Utils.copyFiles(featureRootLocation + '/' + "sourceTemplateFeature", sourceFeatureDir); //$NON-NLS-1$ //$NON-NLS-2$
 		File buildProperty = new File(sourceFeatureDir + '/' + PROPERTIES_FILE); //$NON-NLS-1$
-		if (buildProperty.exists()) //If a build.properties file already exist then we don't override it.
+		if (buildProperty.exists()) {//If a build.properties file already exist then we don't override it.
+			getSite(false).addFeatureReferenceModel(sourceDir);
 			return;
+		}
 		copiedFiles.add(DEFAULT_FEATURE_FILENAME_DESCRIPTOR); //Because the feature.xml is not copied, we need to add it to the file
 		Properties sourceBuildProperties = new Properties();
 		sourceBuildProperties.put(PROPERTY_BIN_INCLUDES, Utils.getStringFromCollection(copiedFiles, ",")); //$NON-NLS-1$
@@ -1183,5 +1153,6 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 			String message = Policy.bind("exception.writingFile", buildProperty.getAbsolutePath()); //$NON-NLS-1$ //$NON-NLS-2$
 			throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, EXCEPTION_WRITING_FILE, message, e));
 		}
+		getSite(false).addFeatureReferenceModel(sourceDir);
 	}
 }

@@ -37,7 +37,7 @@ public class PackagerBuildScriptGenerator extends FeatureBuildScriptGenerator {
 		for (int i = 0; i < featureList.length; i++) {
 			FeatureBuildScriptGenerator generator = new PackagerBuildScriptGenerator(featureList[i], assemblageInformation);
 			generator.setGenerateIncludedFeatures(true);
-			generator.setAnalyseChildren(true);
+			generator.setAnalyseChildren(true);	//TODO Should not that be false?
 			generator.setSourceFeatureGeneration(false);
 			generator.setBinaryFeatureGeneration(true);
 			generator.setScriptGeneration(false);

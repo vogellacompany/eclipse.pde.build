@@ -105,7 +105,6 @@ public class BuildScriptGenerator extends AbstractScriptGenerator {
 			generator.setSourceFeatureGeneration(false);
 			generator.setBinaryFeatureGeneration(true);
 			generator.setScriptGeneration(true);
-			generator.getSite(true); // Force the site to be refreshed
 			generator.setPluginPath(pluginPath);
 			generator.setBuildSiteFactory(null);
 			generator.setDevEntries(devEntries);
