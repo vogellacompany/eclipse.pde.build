@@ -10,6 +10,7 @@
  **********************************************************************/
 package org.eclipse.pde.internal.build.builder;
 
+import java.io.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
@@ -788,8 +789,31 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		return new Path(getPropertyFormat(PROPERTY_BUILD_RESULT_FOLDER)).append(jarName).toString();
 	}
 
-	protected Properties getBuildProperties() throws CoreException {
-		return (Properties) model.getUserObject();
+	protected String[] getClasspathEntries(BundleDescription lookedUpModel) throws CoreException {
+		return (String[]) getSite(false).getRegistry().getExtraData().get(new Long(lookedUpModel.getBundleId()));
+	}
+	
+	protected Properties getBuildProperties() {
+		if (buildProperties != null) {
+			return buildProperties;
+		}
+		
+		buildProperties = new Properties();
+		InputStream propertyStream = null;
+		try {
+			propertyStream = new BufferedInputStream(new FileInputStream(new File(model.getLocation(), propertiesFileName)));
+			buildProperties.load(propertyStream); //$NON-NLS-1$
+		} catch (Exception e) {
+			//ignore because compiled plug-ins do not have such files
+		} finally {
+			try {
+				if (propertyStream != null)
+					propertyStream.close();
+			} catch (IOException e1) {
+				//Ignore
+			}
+		}
+		return buildProperties;
 	}
 
 	/**

@@ -20,17 +20,14 @@ import org.eclipse.core.internal.runtime.PlatformURLPluginConnection;
 import org.eclipse.core.runtime.*;
 import org.eclipse.osgi.service.resolver.BundleDescription;
 import org.eclipse.osgi.service.resolver.HostSpecification;
-import org.eclipse.osgi.util.ManifestElement;
 import org.eclipse.pde.internal.build.*;
 import org.eclipse.pde.internal.build.site.PDEState;
-import org.osgi.framework.BundleException;
-import org.osgi.framework.Constants;
 
 public class ClasspathComputer2_1 implements IClasspathComputer, IPDEBuildConstants, IXMLConstants {
 	private ModelBuildScriptGenerator generator;
 
-	public ClasspathComputer2_1(ModelBuildScriptGenerator generator) {
-		this.generator = generator;
+	public ClasspathComputer2_1(ModelBuildScriptGenerator modelGenerator) {
+		this.generator = modelGenerator;
 	}
 
 	/**
@@ -369,20 +366,8 @@ public class ClasspathComputer2_1 implements IClasspathComputer, IPDEBuildConsta
 		}
 	}
 	
-	private String[] getClasspathEntries(BundleDescription bundle) {
-		ManifestElement[] modelClasspath = null;
-		try {
-			modelClasspath = ManifestElement.parseClassPath((String) ((Dictionary) bundle.getUserObject()).get(Constants.BUNDLE_CLASSPATH));
-		} catch (BundleException e) {
-			// Ignore since this would have been caught while building the registry
-		}
-		if (modelClasspath==null)
-			return new String[0];
-		
-		String[] libraries = new String[modelClasspath.length];
-		for (int i = 0; i < libraries.length; i++) {
-			libraries[i] = modelClasspath[i].getValue();
-		}
-		return libraries;
+	//Return the jar name from the classpath 
+	private String[] getClasspathEntries(BundleDescription bundle) throws CoreException {
+		return generator.getClasspathEntries(bundle);
 	}
 }

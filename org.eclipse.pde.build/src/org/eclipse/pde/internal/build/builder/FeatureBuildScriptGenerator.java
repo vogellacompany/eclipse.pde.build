@@ -1201,20 +1201,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 												 // already exist then we don't
 												 // override it.
 			return;
-		copiedFiles.add(DEFAULT_FEATURE_FILENAME_DESCRIPTOR); //Because
-																											   // the
-																											   // feature.xml
-																											   // is
-																											   // not
-																											   // copied,
-																											   // we
-																											   // need
-																											   // to
-																											   // add
-																											   // it
-																											   // to
-																											   // the
-																											   // file
+		copiedFiles.add(DEFAULT_FEATURE_FILENAME_DESCRIPTOR); //Because the feature.xml is not copied, we need to add it to the file
 		Properties sourceBuildProperties = new Properties();
 		sourceBuildProperties.put(PROPERTY_BIN_INCLUDES, Utils.getStringFromCollection(copiedFiles, ",")); //$NON-NLS-1$
 		try {

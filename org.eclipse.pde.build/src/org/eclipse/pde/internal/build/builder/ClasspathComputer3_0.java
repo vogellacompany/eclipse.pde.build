@@ -20,18 +20,14 @@ import org.eclipse.core.internal.runtime.PlatformURLPluginConnection;
 import org.eclipse.core.runtime.*;
 import org.eclipse.osgi.service.resolver.BundleDescription;
 import org.eclipse.osgi.service.resolver.HostSpecification;
-import org.eclipse.osgi.util.ManifestElement;
 import org.eclipse.pde.internal.build.*;
 import org.eclipse.pde.internal.build.site.PDEState;
-import org.osgi.framework.BundleException;
-import org.osgi.framework.Constants;
-import sun.security.action.GetBooleanAction;
 
 public class ClasspathComputer3_0 implements IClasspathComputer, IPDEBuildConstants, IXMLConstants {
 	private ModelBuildScriptGenerator generator;
 
-	public ClasspathComputer3_0(ModelBuildScriptGenerator generator) {
-		this.generator = generator;
+	public ClasspathComputer3_0(ModelBuildScriptGenerator modelGenerator) {
+		this.generator = modelGenerator;
 	}
 
 	/**
@@ -82,7 +78,7 @@ public class ClasspathComputer3_0 implements IClasspathComputer, IPDEBuildConsta
 		String root = generator.getLocation(model);
 		IPath base = Utils.makeRelative(new Path(root), new Path(baseLocation));
 		for (int i = 0; i < libraries.length; i++) {
-			addDevEntries(model, baseLocation, classpath, Utils.getArrayFromString(((Properties) model.getUserObject()).getProperty(PROPERTY_OUTPUT_PREFIX + libraries[i])));
+			addDevEntries(model, baseLocation, classpath, Utils.getArrayFromString(generator.getBuildProperties().getProperty(PROPERTY_OUTPUT_PREFIX + libraries[i])));
 			String library = base.append(libraries[i]).toString();
 			addPathAndCheck(model.getUniqueId(), library, classpath);
 		}
@@ -360,20 +356,7 @@ public class ClasspathComputer3_0 implements IClasspathComputer, IPDEBuildConsta
 	}
 	
 	//Return the jar name from the classpath 
-	private String[] getClasspathEntries(BundleDescription bundle) {
-		ManifestElement[] modelClasspath = null;
-		try {
-			modelClasspath = ManifestElement.parseClassPath((String) ((Dictionary) bundle.getUserObject()).get(Constants.BUNDLE_CLASSPATH));
-		} catch (BundleException e) {
-			// Ignore since this would have been caught while building the registry
-		}
-		if (modelClasspath==null)
-			return new String[0];
-		
-		String[] libraries = new String[modelClasspath.length];
-		for (int i = 0; i < libraries.length; i++) {
-			libraries[i] = modelClasspath[i].getValue();
-		}
-		return libraries;
+	private String[] getClasspathEntries(BundleDescription bundle) throws CoreException {
+		return generator.getClasspathEntries(bundle);
 	}
 }
