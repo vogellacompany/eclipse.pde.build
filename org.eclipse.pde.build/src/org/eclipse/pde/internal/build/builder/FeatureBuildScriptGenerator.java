@@ -471,7 +471,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 			//TODO Here we should not always look in the registry, because the plugin may have not been dl because we know its number from the feature.xml 
 			pluginVersionInfo += (entryIdentifier + "," + model.getVersion() + ","); //$NON-NLS-1$ //$NON-NLS-2$
 		}
-		script.print("<eclipse.idReplacer featureFilePath=\"" + root + "/" + DEFAULT_FEATURE_FILENAME_DESCRIPTOR + "\" featureIds=\"" + featureVersionInfo + "\" pluginIds=\"" + pluginVersionInfo + "\"/>"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$
+		script.println("<eclipse.idReplacer featureFilePath=\"" + root + "/" + DEFAULT_FEATURE_FILENAME_DESCRIPTOR + "\" featureIds=\"" + featureVersionInfo + "\" pluginIds=\"" + pluginVersionInfo + "\"/>"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$
 
 		generateRootFilesAndPermissionsCalls();
 		script.printTargetEnd();
@@ -772,6 +772,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 			generator.setBuildSiteFactory(siteFactory);
 			generator.setModel(model);
 			generator.setFeatureGenerator(this);
+			generator.setPluginPath(getPluginPath());
 			generator.generate();
 		}
 	}
