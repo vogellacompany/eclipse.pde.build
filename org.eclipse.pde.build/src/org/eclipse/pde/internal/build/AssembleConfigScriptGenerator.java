@@ -46,6 +46,8 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 	
 	private static final byte FOLDER = 0;
 	private static final byte FILE = 1;
+	private String PROPERTY_ECLIPSE_PLUGINS = "eclipse.plugins";
+	private String PROPERTY_ECLIPSE_FEATURES = "eclipse.features";
 	
 	public AssembleConfigScriptGenerator() {
 		super();
@@ -86,6 +88,9 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 		generatePrologue();
 		generateInitializationSteps();
 		generateGatherBinPartsCalls();
+		if (embeddedSource)
+			generateGatherSourceCalls();
+		generatePostProcessingSteps();
 		if (! outputFormat.equalsIgnoreCase("folder")) {
 			if (configInfo.getOs().equalsIgnoreCase("macosx")) { //$NON-NLS-1$
 				generateTarTarget();
@@ -98,6 +103,30 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 			}
 		}
 		generateEpilogue();
+	}
+
+	/**
+	 * 
+	 */
+	private void generateGatherSourceCalls() throws CoreException {
+		Map properties = new HashMap(1);
+		properties.put(PROPERTY_DESTINATION_TEMP_FOLDER, getPropertyFormat(PROPERTY_ECLIPSE_PLUGINS));
+		for (int i = 0; i < plugins.length; i++) {
+			BundleDescription plugin = plugins[i];
+			String placeToGather = getLocation(plugin);
+			script.printAntTask(DEFAULT_BUILD_SCRIPT_FILENAME, Utils.makeRelative(new Path(placeToGather), new Path(workingDirectory)).toOSString(), TARGET_GATHER_SOURCES, null, null, properties);
+		}
+
+		properties = new HashMap(1);
+		properties.put(PROPERTY_FEATURE_BASE, getPropertyFormat(PROPERTY_ECLIPSE_BASE));
+		for (int i = 0; i < features.length; i++) {
+			IFeature feature = features[i];
+			String placeToGather = feature.getURL().getPath();
+			int j = placeToGather.lastIndexOf(DEFAULT_FEATURE_FILENAME_DESCRIPTOR);
+			if (j != -1)
+				placeToGather = placeToGather.substring(0, j);
+			script.printAntTask(DEFAULT_BUILD_SCRIPT_FILENAME, Utils.makeRelative(new Path(placeToGather), new Path(workingDirectory)).toOSString(), TARGET_GATHER_SOURCES, null, null, properties);
+		}
 	}
 
 	private void generatePackagingTargets() {
@@ -134,7 +163,8 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 		script.printProperty(PROPERTY_ARCH, configInfo.getArch());
 		script.printProperty(PROPERTY_ASSEMBLY_TMP, getPropertyFormat(PROPERTY_BUILD_DIRECTORY) + "/tmp"); //$NON-NLS-1$
 		script.printProperty(PROPERTY_ECLIPSE_BASE, getPropertyFormat(PROPERTY_ASSEMBLY_TMP) + '/' + getPropertyFormat(PROPERTY_COLLECTING_FOLDER)); //$NON-NLS-1$ //$NON-NLS-2$
-		script.printProperty(PROPERTY_DESTINATION_TEMP_FOLDER, getPropertyFormat(PROPERTY_ECLIPSE_BASE) + '/' + DEFAULT_PLUGIN_LOCATION); //$NON-NLS-1$
+		script.printProperty(PROPERTY_ECLIPSE_PLUGINS, getPropertyFormat(PROPERTY_ECLIPSE_BASE) + '/' + DEFAULT_PLUGIN_LOCATION);
+		script.printProperty(PROPERTY_ECLIPSE_FEATURES, getPropertyFormat(PROPERTY_ECLIPSE_BASE) + '/' + DEFAULT_FEATURE_LOCATION);
 		script.printProperty(PROPERTY_ARCHIVE_FULLPATH, getPropertyFormat(PROPERTY_BASEDIR) + '/' + getPropertyFormat(PROPERTY_BUILD_LABEL) + '/' + getPropertyFormat(PROPERTY_ARCHIVE_NAME)); //$NON-NLS-1$ //$NON-NLS-2$
 		generatePackagingTargets();
 		script.printTargetDeclaration(TARGET_MAIN, null, null, null, null);
@@ -145,7 +175,6 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 			script.printEchoTask("basedir : " + getPropertyFormat(PROPERTY_BASEDIR));
 			script.printEchoTask("assemblyTempDir : " + getPropertyFormat(PROPERTY_ASSEMBLY_TMP));
 			script.printEchoTask("eclipse.base : "  + getPropertyFormat(PROPERTY_ECLIPSE_BASE));
-			script.printEchoTask("destination.temp.folder : " + getPropertyFormat(PROPERTY_DESTINATION_TEMP_FOLDER));
 			script.printEchoTask("collectingFolder : " + getPropertyFormat(PROPERTY_COLLECTING_FOLDER));
 			script.printEchoTask("archivePrefix : " + getPropertyFormat(PROPERTY_ARCHIVE_PREFIX));
 		}
@@ -155,28 +184,44 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 		script.printMkdirTask(getPropertyFormat(PROPERTY_BUILD_LABEL));
 	}
 
+	private void generatePostProcessingSteps() throws CoreException {
+		for (int i = 0; i < plugins.length; i++) {
+			BundleDescription plugin = plugins[i];
+			if (forceUpdateJarFormat) //Force the updateJar if it is asked as an output format
+				pluginsPostProcessingSteps.put(plugin.getUniqueId(), UPDATEJAR);
+			generatePostProcessingSteps(plugin.getUniqueId(), plugin.getVersion().toString(), BUNDLE);
+		}
+		
+		for (int i = 0; i < features.length; i++) {
+			IFeature feature = features[i];
+			if (forceUpdateJarFormat)	//Force the updateJar if it is asked as an output format
+				featuresPostProcessingSteps.put(feature.getVersionedIdentifier().getIdentifier(), UPDATEJAR);
+			generatePostProcessingSteps(feature.getVersionedIdentifier().getIdentifier(), feature.getVersionedIdentifier().getVersion().toString(), FEATURE);
+		}
+	}
+	
 	private void generateGatherBinPartsCalls() throws CoreException {
+		Map properties = new HashMap(1);
+		properties.put(PROPERTY_DESTINATION_TEMP_FOLDER, getPropertyFormat(PROPERTY_ECLIPSE_PLUGINS));
 		for (int i = 0; i < plugins.length; i++) {
 			BundleDescription plugin = plugins[i];
 			String placeToGather = getLocation(plugin);
-			script.printAntTask(DEFAULT_BUILD_SCRIPT_FILENAME, Utils.makeRelative(new Path(placeToGather), new Path(workingDirectory)).toOSString(), TARGET_GATHER_BIN_PARTS, null, null, null);
-			generatePostProcessingSteps(plugin.getUniqueId(), plugin.getVersion().toString(), BUNDLE); 
+			script.printAntTask(DEFAULT_BUILD_SCRIPT_FILENAME, Utils.makeRelative(new Path(placeToGather), new Path(workingDirectory)).toOSString(), TARGET_GATHER_BIN_PARTS, null, null, properties);
 		}
 		
+		properties = new HashMap(1);
+		properties.put(PROPERTY_FEATURE_BASE, getPropertyFormat(PROPERTY_ECLIPSE_BASE));
 		for (int i = 0; i < features.length; i++) {
 			IFeature feature = features[i];
 			String placeToGather = feature.getURL().getPath();
 			int j = placeToGather.lastIndexOf(DEFAULT_FEATURE_FILENAME_DESCRIPTOR);
 			if (j != -1)
 				placeToGather = placeToGather.substring(0, j);
-			Map properties = new HashMap(1);
-			properties.put(PROPERTY_FEATURE_BASE, getPropertyFormat(PROPERTY_ECLIPSE_BASE));
 			script.printAntTask(DEFAULT_BUILD_SCRIPT_FILENAME, Utils.makeRelative(new Path(placeToGather), new Path(workingDirectory)).toOSString(), TARGET_GATHER_BIN_PARTS, null, null, properties);
-			generatePostProcessingSteps(feature.getVersionedIdentifier().getIdentifier(), feature.getVersionedIdentifier().getVersion().toString(), FEATURE);
 		}
 	}
 
-	//generate the appropriate postProcessingCall, and return a flag indicating the shape of the result, after processing 
+	//generate the appropriate postProcessingCall
 	private void generatePostProcessingSteps(String name, String version, byte type) {
 		String style = getPluginUnpackClause(name, version);
 		Properties currentProperties = type==BUNDLE ? pluginsPostProcessingSteps : featuresPostProcessingSteps;
@@ -189,7 +234,7 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 			return;
 		}
 		if (UPDATEJAR.equalsIgnoreCase(style)) {
-			generateJarUpCall(name, version);
+			generateJarUpCall(name, version, type);
 			return;
 		}
 	}
@@ -223,9 +268,9 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 		return new Object[] { name + '_' + version, new Byte(FOLDER)};
 	}
 	
-	private void generateJarUpCall(String name, String version) {
+	private void generateJarUpCall(String name, String version, byte type) {
 		Map properties = new HashMap(2);
-		properties.put(PROPERTY_SOURCE, getPropertyFormat(PROPERTY_DESTINATION_TEMP_FOLDER));
+		properties.put(PROPERTY_SOURCE, type == BUNDLE ? getPropertyFormat(PROPERTY_ECLIPSE_PLUGINS) : getPropertyFormat(PROPERTY_ECLIPSE_FEATURES));
 		properties.put(PROPERTY_ELEMENT_NAME, name + '_' + version);
 		script.printAntCallTask(TARGET_JARUP, null, properties);
 	}

@@ -24,6 +24,8 @@ import org.eclipse.update.core.SiteManager;
 public abstract class AbstractScriptGenerator implements IXMLConstants, IPDEBuildConstants, IBuildPropertiesConstants {
 
 	protected static String outputFormat = "zip"; 
+	protected static boolean embeddedSource = false;
+	protected static boolean forceUpdateJarFormat = false;
 	private static List configInfos;
 	protected static String workingDirectory;
 	protected static boolean buildingOSGi = false;
