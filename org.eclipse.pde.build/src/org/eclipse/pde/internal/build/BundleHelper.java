@@ -43,7 +43,7 @@ public class BundleHelper  {
 		this.context = context;
 		defaultInstance = this;
 		bundle = context.getBundle();
-		debug = "true".equalsIgnoreCase(Platform.getDebugOption(IPDEBuildConstants.PI_PDEBUILD));	//$NON-NLS-1$
+		debug = "true".equalsIgnoreCase(Platform.getDebugOption(IPDEBuildConstants.PI_PDEBUILD + "/debug"));	//$NON-NLS-1$ //$NON-NLS-2$
 	}
 	
 	public final URL find(IPath path) {
@@ -86,6 +86,6 @@ public class BundleHelper  {
 	}
 	
 	public boolean isDebugging() {
-		return true;	//TODO To change
+		return debug;
 	}
 }
