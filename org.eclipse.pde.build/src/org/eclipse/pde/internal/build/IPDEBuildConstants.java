@@ -60,4 +60,5 @@ public interface IPDEBuildConstants {
 	public final static int EXCEPTION_INVALID_JAR_ORDER = 13;
 	public final static int EXCEPTION_CLASSPATH_CYCLE = 14;
 	public final static int WARNING_MISSING_SOURCE = 20;
+	public final static int WARNING_MISSING_MATCHING_PLUGIN = 21;
 }

@@ -784,17 +784,26 @@ protected PluginRegistryModel getRegistry() throws CoreException {
 private void setFragments() {
 	PluginFragmentModel[] fragments = registry.getFragments();
 	for (int i = 0; i < fragments.length; i++) {
-		String pluginId = fragments[i].getPluginId();
-		PluginDescriptorModel plugin = registry.getPlugin(pluginId);
-		PluginFragmentModel[] existingFragments = plugin.getFragments();
-		if (existingFragments == null)
-			plugin.setFragments(new PluginFragmentModel[] { fragments[i] });
-		else {
-			PluginFragmentModel[] newFragments = new PluginFragmentModel[existingFragments.length + 1];
-			System.arraycopy(existingFragments, 0, newFragments, 0, existingFragments.length);
-			newFragments[newFragments.length - 1] = fragments[i];
-			plugin.setFragments(newFragments);
-		}
+	    String pluginId = fragments[i].getPluginId();
+	    PluginDescriptorModel plugin = registry.getPlugin(pluginId);
+	    if (plugin==null) {     //fix for bug 39976
+	        Plugin self = Platform.getPlugin(IPDEBuildConstants.PI_PDEBUILD);
+	        if (self != null) {
+	            String message = Policy.bind("warning.missingPluginForFragment", pluginId, fragments[i].getId()); //$NON-NLS-1$
+	            IStatus status = new Status(IStatus.WARNING, IPDEBuildConstants.PI_PDEBUILD, IPDEBuildConstants.WARNING_MISSING_MATCHING_PLUGIN, message, null);
+	            self.getLog().log(status);
+	        }
+	        continue;
+	    }
+	    PluginFragmentModel[] existingFragments = plugin.getFragments();
+	    if (existingFragments == null)
+	        plugin.setFragments(new PluginFragmentModel[] { fragments[i] });
+	    else {
+	        PluginFragmentModel[] newFragments = new PluginFragmentModel[existingFragments.length + 1];
+	        System.arraycopy(existingFragments, 0, newFragments, 0, existingFragments.length);
+	        newFragments[newFragments.length - 1] = fragments[i];
+	        plugin.setFragments(newFragments);
+	    }
 	}
 }
 
