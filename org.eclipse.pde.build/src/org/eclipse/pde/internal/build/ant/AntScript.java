@@ -157,9 +157,8 @@ public class AntScript {
 	 * 
 	 * @param zipfile the destination file name
 	 * @param basedir the source directory to start the zip
-	 * @param filesOnly <code>true</code> if the resulting zip file should contain
- *   only files and not directories
-	 * @param update TODO
+	 * @param filesOnly <code>true</code> if the resulting zip file should contain only files and not directories
+	 * @param update ndicates whether to update or overwrite the destination file if it already exists
 	 * @param fileSets the inclusion/exclusion rules to use when zipping
 	 * @param tab the number of tabs to indent
 	 */
