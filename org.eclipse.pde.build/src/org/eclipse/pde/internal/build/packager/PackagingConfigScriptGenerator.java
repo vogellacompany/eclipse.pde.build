@@ -33,14 +33,15 @@ public class PackagingConfigScriptGenerator extends AssembleConfigScriptGenerato
 	private void generateMainTarget() {
 		script.printTargetDeclaration(TARGET_MAIN, null, null, null, null);
 		
-		script.printEchoTask("baseDir: " + getPropertyFormat(PROPERTY_BASEDIR));
-		script.printEchoTask("tmpDir: " + getPropertyFormat("tempDirectory"));
-		script.printEchoTask("collectingFolder: " + getPropertyFormat(PROPERTY_COLLECTING_FOLDER));
-		script.printEchoTask("archivePrefix: " + getPropertyFormat(PROPERTY_ARCHIVE_PREFIX));
-		script.println("<echo message=\"eclipse.base: ${eclipse.base}\"/>");
-		script.println("<echo message=\"tmp_dir: ${assemblyTempDir}\"/>");
-		script.println("<echo message=\"destination.temp.folder ${destination.temp.folder}\"/>");
-	
+		if (BundleHelper.getDefault().isDebugging()) {
+			script.printEchoTask("baseDir: " + getPropertyFormat(PROPERTY_BASEDIR));
+			script.printEchoTask("tmpDir: " + getPropertyFormat("tempDirectory"));
+			script.printEchoTask("collectingFolder: " + getPropertyFormat(PROPERTY_COLLECTING_FOLDER));
+			script.printEchoTask("archivePrefix: " + getPropertyFormat(PROPERTY_ARCHIVE_PREFIX));
+			script.println("<echo message=\"eclipse.base: ${eclipse.base}\"/>");
+			script.println("<echo message=\"tmp_dir: ${assemblyTempDir}\"/>");
+			script.println("<echo message=\"destination.temp.folder ${destination.temp.folder}\"/>");
+		}
 		Map parameters = new HashMap(1);
 		parameters.put("assembleScriptName", filename); //$NON-NLS-1$
 		//TODO Improve the name handling

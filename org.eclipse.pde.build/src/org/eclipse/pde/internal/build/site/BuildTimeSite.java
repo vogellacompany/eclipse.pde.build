@@ -27,17 +27,16 @@ import org.eclipse.update.core.*;
  */
 public class BuildTimeSite extends Site implements ISite, IPDEBuildConstants, IXMLConstants {
 	private PDEState state;
-	private boolean compile21 = false;// ! AbstractScriptGenerator.isBuildingOSGi();
-	
 	public PDEState getRegistry() throws CoreException {
 		if (state == null) {
 			// create the registry according to the site where the code to compile is, and a existing installation of eclipse 
 			BuildTimeSiteContentProvider contentProvider = (BuildTimeSiteContentProvider) getSiteContentProvider();
 			
-			if(compile21)
-				state = new PluginRegistryConverter();
-			else
+			if(AbstractScriptGenerator.isBuildingOSGi())
 				state = new PDEState();
+			else
+				state = new PluginRegistryConverter();
+			
 			state.addBundles(contentProvider.getPluginPaths());
 
 			state.resolveState();

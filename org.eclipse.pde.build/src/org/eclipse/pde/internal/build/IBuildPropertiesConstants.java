@@ -17,8 +17,8 @@ public interface IBuildPropertiesConstants {
 	public final static String ROOT_PREFIX = "root."; //$NON-NLS-1$
 	public final static String ROOT = "root"; //$NON-NLS-1$
 	
-	public final static String VALUE_TRUE = "true"; //$NON-NLS-1$
-	public final static String VALUE_FALSE = "false"; //$NON-NLS-1$
+	public final static String TRUE = "true"; //$NON-NLS-1$
+	public final static String FALSE = "false"; //$NON-NLS-1$
 
 	public static final String PROPERTY_JAR_EXTRA_CLASSPATH = "jars.extra.classpath"; //$NON-NLS-1$
 	public static final String PROPERTY_JAR_ORDER = "jars.compile.order"; //$NON-NLS-1$

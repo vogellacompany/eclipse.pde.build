@@ -24,6 +24,8 @@ import org.eclipse.update.core.IPluginEntry;
  * Generic class for generating scripts for plug-ins and fragments.
  */
 public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
+	private static final String EXPANDED_DOT = "@dot";	//$NON-NLS-1$
+	private static final String DOT = "."; 	//$NON-NLS-1$
 	/**
 	 * Represents a entry that must be compiled and which is listed in the build.properties file.
 	 */
@@ -86,8 +88,6 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	private String propertiesFileName = PROPERTIES_FILE;
 	private String buildScriptFileName = DEFAULT_BUILD_SCRIPT_FILENAME;
 
-	private boolean compile21 = false;//! isBuildingOSGi();
-
 	/**
 	 * @see AbstractScriptGenerator#generate()
 	 */
@@ -103,12 +103,12 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		if (featureGenerator != null && featureGenerator.isSourceFeatureGeneration() == false && featureGenerator.getBuildProperties().containsKey(GENERATION_SOURCE_PLUGIN_PREFIX + model.getUniqueId()))
 			return;
 
-		if (compile21)
+		if (! AbstractScriptGenerator.isBuildingOSGi())
 			checkBootAndRuntime();
 		
 		initializeVariables();
-		
-		System.out.println("generating " + model.getUniqueId());	//TODO Need to put that into a log
+		if (BundleHelper.getDefault().isDebugging())
+			System.out.println("Generating plugin" + model.getUniqueId());
 
 		String custom = (String) getBuildProperties().get(PROPERTY_CUSTOM);
 		if (custom != null && custom.equalsIgnoreCase("true")) { //$NON-NLS-1$
@@ -147,21 +147,22 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	}
 
 	private void specialDotProcessing(String[] classpathInfo) throws CoreException {
-		if (classpathInfo.length>0 && ".".equals(classpathInfo[0])) {
-			getSite(false).getRegistry().getExtraData().put(new Long(model.getBundleId()), new String[]{"@dot"});
-			getBuildProperties().setProperty("source.@dot", getBuildProperties().getProperty("source.."));
-			getBuildProperties().remove("source..");
-			String outputValue = getBuildProperties().getProperty("output..");
+		if (classpathInfo.length>0 && DOT.equals(classpathInfo[0])) {
+			getSite(false).getRegistry().getExtraData().put(new Long(model.getBundleId()), new String[]{EXPANDED_DOT});
+			
+			getBuildProperties().setProperty(PROPERTY_SOURCE_PREFIX + EXPANDED_DOT, getBuildProperties().getProperty(PROPERTY_SOURCE_PREFIX + DOT));
+			getBuildProperties().remove(PROPERTY_SOURCE_PREFIX + DOT);
+			String outputValue = getBuildProperties().getProperty(PROPERTY_OUTPUT_PREFIX + DOT);
 			if (outputValue != null) {
-				getBuildProperties().setProperty("output.@dot", outputValue);
-				getBuildProperties().remove("output..");
+				getBuildProperties().setProperty(PROPERTY_OUTPUT_PREFIX + EXPANDED_DOT, outputValue);
+				getBuildProperties().remove(PROPERTY_OUTPUT_PREFIX + DOT);
 			}
 			String buildOrder = getBuildProperties().getProperty(PROPERTY_JAR_ORDER);
 			if (buildOrder!=null) {
 				String[] order = Utils.getArrayFromString(buildOrder);
 				for (int i = 0; i < order.length; i++)
-					if (order[i].equals("."))
-						order[i] = "@dot";
+					if (order[i].equals(DOT))
+						order[i] = EXPANDED_DOT;
 				getBuildProperties().setProperty(PROPERTY_JAR_ORDER,Utils.getStringFromArray(order, ","));			
 			}
 		}
@@ -358,7 +359,7 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 				String[] splitIncludes = Utils.getArrayFromString(include);
 				boolean found = false; 
 				for (int i = 0; i < splitIncludes.length; i++) {
-					if (splitIncludes[i].equals(".")) {
+					if (splitIncludes[i].equals(DOT)) {
 						splitIncludes[i] = "";
 						found = true;
 						break;
@@ -366,7 +367,7 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 				}
 				if (found) {
 					include = Utils.getStringFromArray(splitIncludes, ",");
-					FileSet fileSet = new FileSet(getPropertyFormat(PROPERTY_BASEDIR) + "/@dot", null, "**", null, null, null, null);
+					FileSet fileSet = new FileSet(getPropertyFormat(PROPERTY_BASEDIR) + '/' + EXPANDED_DOT, null, "**", null, null, null, null);
 					script.printCopyTask(null, root,new FileSet[] { fileSet }, true);
 				}
 			}
@@ -382,7 +383,7 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		String qualifier = getBuildProperties().getProperty(PROPERTY_QUALIFIER);
 		if (qualifier == null || qualifier.equalsIgnoreCase(PROPERTY_NONE))
 			return;
-		script.print("<eclipse.versionReplacer path=\"" + location + "\" version=\"" + model.getVersion() + "\"/>");		//TODO Fix the nl  
+		script.print("<eclipse.versionReplacer path=\"" + location + "\" version=\"" + model.getVersion() + "\"/>");
 	}
 
 	private void generatePermissionProperties(String directory) throws CoreException {
@@ -500,7 +501,7 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	 * @param script the script to begin
 	 */
 	private void generatePrologue() {
-		script.printProjectDeclaration(model.getUniqueId(), TARGET_BUILD_JARS, "."); //$NON-NLS-1$
+		script.printProjectDeclaration(model.getUniqueId(), TARGET_BUILD_JARS, DOT); //$NON-NLS-1$
 		script.println();
 		script.printProperty(PROPERTY_BOOTCLASSPATH, ""); //$NON-NLS-1$
 		script.printProperty(PROPERTY_BASE_WS, getPropertyFormat(PROPERTY_WS));
@@ -616,10 +617,10 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		// Put the jars in a correct compile order
 		String jarOrder = (String) getBuildProperties().get(PROPERTY_JAR_ORDER);
 		IClasspathComputer classpath;
-		if (compile21)
-			classpath = new ClasspathComputer2_1(this);
-		else 
+		if (AbstractScriptGenerator.isBuildingOSGi())
 			classpath = new ClasspathComputer3_0(this);
+		else 
+			classpath = new ClasspathComputer2_1(this);
 		
 		if (jarOrder != null) {
 			String[] order = Utils.getArrayFromString(jarOrder);
@@ -896,15 +897,6 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 
 	public void setBuildScriptFileName(String buildScriptFileName) {
 		this.buildScriptFileName = buildScriptFileName;
-	}
-	
-	public boolean hasManifest() {
-		try {
-			return new File(getLocation(model), MANIFEST_FOLDER + '/' + MANIFEST ).exists(); //$NON-NLS-1$
-		} catch (CoreException e) {
-			// Ignore the exception and return false
-			return false;
-		} 
 	}
 
 	/**

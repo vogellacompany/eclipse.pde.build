@@ -51,7 +51,6 @@ public class BuildScriptGenerator extends AbstractScriptGenerator {
 	 * @throws CoreException
 	 */
 	public void generate() throws CoreException {
-		// TO CHECK Does this usecase really exist? Do we really pass list of map file entry?
 		List plugins = new ArrayList(5);
 		List features = new ArrayList(5);
 		sortElements(features, plugins);
@@ -99,7 +98,6 @@ public class BuildScriptGenerator extends AbstractScriptGenerator {
 	protected void generateFeatures(List features) throws CoreException {
 		for (Iterator i = features.iterator(); i.hasNext();) {
 			AssemblyInformation assemblageInformation = null;
-			//if (! noAssembleGeneration) //FIXME Put a parameter for assembly Generation
 			assemblageInformation = new AssemblyInformation();
 
 			String featureId = (String) i.next();

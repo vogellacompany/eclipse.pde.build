@@ -169,7 +169,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		// if the feature defines its own custom script, we do not generate a
 		// new one but we do try to update the version number
 		String custom = (String) getBuildProperties().get(PROPERTY_CUSTOM);
-		if (VALUE_TRUE.equalsIgnoreCase(custom)) { //$NON-NLS-1$
+		if (TRUE.equalsIgnoreCase(custom)) { //$NON-NLS-1$
 			File buildFile = new File(featureRootLocation, DEFAULT_BUILD_SCRIPT_FILENAME);
 			try {
 				updateVersion(buildFile, PROPERTY_FEATURE_VERSION_SUFFIX, feature.getVersionedIdentifier().getVersion().toString());
@@ -241,7 +241,8 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	 * @throws CoreException
 	 */
 	private void generateBuildScript() throws CoreException {
-		System.out.println("Generating feature " + featureFullName);//TODO put a message into the console
+		if (BundleHelper.getDefault().isDebugging())
+			System.out.println("Generating feature " + featureFullName); //$NON-NLS-1$
 		generatePrologue();
 		generateAllPluginsTarget();
 		generateAllFeaturesTarget();
@@ -594,7 +595,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		script.printMkdirTask(featureTempFolder);
 		Map params = new HashMap(1);
 		params.put(PROPERTY_FEATURE_BASE, featureTempFolder);
-		params.put(PROPERTY_INCLUDE_CHILDREN, VALUE_TRUE); //$NON-NLS-1$
+		params.put(PROPERTY_INCLUDE_CHILDREN, TRUE); //$NON-NLS-1$
 		params.put(PROPERTY_OS, feature.getOS() == null ? Config.ANY : feature.getOS());
 		params.put(PROPERTY_WS, feature.getWS() == null ? Config.ANY : feature.getWS());
 		params.put(PROPERTY_ARCH, feature.getOSArch() == null ? Config.ANY : feature.getOSArch());

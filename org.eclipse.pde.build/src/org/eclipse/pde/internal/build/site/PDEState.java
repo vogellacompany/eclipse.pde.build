@@ -1,5 +1,5 @@
 /**********************************************************************
- * Copyright (c) 2000, 2003 IBM Corporation and others.
+ * Copyright (c) 2004 IBM Corporation and others.
  * All rights reserved.   This program and the accompanying materials
  * are made available under the terms of the Common Public License v1.0
  * which accompanies this distribution, and is available at
@@ -123,6 +123,43 @@ public class PDEState implements IPDEBuildConstants, IBuildPropertiesConstants {
 		return addBundle(manifest, bundleLocation);
 	}
 	
+	private String findOSGiJars(File bundleLocation) {
+		String eclipseProperies = "eclipse.properties"; //$NON-NLS-1$
+		InputStream manifestStream = null;
+		try {
+			URL manifestLocation = null;
+			if (bundleLocation.getName().endsWith("jar")) {
+				manifestLocation = new URL("jar:file:" + bundleLocation + "!/" + eclipseProperies);
+				manifestStream = manifestLocation.openStream();
+			} else {
+				manifestStream = new FileInputStream(new File(bundleLocation, eclipseProperies));
+			}
+		} catch (IOException e) {
+			//ignore
+		}
+		Properties properties = new Properties();
+		try {
+			properties.load(manifestStream);
+			manifestStream.close();
+		} catch (IOException e1) {
+			//Ignore
+		}
+		String osgiPath = properties.getProperty("osgi.frameworkClassPath");
+		if (osgiPath == null)
+			osgiPath = "core.jar, console.jar, osgi.jar, resolver.jar, defaultAdaptor.jar, eclipseAdaptor.jar"; //$NON-NLS-1$
+		
+		return osgiPath;
+	}
+	
+	private String getDate() {
+		final String empty = ""; 
+		int monthNbr = Calendar.getInstance().get(Calendar.MONTH) + 1;
+		String month = (monthNbr< 10 ? "0" : empty) + monthNbr;
+		
+		int dayNbr = Calendar.getInstance().get(Calendar.DAY_OF_MONTH) + 1;
+		String day = (monthNbr< 10 ? "0" : empty) + dayNbr;
+		return empty + Calendar.getInstance().get(Calendar.YEAR) +  month + day; //$NON-NLS-1$
+	}
 	private void updateVersionNumber(Dictionary manifest) {
 		String q = (String) manifest.get(PROPERTY_QUALIFIER);
 		if (q == null)
@@ -131,7 +168,7 @@ public class PDEState implements IPDEBuildConstants, IBuildPropertiesConstants {
 		if (q.equalsIgnoreCase(PROPERTY_CONTEXT)) {
 			newQualifier = (String) repositoryVersions.get(manifest.get(Constants.BUNDLE_SYMBOLICNAME));
 			if (newQualifier == null)
-				newQualifier = "" + Calendar.getInstance().get(Calendar.YEAR) + (Calendar.getInstance().get(Calendar.MONTH) + 1) + Calendar.getInstance().get(Calendar.DAY_OF_MONTH); //$NON-NLS-1$
+				newQualifier = getDate();
 		} else {
 			newQualifier = q;
 		}
@@ -264,7 +301,7 @@ public class PDEState implements IPDEBuildConstants, IBuildPropertiesConstants {
 		if (version == null)
 			return getResolvedBundle(bundleId);
 		BundleDescription description = getState().getBundle(bundleId, new Version(version));
-		if (description.isResolved())
+		if (description != null && description.isResolved())
 			return description;
 		return null;
 	}

@@ -15,19 +15,15 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.Map;
 import org.eclipse.core.internal.runtime.FindSupport;
-import org.eclipse.core.internal.runtime.InternalPlatform;
 import org.eclipse.core.runtime.*;
-import org.eclipse.core.runtime.ILog;
-import org.eclipse.core.runtime.IPath;
 import org.osgi.framework.*;
-import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleContext;
 
 
 public class BundleHelper  {
 	private Bundle bundle;
 	private BundleContext context;
 	private static BundleHelper defaultInstance;
+	private boolean debug = false;
 	
 	public static BundleHelper getDefault() {
 		return defaultInstance;
@@ -46,7 +42,8 @@ public class BundleHelper  {
 			throw new RuntimeException("Can not instantiate bundle helper"); 
 		this.context = context;
 		defaultInstance = this;
-		bundle = context.getBundle(); 
+		bundle = context.getBundle();
+		debug = "true".equalsIgnoreCase(Platform.getDebugOption(IPDEBuildConstants.PI_PDEBUILD));	//$NON-NLS-1$
 	}
 	
 	public final URL find(IPath path) {
@@ -86,5 +83,9 @@ public class BundleHelper  {
 		if (reference == null)
 			return null;
 		return context.getService(reference);
+	}
+	
+	public boolean isDebugging() {
+		return debug;
 	}
 }
