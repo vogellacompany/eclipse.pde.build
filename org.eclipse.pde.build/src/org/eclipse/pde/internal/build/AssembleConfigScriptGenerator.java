@@ -12,9 +12,9 @@ package org.eclipse.pde.internal.build;
 
 import java.io.*;
 import java.util.*;
+
+import org.eclipse.osgi.service.resolver.BundleDescription;
 import org.eclipse.core.runtime.*;
-import org.eclipse.core.runtime.model.PluginFragmentModel;
-import org.eclipse.core.runtime.model.PluginModel;
 import org.eclipse.pde.internal.build.ant.AntScript;
 import org.eclipse.update.core.IFeature;
 
@@ -28,8 +28,8 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 	protected String featureId;
 	protected Config configInfo;
 	protected IFeature[] features;
-	protected PluginModel[] plugins;
-	protected PluginFragmentModel[] fragments;
+	protected BundleDescription[] plugins;
+	protected BundleDescription[] fragments;
 	protected String filename;
 	protected boolean copyRootFile;
 	private String PROPERTY_TMP_DIR = "tmp_dir"; //$NON-NLS-1$	
@@ -47,10 +47,10 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 		this.features = new IFeature[featureList.size()];
 		featureList.toArray(this.features);
 
-		this.plugins = new PluginModel[pluginList.size()];
+		this.plugins = new BundleDescription[pluginList.size()];
 		pluginList.toArray(this.plugins);
 
-		this.fragments = new PluginFragmentModel[fragmentList.size()];
+		this.fragments = new BundleDescription[fragmentList.size()];
 		fragmentList.toArray(this.fragments);
 
 		filename = directory + "/" + (scriptName != null ? scriptName : getFilename()); //$NON-NLS-1$
@@ -119,12 +119,12 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 
 	private void generateGatherBinPartsCalls() throws CoreException {
 		for (int i = 0; i < plugins.length; i++) {
-			PluginModel plugin = plugins[i];
+			BundleDescription plugin = plugins[i];
 			String placeToGather = getLocation(plugin);
 			script.printAntTask(DEFAULT_BUILD_SCRIPT_FILENAME, Utils.makeRelative(new Path(placeToGather), new Path(workingDirectory)).toOSString(), TARGET_GATHER_BIN_PARTS, null, null, null);
 		}
 		for (int i = 0; i < fragments.length; i++) {
-			PluginModel fragment = fragments[i];
+			BundleDescription fragment = fragments[i];
 			String placeToGather = getLocation(fragment);
 			script.printAntTask(DEFAULT_BUILD_SCRIPT_FILENAME, Utils.makeRelative(new Path(placeToGather), new Path(workingDirectory)).toOSString(), TARGET_GATHER_BIN_PARTS, null, null, null);
 		}
@@ -156,7 +156,7 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 		final int parameterSize = 15;
 		List parameters = new ArrayList(parameterSize + 1);
 		for (int i = 0; i < plugins.length; i++) {
-			parameters.add(getPropertyFormat(PROPERTY_COLLECTING_PLACE) + "/" + DEFAULT_PLUGIN_LOCATION + "/" + plugins[i].getPluginId() + "_" + plugins[i].getVersion()); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+			parameters.add(getPropertyFormat(PROPERTY_COLLECTING_PLACE) + "/" + DEFAULT_PLUGIN_LOCATION + "/" + plugins[i].getUniqueId() + "_" + plugins[i].getVersion()); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 			if (i % parameterSize == 0) {
 				createZipExecCommand(parameters);
 				parameters.clear();
@@ -168,7 +168,7 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 		}
 
 		for (int i = 0; i < fragments.length; i++) {
-			parameters.add(getPropertyFormat(PROPERTY_COLLECTING_PLACE) + "/" + DEFAULT_PLUGIN_LOCATION + "/" + fragments[i].getId() + "_" + fragments[i].getVersion()); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+			parameters.add(getPropertyFormat(PROPERTY_COLLECTING_PLACE) + "/" + DEFAULT_PLUGIN_LOCATION + "/" + fragments[i].getUniqueId() + "_" + fragments[i].getVersion()); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 			if (i % parameterSize == 0) {
 				createZipExecCommand(parameters);
 				parameters.clear();

@@ -18,8 +18,14 @@ import org.eclipse.core.internal.boot.PlatformURLHandler;
 import org.eclipse.core.internal.runtime.PlatformURLFragmentConnection;
 import org.eclipse.core.internal.runtime.PlatformURLPluginConnection;
 import org.eclipse.core.runtime.*;
-import org.eclipse.core.runtime.model.*;
+import org.eclipse.osgi.framework.util.Headers;
+import org.eclipse.osgi.service.resolver.BundleDescription;
+import org.eclipse.osgi.service.resolver.HostSpecification;
+import org.eclipse.osgi.util.ManifestElement;
 import org.eclipse.pde.internal.build.*;
+import org.eclipse.pde.internal.build.site.PDEState;
+import org.osgi.framework.BundleException;
+import org.osgi.framework.Constants;
 
 public class ClasspathComputer implements IPDEBuildConstants, IXMLConstants {
 	private ModelBuildScriptGenerator generator;
@@ -37,7 +43,7 @@ public class ClasspathComputer implements IPDEBuildConstants, IXMLConstants {
 	 * @return String the classpath
 	 * @throws CoreException
 	 */
-	public String getClasspath(PluginModel model, ModelBuildScriptGenerator.JAR jar) throws CoreException {
+	public List getClasspath(BundleDescription model, ModelBuildScriptGenerator.JAR jar) throws CoreException {
 		List classpath = new ArrayList(20);
 		List pluginChain = new ArrayList(10);
 		String location = generator.getLocation(model);
@@ -52,7 +58,7 @@ public class ClasspathComputer implements IPDEBuildConstants, IXMLConstants {
 		//PREREQUISITE
 		addPrerequisites(model, classpath, location, pluginChain);
 
-		return Utils.getStringFromCollection(classpath, ";"); //$NON-NLS-1$
+		return classpath;
 
 	}
 
@@ -63,7 +69,7 @@ public class ClasspathComputer implements IPDEBuildConstants, IXMLConstants {
 	 * @param location
 	 * @throws CoreException
 	 */
-	private void addPlugin(PluginModel plugin, List classpath, String location) throws CoreException {
+	private void addPlugin(BundleDescription plugin, List classpath, String location) throws CoreException {
 		addRuntimeLibraries(plugin, classpath, location);
 		addFragmentsLibraries(plugin, classpath, location);
 	}
@@ -75,16 +81,14 @@ public class ClasspathComputer implements IPDEBuildConstants, IXMLConstants {
 	 * @param baseLocation
 	 * @throws CoreException
 	 */
-	private void addRuntimeLibraries(PluginModel model, List classpath, String baseLocation) throws CoreException {
-		LibraryModel[] libraries = model.getRuntime();
-		if (libraries == null)
-			return;
+	private void addRuntimeLibraries(BundleDescription model, List classpath, String baseLocation) throws CoreException {
+		String[] libraries = getClasspathEntries(model);
 		String root = generator.getLocation(model);
 		IPath base = Utils.makeRelative(new Path(root), new Path(baseLocation));
 		for (int i = 0; i < libraries.length; i++) {
-			addDevEntries(model, baseLocation, classpath, Utils.getArrayFromString(generator.getBuildProperties().getProperty(PROPERTY_OUTPUT_PREFIX + libraries[i].getName())));
-			String library = base.append(libraries[i].getName()).toString();
-			addPathAndCheck(model.getId(), library, classpath);
+			addDevEntries(model, baseLocation, classpath, Utils.getArrayFromString(generator.getBuildProperties().getProperty(PROPERTY_OUTPUT_PREFIX + libraries[i])));
+			String library = base.append(libraries[i]).toString();
+			addPathAndCheck(model.getUniqueId(), library, classpath);
 		}
 	}
 
@@ -98,16 +102,18 @@ public class ClasspathComputer implements IPDEBuildConstants, IXMLConstants {
 	 * @return PluginModel
 	 * @throws CoreException if the specified plug-in version does not exist in the registry
 	 */
-	private PluginModel getPlugin(String id, String version) throws CoreException {
-		PluginModel plugin = generator.getSite(false).getPluginRegistry().getPlugin(id, version);
+	private BundleDescription getPlugin(String id, String version) throws CoreException {
+		if (version==null)
+			return generator.getSite(false).getRegistry().getResolvedBundle(id);
+		else 
+			return generator.getSite(false).getRegistry().getResolvedBundle(id, version);
 		// TODO need to handle optional plugins here.  If an optional is missing it is
 		// not an error.  For now return null and essentially ignore missing plugins.
 		//	if (plugin == null) {
 		//		String pluginName = (version == null) ? id : id + "_" + version; //$NON-NLS-1$
 		//		throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, IPDEBuildConstants.EXCEPTION_PLUGIN_MISSING, Policy.bind("exception.missingPlugin", pluginName), null)); //$NON-NLS-1$
 		//	}
-		// TODO Problem with the non-determinism of the value returned by the plugin registry when several plugin exists. Case with a "compile against" set and a "compiled" set that interleaves. 
-		return plugin;
+		// TODO Problem with the non-determinism of the value returned by the plugin registry when several plugin exists. Case with a "compile against" set and a "compiled" set that interleaves.		
 	}
 
 	/**
@@ -118,13 +124,13 @@ public class ClasspathComputer implements IPDEBuildConstants, IXMLConstants {
 	 * @throws CoreException
 	 */
 	//TODO Check the position of the bin directory seems to be bogus (it appears after the jar)
-	private void addFragmentsLibraries(PluginModel plugin, List classpath, String baseLocation) throws CoreException {
+	private void addFragmentsLibraries(BundleDescription plugin, List classpath, String baseLocation) throws CoreException {
 		// if plugin is not a plugin, it's a fragment and there is no fragment for a fragment. So we return.
-		if (!(plugin instanceof PluginDescriptorModel))
+		if (!(plugin instanceof BundleDescription))
 			return;
 
-		PluginDescriptorModel pluginModel = (PluginDescriptorModel) plugin;
-		PluginFragmentModel[] fragments = pluginModel.getFragments();
+		BundleDescription pluginModel = (BundleDescription) plugin;
+		BundleDescription[] fragments = pluginModel.getFragments();
 		if (fragments == null)
 			return;
 
@@ -147,20 +153,18 @@ public class ClasspathComputer implements IPDEBuildConstants, IXMLConstants {
 	 * @param baseLocation
 	 * @throws CoreException
 	 */
-	private void addPluginLibrariesToFragmentLocations(PluginModel plugin, PluginFragmentModel fragment, List classpath, String baseLocation) throws CoreException {
+	private void addPluginLibrariesToFragmentLocations(BundleDescription plugin, BundleDescription fragment, List classpath, String baseLocation) throws CoreException {
 		//TODO This methods causes the addition of a lot of useless entries. See bug #35544
 		//If we reintroduce the test below, we reintroduce the problem 35544	
 		//	if (fragment.getRuntime() != null)
 		//		return;
+		String[] libraries = getClasspathEntries(plugin);
 
-		LibraryModel[] libraries = plugin.getRuntime();
-		if (libraries == null)
-			return;
 		String root = generator.getLocation(fragment);
 		IPath base = Utils.makeRelative(new Path(root), new Path(baseLocation));
 		for (int i = 0; i < libraries.length; i++) {
-			String libraryName = base.append(libraries[i].getName()).toString();
-			addPathAndCheck(fragment.getId(), libraryName, classpath);
+			String libraryName = base.append(libraries[i]).toString();
+			addPathAndCheck(fragment.getUniqueId(), libraryName, classpath);
 		}
 	}
 
@@ -173,11 +177,11 @@ public class ClasspathComputer implements IPDEBuildConstants, IXMLConstants {
 			classpath.add(path);
 	}
 
-	private void addSelf(PluginModel model, ModelBuildScriptGenerator.JAR jar, List classpath, String location, List pluginChain) throws CoreException {
+	private void addSelf(BundleDescription model, ModelBuildScriptGenerator.JAR jar, List classpath, String location, List pluginChain) throws CoreException {
 		// If model is a fragment, we need to add in the classpath the plugin to which it is related
-		if (model instanceof PluginFragmentModel) {
-			PluginModel plugin = generator.getSite(false).getPluginRegistry().getPlugin(((PluginFragmentModel) model).getPlugin());
-			addPluginAndPrerequisites(plugin, classpath, location, pluginChain);
+		HostSpecification host = model.getHost();
+		if (host != null) {
+			addPluginAndPrerequisites(host.getBundle(), classpath, location, pluginChain);
 		}
 
 		// Add the libraries
@@ -186,10 +190,10 @@ public class ClasspathComputer implements IPDEBuildConstants, IXMLConstants {
 		if (jarOrder == null) {
 			// if no jar order was specified in build.properties, we add all the libraries but the current one
 			// based on the order specified by the plugin.xml. Both library that we compile and .jar provided are processed
-			LibraryModel[] libraries = model.getRuntime();
+			String[] libraries = getClasspathEntries(model);
 			if (libraries != null) {
 				for (int i = 0; i < libraries.length; i++) {
-					String libraryName = libraries[i].getName();
+					String libraryName = libraries[i];
 					if (jar.getName(false).equals(libraryName))
 						continue;
 
@@ -200,7 +204,7 @@ public class ClasspathComputer implements IPDEBuildConstants, IXMLConstants {
 					//Potential pb: here there maybe a nasty case where the libraries variable may refer to something which is part of the base
 					//but $xx$ will replace it by the $xx instead of $basexx. The solution is for the user to use the explicitly set the content
 					// of its build.property file
-					addPathAndCheck(model.getId(), libraryName, classpath);
+					addPathAndCheck(model.getUniqueId(), libraryName, classpath);
 				}
 			}
 		} else {
@@ -210,16 +214,16 @@ public class ClasspathComputer implements IPDEBuildConstants, IXMLConstants {
 				if (order[i].equals(jar.getName(false)))
 					break;
 				addDevEntries(model, location, classpath, Utils.getArrayFromString((String) modelProperties.get(PROPERTY_OUTPUT_PREFIX + order[i])));
-				addPathAndCheck(model.getId(), order[i], classpath);
+				addPathAndCheck(model.getUniqueId(), order[i], classpath);
 			}
 			// Then we add all the "pure libraries" (the one that does not contain source)
-			LibraryModel[] libraries = model.getRuntime();
+			String[] libraries = getClasspathEntries(model);
 			for (int i = 0; i < libraries.length; i++) {
-				String libraryName = libraries[i].getName();
+				String libraryName = libraries[i];
 				if (modelProperties.get(PROPERTY_SOURCE_PREFIX + libraryName) == null) {
 					//Potential pb: if the pure library is something that is being compiled (which is supposetly not the case, but who knows...)
 					//the user will get $basexx instead of $ws 
-					addPathAndCheck(model.getId(), libraryName, classpath);
+					addPathAndCheck(model.getUniqueId(), libraryName, classpath);
 				}
 			}
 		}
@@ -261,10 +265,10 @@ public class ClasspathComputer implements IPDEBuildConstants, IXMLConstants {
 		if (urlfragments.length > 2 && urlfragments[0].equals(PlatformURLHandler.PROTOCOL + PlatformURLHandler.PROTOCOL_SEPARATOR)) {
 			String modelLocation = null;
 			if (urlfragments[1].equalsIgnoreCase(PlatformURLPluginConnection.PLUGIN))
-				modelLocation = generator.getLocation(generator.getSite(false).getPluginRegistry().getPlugin(urlfragments[2]));
+				modelLocation = generator.getLocation(generator.getSite(false).getRegistry().getResolvedBundle(urlfragments[2]));
 
 			if (urlfragments[1].equalsIgnoreCase(PlatformURLFragmentConnection.FRAGMENT))
-				modelLocation = generator.getLocation(generator.getSite(false).getPluginRegistry().getFragment(urlfragments[2]));
+				modelLocation = generator.getLocation(generator.getSite(false).getRegistry().getResolvedBundle(urlfragments[2]));
 
 			if (urlfragments[1].equalsIgnoreCase("resource")) { //$NON-NLS-1$
 				String message = Policy.bind("exception.url", generator.getPropertiesFileName() + "::" + url); //$NON-NLS-1$  //$NON-NLS-2$
@@ -300,7 +304,7 @@ public class ClasspathComputer implements IPDEBuildConstants, IXMLConstants {
 	}
 
 	//Add the prerequisite of a given plugin (target)
-	private void addPrerequisites(PluginModel target, List classpath, String baseLocation, List pluginChain) throws CoreException {
+	private void addPrerequisites(BundleDescription target, List classpath, String baseLocation, List pluginChain) throws CoreException {
 
 		if (pluginChain.contains(target)) {
 			if (AbstractScriptGenerator.isBuildingOSGi()) {
@@ -321,13 +325,11 @@ public class ClasspathComputer implements IPDEBuildConstants, IXMLConstants {
 
 		// add libraries from pre-requisite plug-ins.  Don't worry about the export flag
 		// as all required plugins may be required for compilation.
-		PluginPrerequisiteModel[] requires = target.getRequires();
+		BundleDescription[] requires = PDEState.getDependentBundles(target);
 		if (requires != null) {
 			pluginChain.add(target);
 			for (int i = 0; i < requires.length; i++) {
-				PluginModel plugin = getPlugin(requires[i].getPlugin(), requires[i].getVersion());
-				if (plugin != null)
-					addPluginAndPrerequisites(plugin, classpath, baseLocation, pluginChain);
+				addPluginAndPrerequisites(requires[i], classpath, baseLocation, pluginChain);
 			}
 			pluginChain.remove(target);
 		}
@@ -344,7 +346,7 @@ public class ClasspathComputer implements IPDEBuildConstants, IXMLConstants {
 	 * @param considerExport
 	 * @throws CoreException
 	 */
-	private void addPluginAndPrerequisites(PluginModel target, List classpath, String baseLocation, List pluginChain) throws CoreException {
+	private void addPluginAndPrerequisites(BundleDescription target, List classpath, String baseLocation, List pluginChain) throws CoreException {
 		addPlugin(target, classpath, baseLocation);
 		addPrerequisites(target, classpath, baseLocation, pluginChain);
 	}
@@ -356,7 +358,7 @@ public class ClasspathComputer implements IPDEBuildConstants, IXMLConstants {
 	 * @param classpath
 	 * @throws CoreException
 	 */
-	private void addDevEntries(PluginModel model, String baseLocation, List classpath, String[] jarSpecificEntries) throws CoreException {
+	private void addDevEntries(BundleDescription model, String baseLocation, List classpath, String[] jarSpecificEntries) throws CoreException {
 		// first we verify if the addition of dev entries is required
 		if (generator.devEntries != null && generator.devEntries.length == 0)
 			return;
@@ -375,7 +377,26 @@ public class ClasspathComputer implements IPDEBuildConstants, IXMLConstants {
 		String path;
 		for (int i = 0; i < entries.length; i++) {
 			path = root.append(entries[i]).toString();
-			addPathAndCheck(model.getId(), path, classpath);
+			addPathAndCheck(model.getUniqueId(), path, classpath);
 		}
+	}
+	
+	//Return the jar name from the classpath 
+	private String[] getClasspathEntries(BundleDescription bundle) {
+		//FIXME Need to do something for the System bundle which does not say anything abou t its jars....
+		ManifestElement[] modelClasspath = null;
+		try {
+			modelClasspath = ManifestElement.parseClassPath((String) ((Headers) bundle.getUserObject()).get(Constants.BUNDLE_CLASSPATH));
+		} catch (BundleException e) {
+			// Ignore since this would have been caught while building the registry
+		}
+		if (modelClasspath==null)
+			return new String[0];
+		
+		String[] libraries = new String[modelClasspath.length];
+		for (int i = 0; i < libraries.length; i++) {
+			libraries[i] = modelClasspath[i].getValue();
+		}
+		return libraries;
 	}
 }

@@ -15,7 +15,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
 import org.eclipse.core.runtime.*;
-import org.eclipse.core.runtime.model.PluginModel;
+import org.eclipse.osgi.service.resolver.BundleDescription;
 import org.eclipse.pde.internal.build.ant.AntScript;
 import org.eclipse.update.core.SiteManager;
 
@@ -97,7 +97,7 @@ public abstract class AbstractScriptGenerator implements IXMLConstants, IPDEBuil
 	 * @return String
 	 * @throws CoreException if a valid file-system location could not be constructed
 	 */
-	public String getLocation(PluginModel model) throws CoreException {
+	public String getLocation(BundleDescription model) throws CoreException {
 		try {
 			return new URL(model.getLocation()).getFile();
 		} catch (MalformedURLException e) {

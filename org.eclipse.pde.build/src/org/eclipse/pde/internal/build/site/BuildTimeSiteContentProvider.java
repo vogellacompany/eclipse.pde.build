@@ -67,6 +67,11 @@ public class BuildTimeSiteContentProvider extends SiteContentProvider implements
 			if (foundFragments != null)
 				collectedElements.addAll(foundFragments);
 		}
+		for (int i = 0; i < location.length; i++) {
+			Collection foundFragments = Utils.findFiles(location[i].getFile(), DEFAULT_PLUGIN_LOCATION, "MANIFEST.MF");
+			if (foundFragments != null)
+				collectedElements.addAll(foundFragments);
+		}		
 		URL[] pluginURLs = new URL[collectedElements.size()];
 		int i = 0;
 		for (Iterator iter = collectedElements.iterator(); iter.hasNext();) {

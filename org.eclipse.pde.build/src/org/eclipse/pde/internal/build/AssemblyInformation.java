@@ -11,7 +11,8 @@
 package org.eclipse.pde.internal.build;
 
 import java.util.*;
-import org.eclipse.core.runtime.model.*;
+
+import org.eclipse.osgi.service.resolver.BundleDescription;
 import org.eclipse.pde.internal.build.site.BuildTimeFeature;
 import org.eclipse.update.core.IFeature;
 
@@ -33,7 +34,7 @@ public class AssemblyInformation {
 		entry.addFeature(feature);
 	}
 
-	public void addPlugin(Config config, PluginModel plugin) {
+	public void addPlugin(Config config, BundleDescription plugin) {
 		AssemblyLevelConfigInfo entry = (AssemblyLevelConfigInfo) assembleInformation.get(config);
 		entry.addPlugin(plugin);
 	}
@@ -42,7 +43,7 @@ public class AssemblyInformation {
 		return ((AssemblyLevelConfigInfo) assembleInformation.get(config)).getPlugins();
 	}
 
-	public void addFragment(Config config, PluginModel fragment) {
+	public void addFragment(Config config, BundleDescription fragment) {
 		AssemblyLevelConfigInfo entry = (AssemblyLevelConfigInfo) assembleInformation.get(config);
 		entry.addFragment(fragment);
 	}
@@ -101,21 +102,21 @@ public class AssemblyInformation {
 			features.add(feature);
 		}
 
-		public void addPlugin(PluginModel plugin) {
+		public void addPlugin(BundleDescription plugin) {
 			//TODO Could be improve if PluginModel could be compared
 			for (Iterator iter = plugins.iterator(); iter.hasNext();) {
-				PluginDescriptorModel descriptor = (PluginDescriptorModel) iter.next();
-				if (descriptor.getId().equals(plugin.getId()) && descriptor.getVersion().equals(plugin.getVersion()))
+				BundleDescription descriptor = (BundleDescription) iter.next();
+				if (descriptor.getUniqueId().equals(plugin.getUniqueId()) && descriptor.getVersion().equals(plugin.getVersion()))
 					return;
 			}
 			plugins.add(plugin);
 		}
 
-		public void addFragment(PluginModel fragment) {
+		public void addFragment(BundleDescription fragment) {
 			//TODO Could be improve if PluginModel could be compared
 			for (Iterator iter = fragments.iterator(); iter.hasNext(); ) {
-				PluginFragmentModel descriptor = (PluginFragmentModel) iter.next();
-				if (descriptor.getId().equals(fragment.getId()) && descriptor.getVersion().equals(fragment.getVersion()))
+				BundleDescription descriptor = (BundleDescription) iter.next();
+				if (descriptor.getUniqueId().equals(fragment.getUniqueId()) && descriptor.getVersion().equals(fragment.getVersion()))
 					return;				
 			}
 			fragments.add(fragment);

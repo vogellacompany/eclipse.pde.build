@@ -14,7 +14,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import org.eclipse.core.runtime.*;
-import org.eclipse.core.runtime.model.PluginModel;
+import org.eclipse.osgi.service.resolver.BundleDescription;
 import org.eclipse.pde.internal.build.*;
 import org.eclipse.pde.internal.build.ant.FileSet;
 import org.eclipse.pde.internal.build.ant.JavacTask;
@@ -65,7 +65,7 @@ public abstract class ModelBuildScriptGenerator extends AbstractBuildScriptGener
 	/**
 	 * PluginModel to generate script from.
 	 */
-	protected PluginModel model;
+	protected BundleDescription model;
 
 	protected String fullName;
 	protected String pluginZipDestination;
@@ -93,10 +93,10 @@ public abstract class ModelBuildScriptGenerator extends AbstractBuildScriptGener
 
 		// If the the plugin we want to generate is a source plugin, and the feature that required the generation of this plugin is not being asked to build the source
 		// we want to leave. This is particularly usefull for the case of the pde.source building (at least for now since the source of pde is not in a feature)
-		if (featureGenerator != null && featureGenerator.isSourceFeatureGeneration() == false && featureGenerator.getBuildProperties().containsKey(GENERATION_SOURCE_PLUGIN_PREFIX + model.getId()))
+		if (featureGenerator != null && featureGenerator.isSourceFeatureGeneration() == false && featureGenerator.getBuildProperties().containsKey(GENERATION_SOURCE_PLUGIN_PREFIX + model.getUniqueId()))
 			return;
 
-		checkBootAndRuntime();
+		checkBootAndRuntime();	//FIXME This need to be made optional.
 		initializeVariables();
 
 		String custom = (String) getBuildProperties().get(PROPERTY_CUSTOM);
@@ -117,18 +117,18 @@ public abstract class ModelBuildScriptGenerator extends AbstractBuildScriptGener
 	 * Check that boot and runtime are available, otherwise throws an exception because the build will fail.
 	 */
 	private void checkBootAndRuntime() throws CoreException {
-		if (getSite(false).getPluginRegistry().getPlugin(PI_BOOT)==null) {
+		if (getSite(false).getRegistry().getResolvedBundle(PI_BOOT)==null) {
 			IStatus status = new Status(IStatus.ERROR, PI_PDEBUILD, IPDEBuildConstants.EXCEPTION_PLUGIN_MISSING, Policy.bind("exception.missingPlugin", PI_BOOT), null);//$NON-NLS-1$
 			throw new CoreException(status); 
 		}
-		if (getSite(false).getPluginRegistry().getPlugin(PI_RUNTIME)==null) {
+		if (getSite(false).getRegistry().getResolvedBundle(PI_RUNTIME)==null) {
 			IStatus status = new Status(IStatus.ERROR, PI_PDEBUILD, IPDEBuildConstants.EXCEPTION_PLUGIN_MISSING, Policy.bind("exception.missingPlugin", PI_RUNTIME), null);//$NON-NLS-1$
 			throw new CoreException(status); 
 		}
 	}
 
 	private void initializeVariables() {
-		fullName = model.getId() + "_" + model.getVersion(); //$NON-NLS-1$
+		fullName = model.getUniqueId() + "_" + model.getVersion(); //$NON-NLS-1$
 		pluginZipDestination = PLUGIN_DESTINATION + "/" + fullName + ".zip"; //$NON-NLS-1$ //$NON-NLS-2$
 		pluginUpdateJarDestination = PLUGIN_DESTINATION + "/" + fullName + ".jar"; //$NON-NLS-1$ //$NON-NLS-2$
 	}
@@ -173,7 +173,7 @@ public abstract class ModelBuildScriptGenerator extends AbstractBuildScriptGener
 	private void generateBuildJarsTargetForSourceGathering() throws CoreException {
 		script.printTargetDeclaration(TARGET_BUILD_JARS, null, null, null, null);
 
-		IPluginEntry entry = Utils.getPluginEntry(featureGenerator.feature, model.getId())[0];
+		IPluginEntry entry = Utils.getPluginEntry(featureGenerator.feature, model.getUniqueId())[0];
 		Config configInfo;
 		if (entry.getOS() == null && entry.getWS() == null && entry.getOSArch() == null)
 			configInfo = Config.genericConfig();
@@ -183,8 +183,8 @@ public abstract class ModelBuildScriptGenerator extends AbstractBuildScriptGener
 		Set pluginsToGatherSourceFrom = (Set) featureGenerator.sourceToGather.getElementEntries().get(configInfo);
 		if (pluginsToGatherSourceFrom != null) {
 			for (Iterator iter = pluginsToGatherSourceFrom.iterator(); iter.hasNext();) {
-				PluginModel plugin = (PluginModel) iter.next();
-				if (plugin.getId().equals(model.getId())) // We are not trying to gather the source from ourself since we are generated and we know we don't have source...
+				BundleDescription plugin = (BundleDescription) iter.next();
+				if (plugin.getUniqueId().equals(model.getUniqueId())) // We are not trying to gather the source from ourself since we are generated and we know we don't have source...
 					continue;
 	
 				// The two steps are required, because some plugins (xerces, junit, ...) don't build their source: the source already comes zipped
@@ -208,7 +208,7 @@ public abstract class ModelBuildScriptGenerator extends AbstractBuildScriptGener
 		script.println();
 		Properties properties = getBuildProperties();
 		JAR[] availableJars = extractJars(properties);
-		script.printTargetDeclaration(TARGET_CLEAN, TARGET_INIT, null, null, Policy.bind("build.plugin.clean", model.getId())); //$NON-NLS-1$
+		script.printTargetDeclaration(TARGET_CLEAN, TARGET_INIT, null, null, Policy.bind("build.plugin.clean", model.getUniqueId())); //$NON-NLS-1$
 		for (int i = 0; i < availableJars.length; i++) {
 			String jarName = availableJars[i].getName(true);
 			script.printDeleteTask(null, getJARLocation(jarName), null);
@@ -374,7 +374,7 @@ public abstract class ModelBuildScriptGenerator extends AbstractBuildScriptGener
 	 */
 	private void generateZipPluginTarget() throws CoreException {
 		script.println();
-		script.printTargetDeclaration(TARGET_ZIP_PLUGIN, TARGET_INIT, null, null, Policy.bind("build.plugin.zipPlugin", model.getId())); //$NON-NLS-1$
+		script.printTargetDeclaration(TARGET_ZIP_PLUGIN, TARGET_INIT, null, null, Policy.bind("build.plugin.zipPlugin", model.getUniqueId())); //$NON-NLS-1$
 		script.printDeleteTask(getPropertyFormat(PROPERTY_TEMP_FOLDER), null, null);
 		script.printMkdirTask(getPropertyFormat(PROPERTY_TEMP_FOLDER));
 		script.printAntCallTask(TARGET_BUILD_JARS, null, null);
@@ -397,7 +397,7 @@ public abstract class ModelBuildScriptGenerator extends AbstractBuildScriptGener
 	 */
 	private void generateBuildUpdateJarTarget() {
 		script.println();
-		script.printTargetDeclaration(TARGET_BUILD_UPDATE_JAR, TARGET_INIT, null, null, Policy.bind("build.plugin.buildUpdateJar", model.getId())); //$NON-NLS-1$
+		script.printTargetDeclaration(TARGET_BUILD_UPDATE_JAR, TARGET_INIT, null, null, Policy.bind("build.plugin.buildUpdateJar", model.getUniqueId())); //$NON-NLS-1$
 		script.printDeleteTask(getPropertyFormat(PROPERTY_TEMP_FOLDER), null, null);
 		script.printMkdirTask(getPropertyFormat(PROPERTY_TEMP_FOLDER));
 		script.printAntCallTask(TARGET_BUILD_JARS, null, null);
@@ -438,7 +438,7 @@ public abstract class ModelBuildScriptGenerator extends AbstractBuildScriptGener
 	 * @param script the script to begin
 	 */
 	private void generatePrologue() {
-		script.printProjectDeclaration(model.getId(), TARGET_BUILD_JARS, "."); //$NON-NLS-1$
+		script.printProjectDeclaration(model.getUniqueId(), TARGET_BUILD_JARS, "."); //$NON-NLS-1$
 		script.println();
 		script.printProperty(PROPERTY_BOOTCLASSPATH, ""); //$NON-NLS-1$
 		script.printProperty(PROPERTY_BASE_WS, getPropertyFormat(PROPERTY_WS));
@@ -476,13 +476,13 @@ public abstract class ModelBuildScriptGenerator extends AbstractBuildScriptGener
 	 * @param model
 	 * @throws CoreException
 	 */
-	public void setModel(PluginModel model) throws CoreException {
+	public void setModel(BundleDescription model) throws CoreException {
 		if (model == null) {
 			String message = Policy.bind("error.missingElement"); //$NON-NLS-1$
 			throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, EXCEPTION_ELEMENT_MISSING, message, null));
 		}
 		this.model = model;
-		getCompiledElements().add(model.getId());
+		getCompiledElements().add(model.getUniqueId());
 	}
 
 	/**
@@ -492,7 +492,7 @@ public abstract class ModelBuildScriptGenerator extends AbstractBuildScriptGener
 	 * @throws CoreException
 	 */
 	public void setModelId(String modelId) throws CoreException {
-		PluginModel newModel = getModel(modelId);
+		BundleDescription newModel = getModel(modelId);
 		if (newModel == null) {
 			String message = Policy.bind("exception.missingElement", modelId); //$NON-NLS-1$
 			throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, EXCEPTION_ELEMENT_MISSING, message, null));
@@ -507,7 +507,7 @@ public abstract class ModelBuildScriptGenerator extends AbstractBuildScriptGener
 	 * @param modelId the identifier of the model object to lookup
 	 * @return the model object or <code>null</code>
 	 */
-	protected abstract PluginModel getModel(String modelId) throws CoreException;
+	protected abstract BundleDescription getModel(String modelId) throws CoreException;
 
 	/**
 	 * Add the <code>build.zips</code> target to the given Ant script.
@@ -548,7 +548,7 @@ public abstract class ModelBuildScriptGenerator extends AbstractBuildScriptGener
 	 * @param model the plug-in model to reference
 	 * @throws CoreException
 	 */
-	private void generateBuildJarsTarget(PluginModel pluginModel) throws CoreException {
+	private void generateBuildJarsTarget(BundleDescription pluginModel) throws CoreException {
 		Properties properties = getBuildProperties();
 		JAR[] availableJars = extractJars(properties);
 		List jarNames = new ArrayList(availableJars.length);
@@ -579,7 +579,7 @@ public abstract class ModelBuildScriptGenerator extends AbstractBuildScriptGener
 			generateSRCTarget(jar);
 		}
 		script.println();
-		script.printTargetDeclaration(TARGET_BUILD_JARS, TARGET_INIT, null, null, Policy.bind("build.plugin.buildJars", pluginModel.getId())); //$NON-NLS-1$
+		script.printTargetDeclaration(TARGET_BUILD_JARS, TARGET_INIT, null, null, Policy.bind("build.plugin.buildJars", pluginModel.getUniqueId())); //$NON-NLS-1$
 		for (Iterator iter = jarNames.iterator(); iter.hasNext();) {
 			String name = (String) iter.next();
 			script.printAvailableTask(name, replaceVariables(getJARLocation(name), true));
@@ -606,7 +606,7 @@ public abstract class ModelBuildScriptGenerator extends AbstractBuildScriptGener
 	 * @param jar
 	 * @throws CoreException
 	 */
-	private void generateJARTarget(String classpath, JAR jar) throws CoreException {
+	private void generateJARTarget(List classpath, JAR jar) throws CoreException {
 		script.println();
 		String name = jar.getName(false);
 		script.printTargetDeclaration(name, TARGET_INIT, null, jar.getName(true), Policy.bind("build.plugin.jar", name)); //$NON-NLS-1$
@@ -768,7 +768,7 @@ public abstract class ModelBuildScriptGenerator extends AbstractBuildScriptGener
 		String root = getLocation(model);
 		File buildFile = new File(root, buildScriptFileName);
 		try {
-			updateVersion(buildFile, PROPERTY_VERSION_SUFFIX, model.getVersion());
+			updateVersion(buildFile, PROPERTY_VERSION_SUFFIX, model.getVersion().toString());
 		} catch (IOException e) {
 			String message = Policy.bind("exception.writeScript"); //$NON-NLS-1$
 			throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, EXCEPTION_WRITING_SCRIPT, message, e));
@@ -800,7 +800,7 @@ public abstract class ModelBuildScriptGenerator extends AbstractBuildScriptGener
 		return result;
 	}
 	
-	public PluginModel getModel() {
+	public BundleDescription getModel() {
 		return model;
 	}
 	
