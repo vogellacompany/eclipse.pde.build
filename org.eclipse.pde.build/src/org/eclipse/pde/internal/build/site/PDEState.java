@@ -7,7 +7,11 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.*;
 import java.util.ArrayList;
+import java.util.Dictionary;
+import java.util.jar.Attributes;
+import java.util.jar.Manifest;
 
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.osgi.framework.log.FrameworkLog;
@@ -19,6 +23,7 @@ import org.eclipse.osgi.service.resolver.PackageSpecification;
 import org.eclipse.osgi.service.resolver.State;
 import org.eclipse.osgi.service.resolver.StateObjectFactory;
 import org.eclipse.osgi.service.resolver.Version;
+import org.osgi.framework.*;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.ServiceReference;
@@ -29,7 +34,6 @@ public class PDEState {
 	private StateObjectFactory factory;
 	private State state;
 	private long id;
-	int targetVersion = 2;
 	
 	private ServiceReference logServiceReference;
 	private ServiceReference converterServiceReference;
@@ -75,13 +79,13 @@ public class PDEState {
 		InputStream manifestStream = null;
 		try {
 			manifestStream = new BufferedInputStream(new FileInputStream(bundleLocation));
-			Headers manifest = Headers.parseManifest(manifestStream);
+			Dictionary manifest = Headers.parseManifest(manifestStream);
+			if (((String) manifest.get(Constants.BUNDLE_GLOBALNAME)).equals("org.eclipse.osgi")) {
+				manifest = manifestToDictionary(manifest);
+				//TODO We need to handle the special case of the osgi bundle for whom the bundle-classpath is specified in the eclipse.properties file in the osgi folder
+				manifest.put(Constants.BUNDLE_CLASSPATH, "core.jar, console.jar, osgi.jar, resolver.jar, defaultAdaptor.jar, eclipseAdaptor.jar");
+			}
 			BundleDescription descriptor = factory.createBundleDescription(manifest, "file:"+bundleLocation.getParentFile().getParent(), id++);	//FIXME This is dangereous
-			//TODO We need to handle the special case of the osgi bundle for whom the bundle-classpath is specified in the eclipse.properties file in the osgi folder 
-//			if (((String) manifest.get(Constants.BUNDLE_GLOBALNAME)).equals("org.eclipse.osgi")) {
-//				
-//				classpathmanifest.put(Constants.BUNDLE_CLASSPATH, "core.jar, console.jar, osgi.jar, resolver.jar, defaultAdaptor.jar, eclipseAdaptor.jar");
-//			}
 			descriptor.setUserObject(manifest);
 			state.addBundle(descriptor);
 		} catch (FileNotFoundException e) {
@@ -91,6 +95,9 @@ public class PDEState {
 		} catch (BundleException be) {
 			be.printStackTrace();
 			return false;
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		} finally {
 			if (manifestStream != null)
 				try {
@@ -102,6 +109,15 @@ public class PDEState {
 		return true;
 	}
 	
+	public Dictionary manifestToDictionary(Dictionary d) {
+		Enumeration enum = d.keys();
+		Hashtable result = new Hashtable();
+		while (enum.hasMoreElements()) {
+			String key = (String) enum.nextElement();
+			result.put(key, d.get(key));
+		}
+		return result;
+	}
 	public void addBundles(URL[] bundles) {
 		//TODO Need to add system bundles
 		for (int i = 0; i < bundles.length; i++) {
@@ -195,4 +211,5 @@ public class PDEState {
 		System.arraycopy(required, 0, dependents, imported.length, required.length);
 		return dependents;
 	}
+
 }

@@ -1,5 +1,5 @@
 /**********************************************************************
- * Copyright (c) 2000, 2003 IBM Corporation and others.
+ * Copyright (c) 2000, 2004 IBM Corporation and others.
  * All rights reserved.   This program and the accompanying materials
  * are made available under the terms of the Common Public License v1.0
  * which accompanies this distribution, and is available at
@@ -18,7 +18,6 @@ import org.eclipse.core.internal.boot.PlatformURLHandler;
 import org.eclipse.core.internal.runtime.PlatformURLFragmentConnection;
 import org.eclipse.core.internal.runtime.PlatformURLPluginConnection;
 import org.eclipse.core.runtime.*;
-import org.eclipse.osgi.framework.util.Headers;
 import org.eclipse.osgi.service.resolver.BundleDescription;
 import org.eclipse.osgi.service.resolver.HostSpecification;
 import org.eclipse.osgi.util.ManifestElement;
@@ -48,15 +47,11 @@ public class ClasspathComputer implements IPDEBuildConstants, IXMLConstants {
 		List pluginChain = new ArrayList(10);
 		String location = generator.getLocation(model);
 
-		//PARENT
-		if (! AbstractScriptGenerator.isBuildingOSGi() || (AbstractScriptGenerator.isBuildingOSGi() && !generator.hasManifest()) )
-			addPlugin(getPlugin(PI_BOOT, null), classpath, location);
+		//PREREQUISITE
+		addPrerequisites(model, classpath, location, pluginChain);
 
 		//SELF
 		addSelf(model, jar, classpath, location, pluginChain);
-
-		//PREREQUISITE
-		addPrerequisites(model, classpath, location, pluginChain);
 
 		return classpath;
 
@@ -107,6 +102,7 @@ public class ClasspathComputer implements IPDEBuildConstants, IXMLConstants {
 			return generator.getSite(false).getRegistry().getResolvedBundle(id);
 		else 
 			return generator.getSite(false).getRegistry().getResolvedBundle(id, version);
+		//TODO Need to put back the fixes for 42444 / 43072 / 48317
 		// TODO need to handle optional plugins here.  If an optional is missing it is
 		// not an error.  For now return null and essentially ignore missing plugins.
 		//	if (plugin == null) {
@@ -305,34 +301,19 @@ public class ClasspathComputer implements IPDEBuildConstants, IXMLConstants {
 
 	//Add the prerequisite of a given plugin (target)
 	private void addPrerequisites(BundleDescription target, List classpath, String baseLocation, List pluginChain) throws CoreException {
-
-		if (pluginChain.contains(target)) {
-			if (AbstractScriptGenerator.isBuildingOSGi()) {
-				if (target == getPlugin(PI_RUNTIME, null) || target == getPlugin("org.eclipse.osgi", null) || target == getPlugin("org.eclipse.core.runtime.osgi", null)) //$NON-NLS-1$ //$NON-NLS-2$
-					return;
-			} else {
-				if (target == getPlugin(PI_RUNTIME, null))
-					return; 
-			}
-				
+		if (pluginChain.contains(target)) {		
 			String message = Policy.bind("error.pluginCycle"); //$NON-NLS-1$
 			throw new CoreException(new Status(IStatus.ERROR, IPDEBuildConstants.PI_PDEBUILD, IPDEBuildConstants.EXCEPTION_CLASSPATH_CYCLE, message, null));
 		}
 
-		//	The first prerequisite is ALWAYS runtime unless we are building pure osgi bundle (osgi flag but no manifest)
-		if ( (!AbstractScriptGenerator.isBuildingOSGi() || (AbstractScriptGenerator.isBuildingOSGi() && !generator.hasManifest() )) && (target != getPlugin(PI_RUNTIME, null) && target != getPlugin("org.eclipse.core.runtime.osgi", null) && target != getPlugin("org.eclipse.osgi", null) && target != getPlugin("org.eclipse.core.runtime.compatibility", null)) ) //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-			addPluginAndPrerequisites(getPlugin(PI_RUNTIME, null), classpath, baseLocation, pluginChain);
-
 		// add libraries from pre-requisite plug-ins.  Don't worry about the export flag
 		// as all required plugins may be required for compilation.
 		BundleDescription[] requires = PDEState.getDependentBundles(target);
-		if (requires != null) {
-			pluginChain.add(target);
-			for (int i = 0; i < requires.length; i++) {
-				addPluginAndPrerequisites(requires[i], classpath, baseLocation, pluginChain);
-			}
-			pluginChain.remove(target);
+		pluginChain.add(target);
+		for (int i = 0; i < requires.length; i++) {
+			addPluginAndPrerequisites(requires[i], classpath, baseLocation, pluginChain);
 		}
+		pluginChain.remove(target);
 	}
 
 	/**
@@ -383,10 +364,9 @@ public class ClasspathComputer implements IPDEBuildConstants, IXMLConstants {
 	
 	//Return the jar name from the classpath 
 	private String[] getClasspathEntries(BundleDescription bundle) {
-		//FIXME Need to do something for the System bundle which does not say anything abou t its jars....
 		ManifestElement[] modelClasspath = null;
 		try {
-			modelClasspath = ManifestElement.parseClassPath((String) ((Headers) bundle.getUserObject()).get(Constants.BUNDLE_CLASSPATH));
+			modelClasspath = ManifestElement.parseClassPath((String) ((Dictionary) bundle.getUserObject()).get(Constants.BUNDLE_CLASSPATH));
 		} catch (BundleException e) {
 			// Ignore since this would have been caught while building the registry
 		}

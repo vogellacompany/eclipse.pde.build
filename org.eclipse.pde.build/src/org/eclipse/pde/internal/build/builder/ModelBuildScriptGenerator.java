@@ -555,6 +555,7 @@ public abstract class ModelBuildScriptGenerator extends AbstractBuildScriptGener
 		Map jars = new HashMap(availableJars.length);
 		for (int i = 0; i < availableJars.length; i++)
 			jars.put(availableJars[i].getName(false), availableJars[i]);
+		
 		// Put the jars in a correct compile order
 		String jarOrder = (String) getBuildProperties().get(PROPERTY_JAR_ORDER);
 		ClasspathComputer classpath = new ClasspathComputer(this);
@@ -682,8 +683,8 @@ public abstract class ModelBuildScriptGenerator extends AbstractBuildScriptGener
 				fileSets[count++] = new FileSet(sources[i], null, "**/*.java", null, null, null, null); //$NON-NLS-1$
 		}
 
-			String srcLocation = getSRCLocation(name);
-			script.printMkdirTask(new Path(srcLocation).removeLastSegments(1).toString());
+		String srcLocation = getSRCLocation(name);
+		script.printMkdirTask(new Path(srcLocation).removeLastSegments(1).toString());
 
 		if (count!=0)			
 			script.printZipTask(srcLocation, null, false, fileSets);
