@@ -56,8 +56,8 @@ public class PackagingConfigScriptGenerator extends AssembleConfigScriptGenerato
 		args.add("-R"); //$NON-NLS-1$
 		args.add("700"); //$NON-NLS-1$
 		args.add("."); //$NON-NLS-1$
-		script.printExecTask("chmod", getPropertyFormat("tempDirectory") + '/' + getPropertyFormat(PROPERTY_COLLECTING_FOLDER) + '/' + getPropertyFormat(PROPERTY_ARCHIVE_PREFIX), args, "Linux"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$
-		script.printDeleteTask(getPropertyFormat("tempDirectory") + '/' + getPropertyFormat(PROPERTY_COLLECTING_FOLDER) + '/' + getPropertyFormat(PROPERTY_ARCHIVE_PREFIX), "**/*", null); //$NON-NLS-1$//$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+		script.printExecTask("chmod", getPropertyFormat("tempDirectory") + '/' + getPropertyFormat(PROPERTY_COLLECTING_FOLDER), args, "Linux"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$
+		script.printDeleteTask(getPropertyFormat("tempDirectory") + '/' + getPropertyFormat(PROPERTY_COLLECTING_FOLDER), "**/*", null); //$NON-NLS-1$//$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
 		script.printTargetEnd();
 	}
 
