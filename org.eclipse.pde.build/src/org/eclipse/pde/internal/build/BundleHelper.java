@@ -58,7 +58,7 @@ public class BundleHelper  {
 	}
 	
 	public final ILog getLog() {
-		return InternalPlatform.getDefault().getLog(bundle);
+		return Platform.getLog(bundle);
 	}
 
 	public final IPath getStateLocation() throws IllegalStateException {

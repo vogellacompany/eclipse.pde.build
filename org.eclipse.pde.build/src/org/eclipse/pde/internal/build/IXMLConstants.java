@@ -106,4 +106,7 @@ public interface IXMLConstants {
 	public static final String PROPERTY_ZIP_ARGS = "zipargs"; //$NON-NLS-1$
 	public static final String PROPERTY_DOWNLOAD_DIRECTORY = "downloadDirectory"; //$NON-NLS-1$
 	public static final String PROPERTY_RESOURCE_PATH = "resourcePath"; //$NON-NLS-1$
+	public static final String PROPERTY_PLUGIN_TEMP = "pluginTemp"; //$NON-NLS-1$
+	public static final String PROPERTY_BUILD_TEMP = "buildTempFolder"; //$NON-NLS-1$
+
 }

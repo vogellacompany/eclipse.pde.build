@@ -203,7 +203,7 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	private void generateBuildJarsTargetForSourceGathering() throws CoreException {
 		script.printTargetDeclaration(TARGET_BUILD_JARS, null, null, null, null);
 
-		IPluginEntry entry = Utils.getPluginEntry(featureGenerator.feature, model.getUniqueId())[0];
+		IPluginEntry entry = Utils.getPluginEntry(featureGenerator.feature, model.getUniqueId(), false)[0];
 		Config configInfo;
 		if (entry.getOS() == null && entry.getWS() == null && entry.getOSArch() == null)
 			configInfo = Config.genericConfig();
@@ -502,19 +502,18 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		script.println();
 		script.printTargetDeclaration(TARGET_INIT, TARGET_PROPERTIES, null, null, null);
 		
-		script.println("<condition property=\"pluginTemp\" value=\"${tmpFolder}/plugins\">");
-		script.println("<isset property=\"tmpFolder\"/>");
-		script.println("</condition>");
-		script.println("<property name=\"pluginTemp\" value=\"${basedir}\"/>");
+		script.println("<condition property=\"" + PROPERTY_PLUGIN_TEMP +"\" value=\"" + getPropertyFormat(PROPERTY_BUILD_TEMP) + '/' + DEFAULT_PLUGIN_LOCATION + "\">"); //$NON-NLS-1 //$NON-NLS-2 //$NON-NLS-3
+		script.println("\t<isset property=\"" + PROPERTY_BUILD_TEMP + "\"/>"); //$NON-NLS-1 //$NON-NLS-2 
+		script.println("</condition>"); //$NON-NLS-1
+		script.println("<property name=\"" + PROPERTY_PLUGIN_TEMP +"\" value=\"" + getPropertyFormat(PROPERTY_BASEDIR) +"\"/>"); //$NON-NLS-1 //$NON-NLS-2 //$NON-NLS-3
 		
-		script.println("<condition property=\"build.result.folder\" value=\"${pluginTemp}/" + new Path(model.getLocation()).lastSegment() + "\">");
-		script.println("<isset property=\"tmpFolder\"/>");
-		script.println("</condition>");
-		script.println("<property name=\"build.result.folder\" value=\"${basedir}\"/>");
+		script.println("<condition property=\"" + PROPERTY_BUILD_RESULT_FOLDER + "\" value=\"" + getPropertyFormat(PROPERTY_PLUGIN_TEMP) + '/' + new Path(model.getLocation()).lastSegment() + "\">"); //$NON-NLS-1 //$NON-NLS-2 //$NON-NLS-3
+		script.println("\t<isset property=\"" + PROPERTY_BUILD_TEMP + "\"/>"); //$NON-NLS-1 //$NON-NLS-2
+		script.println("</condition>"); //$NON-NLS-1
+		script.println("<property name=\"" + PROPERTY_BUILD_RESULT_FOLDER + "\" value=\"" + getPropertyFormat(PROPERTY_BASEDIR) + "\"/>"); //$NON-NLS-1 //$NON-NLS-2 //$NON-NLS-3
 		
-		script.printProperty(PROPERTY_TEMP_FOLDER, getPropertyFormat(PROPERTY_BASEDIR) + '/' + PROPERTY_TEMP_FOLDER); //$NON-NLS-1$
+		script.printProperty(PROPERTY_TEMP_FOLDER, getPropertyFormat(PROPERTY_BASEDIR) + '/' + PROPERTY_TEMP_FOLDER);
 		script.printProperty(PROPERTY_PLUGIN_DESTINATION, getPropertyFormat(PROPERTY_BASEDIR));
-//		script.printProperty(PROPERTY_BUILD_RESULT_FOLDER, getPropertyFormat(PROPERTY_BASEDIR));
 		script.printTargetEnd();
 		script.println();
 		script.printTargetDeclaration(TARGET_PROPERTIES, null, PROPERTY_ECLIPSE_RUNNING, null, null);

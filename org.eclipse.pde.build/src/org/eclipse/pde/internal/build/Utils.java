@@ -216,8 +216,12 @@ public final class Utils implements IPDEBuildConstants {
 		}
 	}
 
-	public static IPluginEntry[] getPluginEntry(IFeature feature, String pluginId) {
-		IPluginEntry[] plugins = feature.getRawPluginEntries();
+	public static IPluginEntry[] getPluginEntry(IFeature feature, String pluginId, boolean raw) {
+		IPluginEntry[] plugins;
+		if (raw)
+			plugins = feature.getRawPluginEntries();
+		else
+			plugins = feature.getPluginEntries();
 		List foundEntries = new ArrayList(5);
 
 		for (int i = 0; i < plugins.length; i++) {

@@ -115,9 +115,14 @@ public class PDEState implements IPDEBuildConstants, IBuildPropertiesConstants {
 			BundleHelper.getDefault().getLog().log(status);
 			return false;
 		}
-		if (manifest.get(Constants.BUNDLE_SYMBOLICNAME).equals("org.eclipse.osgi")) {
-			//TODO We need to handle the special case of the osgi bundle for whose bundle-classpath is specified in the eclipse.properties file in the osgi folder
-			manifest.put(Constants.BUNDLE_CLASSPATH, "core.jar, console.jar, osgi.jar, resolver.jar, defaultAdaptor.jar, eclipseAdaptor.jar");
+		try {
+			String symbolicHeader = (String) manifest.get(Constants.BUNDLE_SYMBOLICNAME);
+			if (symbolicHeader != null && ManifestElement.parseHeader(Constants.BUNDLE_SYMBOLICNAME, symbolicHeader)[0].getValue().equals("org.eclipse.osgi")) {
+				//TODO We need to handle the special case of the osgi bundle for whose bundle-classpath is specified in the eclipse.properties file in the osgi folder
+				manifest.put(Constants.BUNDLE_CLASSPATH, "core.jar, console.jar, osgi.jar, resolver.jar, defaultAdaptor.jar, eclipseAdaptor.jar");
+			}
+		} catch(BundleException e) {
+			//should not happen since we know the header
 		}
 		return addBundle(manifest, bundleLocation);
 	}

@@ -42,6 +42,9 @@ public abstract class AbstractBuildScriptGenerator extends AbstractScriptGenerat
 	
 	abstract protected Properties getBuildProperties() throws CoreException;
 
+	public void setDevEntries(String entries) {
+		devEntries = new DevClassPathHelper(entries);
+	}
 	public void setDevEntries(DevClassPathHelper entries) {
 		devEntries = entries;
 	}

@@ -132,7 +132,7 @@ public class FeatureWriter extends XMLWriter implements IPDEBuildConstants {
 	}
 
 	public void printIncludes() throws CoreException {
-		IIncludedFeatureReference[] features = feature.getFeatureIncluded();
+		IIncludedFeatureReference[] features = feature.getRawIncludedFeatureReferences();
 		for (int i = 0; i < features.length; i++) {
 			parameters.clear();
 			try {

@@ -197,9 +197,10 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 		}
 	}
 
+	//Get the unpack clause from the feature.xml
 	private String getPluginUnpackClause(String name, String version) {
 		for (int i = 0; i < features.length; i++) {
-			IPluginEntry[] entries = features[i].getRawPluginEntries();
+			IPluginEntry[] entries = features[i].getPluginEntries(); //Only plugin being built needs to be considered 
 			for (int j = 0; j < entries.length; j++) {
 				if (entries[j].getVersionedIdentifier().getIdentifier().equals(name))
 					return ((org.eclipse.update.core.PluginEntry) entries[j]).isUnpack() ? FLAT : UPDATEJAR;

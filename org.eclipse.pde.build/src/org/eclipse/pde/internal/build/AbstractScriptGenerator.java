@@ -23,6 +23,7 @@ import org.eclipse.update.core.SiteManager;
  */
 public abstract class AbstractScriptGenerator implements IXMLConstants, IPDEBuildConstants, IBuildPropertiesConstants {
 
+	private static String targetStyle = "folder"; 
 	private static List configInfos;
 	protected static String workingDirectory;
 	protected static boolean buildingOSGi = false;

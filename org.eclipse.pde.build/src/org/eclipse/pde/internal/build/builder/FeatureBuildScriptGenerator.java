@@ -83,7 +83,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	 */
 	protected List computeElements() throws CoreException {
 		List result = new ArrayList(5);
-		IPluginEntry[] pluginList = feature.getPluginEntries();//getRawPluginEntries();
+		IPluginEntry[] pluginList = feature.getPluginEntries();
 		for (int i = 0; i < pluginList.length; i++) {
 			IPluginEntry entry = pluginList[i];
 			VersionedIdentifier identifier = entry.getVersionedIdentifier();
@@ -425,13 +425,15 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 			}
 			// Generate the parameters for the Id Replacer.
 			String featureVersionInfo = ""; //$NON-NLS-1$
-			IIncludedFeatureReference[] includedFeatures = feature.getRawIncludedFeatureReferences();
+			// Here we get all the included features (independently of the config being built so the version numbers in the feature can be replaced)
+			IIncludedFeatureReference[] includedFeatures = feature.getRawIncludedFeatureReferences();	
 			for (int i = 0; i < includedFeatures.length; i++) {
 				IFeature includedFeature = getSite(false).findFeature(includedFeatures[i].getVersionedIdentifier().getIdentifier());
 				VersionedIdentifier includedFeatureVersionId = includedFeature.getVersionedIdentifier();
-				featureVersionInfo += (includedFeatureVersionId.getIdentifier() + "," + includedFeatureVersionId.getVersion().toString() + ","); //$NON-NLS-1$ //$NON-NLS-2$
+				featureVersionInfo += (includedFeatureVersionId.getIdentifier() + ',' + includedFeatureVersionId.getVersion().toString() + ',');
 			}
 			String pluginVersionInfo = ""; //$NON-NLS-1$
+			// Here we get all the included plugins (independently of the config being built so the version numbers in the feature can be replaced)
 			IPluginEntry[] pluginsIncluded = feature.getRawPluginEntries();
 			for (int i = 0; i < pluginsIncluded.length; i++) {
 				VersionedIdentifier identifier = pluginsIncluded[i].getVersionedIdentifier();
@@ -442,7 +444,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 					versionRequested = null;
 				String entryIdentifier = identifier.getIdentifier();
 				model = getSite(false).getRegistry().getResolvedBundle(entryIdentifier, versionRequested);
-				pluginVersionInfo += (entryIdentifier + "," + model.getVersion() + ","); //$NON-NLS-1$ //$NON-NLS-2$
+				pluginVersionInfo += (entryIdentifier + ',' + model.getVersion() + ',');
 			}
 			script.println("<eclipse.idReplacer featureFilePath=\"" + root + '/' + DEFAULT_FEATURE_FILENAME_DESCRIPTOR + "\" featureIds=\"" + featureVersionInfo + "\" pluginIds=\"" + pluginVersionInfo + "\"/>"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$
 		}
@@ -454,7 +456,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	 *  
 	 */
 	private void generateRootFilesAndPermissionsCalls() {
-		script.printAntCallTask(TARGET_ROOTFILES_PREFIX + getPropertyFormat(PROPERTY_OS) + "_" + getPropertyFormat(PROPERTY_WS) + "_" + getPropertyFormat(PROPERTY_ARCH), null, null); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+		script.printAntCallTask(TARGET_ROOTFILES_PREFIX + getPropertyFormat(PROPERTY_OS) + '_' + getPropertyFormat(PROPERTY_WS) + '_' + getPropertyFormat(PROPERTY_ARCH), null, null);
 	}
 	/**
 	 *  
@@ -472,7 +474,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		String configName;
 		String baseList = getBuildProperties().getProperty(ROOT, ""); //$NON-NLS-1$ //$NON-NLS-2$
 		String fileList = getBuildProperties().getProperty(ROOT_PREFIX + aConfig.toString("."), ""); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-		fileList = (fileList.length() == 0 ? "" : fileList + ",") + baseList; //$NON-NLS-1$ //$NON-NLS-2$
+		fileList = (fileList.length() == 0 ? "" : fileList + ',') + baseList; //$NON-NLS-1$ //$NON-NLS-2$
 		if (fileList.equals("")) //$NON-NLS-1$
 			return;
 		assemblyData.setCopyRootFile(aConfig);
@@ -495,10 +497,10 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	private void generatePermissions(Config aConfig) throws CoreException {
 		String configInfix = aConfig.toString("."); //$NON-NLS-1$
 		Properties featureProperties = getBuildProperties();
-		String prefixPermissions = ROOT_PREFIX + configInfix + "." + PERMISSIONS + "."; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-		String prefixLinks = ROOT_PREFIX + configInfix + "." + LINK; //$NON-NLS-1$ //$NON-NLS-2$
-		String commonPermissions = ROOT_PREFIX + PERMISSIONS + "."; //$NON-NLS-1$ //$NON-NLS-2$
-		String commonLinks = ROOT_PREFIX + LINK; //$NON-NLS-1$
+		String prefixPermissions = ROOT_PREFIX + configInfix + ',' + PERMISSIONS + ',';
+		String prefixLinks = ROOT_PREFIX + configInfix + ',' + LINK;
+		String commonPermissions = ROOT_PREFIX + PERMISSIONS + ',';
+		String commonLinks = ROOT_PREFIX + LINK;
 		for (Iterator iter = featureProperties.entrySet().iterator(); iter.hasNext();) {
 			Map.Entry permission = (Map.Entry) iter.next();
 			String instruction = (String) permission.getKey();
@@ -630,7 +632,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 			if (writtenCalls.contains(current))
 				continue;
 			writtenCalls.add(current);
-			IPluginEntry[] entries = Utils.getPluginEntry(feature, current.getUniqueId());
+			IPluginEntry[] entries = Utils.getPluginEntry(feature, current.getUniqueId(), false);
 			for (int j = 0; j < entries.length; j++) {
 				List list = selectConfigs(entries[j]);
 				if (list.size() == 0)
