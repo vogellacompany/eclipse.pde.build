@@ -86,6 +86,6 @@ public class BundleHelper  {
 	}
 	
 	public boolean isDebugging() {
-		return debug;
+		return true;	//TODO To change
 	}
 }
