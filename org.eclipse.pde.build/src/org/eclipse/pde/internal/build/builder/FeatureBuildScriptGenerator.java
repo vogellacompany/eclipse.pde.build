@@ -596,6 +596,11 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		script.printMkdirTask(featureTempFolder);
 		params.clear();
 		params.put(PROPERTY_FEATURE_BASE, featureTempFolder);
+		params.put(PROPERTY_OS, feature.getOS() == null ? Config.ANY : feature.getOS());
+		params.put(PROPERTY_WS, feature.getWS() == null ? Config.ANY : feature.getWS());
+		params.put(PROPERTY_ARCH, feature.getOSArch() == null ? Config.ANY : feature.getOSArch());
+		params.put(PROPERTY_NL, feature.getNL() == null ? Config.ANY : feature.getNL());
+
 		// Be sure to call the gather with children turned off.  The only way to do this is 
 		// to clear all inherited values.  Must remember to setup anything that is really expected.
 		script.printAntCallTask(TARGET_GATHER_BIN_PARTS, "false", params); //$NON-NLS-1$
@@ -618,6 +623,11 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		Map params = new HashMap(1);
 		params.put(PROPERTY_FEATURE_BASE, featureTempFolder);
 		params.put(PROPERTY_INCLUDE_CHILDREN, "true"); //$NON-NLS-1$
+		params.put(PROPERTY_OS, feature.getOS() == null ? Config.ANY : feature.getOS());
+		params.put(PROPERTY_WS, feature.getWS() == null ? Config.ANY : feature.getWS());
+		params.put(PROPERTY_ARCH, feature.getOSArch() == null ? Config.ANY : feature.getOSArch());
+		params.put(PROPERTY_NL, feature.getNL() == null ? Config.ANY : feature.getNL());
+
 		script.printAntCallTask(TARGET_GATHER_BIN_PARTS, null, params);
 		script.printZipTask(getPropertyFormat(PROPERTY_BASEDIR) + "/" + featureFullName + ".bin.dist.zip", featureTempFolder, false, null); //$NON-NLS-1$ //$NON-NLS-2$
 		script.printDeleteTask(featureTempFolder, null, null);
