@@ -1,7 +1,0 @@
-----------
-1. WARNING in D:\work\workspaces\towardM8\org.eclipse.pde.build\src_ant\org\eclipse\pde\internal\build\tasks\ManifestModifier.java (at line 10)
-	import org.apache.tools.ant.*;
-	       ^^^^^^^^^^^^^^^^^^^^
-The import org.apache.tools.ant is never used
-----------
-1 problem (1 warning)
