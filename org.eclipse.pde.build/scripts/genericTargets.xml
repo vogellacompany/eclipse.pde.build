@@ -67,7 +67,6 @@
 <target name="processElement" description="Processing build scripts..." depends="init">
 	<ant antfile="build.xml" dir="${elementPath}" target="build.jars">
 		<property name="target" value="build.jars"/>
-		<property name="ws" value="win32"/>
 	</ant>
 </target>
 
