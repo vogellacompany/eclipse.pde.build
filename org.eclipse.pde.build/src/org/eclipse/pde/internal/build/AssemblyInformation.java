@@ -88,12 +88,6 @@ public class AssemblyInformation {
 		}
 
 		public void addPlugin(BundleDescription plugin) {
-			//TODO Could be improve if PluginModel could be compared
-			for (Iterator iter = plugins.iterator(); iter.hasNext();) {
-				BundleDescription descriptor = (BundleDescription) iter.next();
-				if (descriptor.getUniqueId().equals(plugin.getUniqueId()) && descriptor.getVersion().equals(plugin.getVersion()))
-					return;
-			}
 			plugins.add(plugin);
 		}
 	}

@@ -120,14 +120,15 @@ public class FetchFileGenerator extends AbstractScriptGenerator {
 			try {
 				userInfos = new URL(fileDescription[URL]).getUserInfo();
 			} catch (MalformedURLException e) {
-				//TODO Should through an exception? and / or try to check the url with the file name concatenated?
+				IStatus status = new Status(IStatus.ERROR, PI_PDEBUILD, EXCEPTION_MALFORMED_URL, Policy.bind("exception.url",fileDescription[URL]), e); //$NON-NLS-1$
+				throw new CoreException(status); 
 			}
 			
 			if (filterByConfig(fileDescription[CONFIGS]) &&	filterByFilter(fileDescription[FILTERS])) {
 				generateFetchFileFor(fileName, fileDescription[URL], userInfos);
 				collectedFiles += fileName + ", " + (fileDescription[DIRECTORY].equals("") ? "." : fileDescription[DIRECTORY]) + " & "; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$				
 			} else {
-				IStatus status = new Status(IStatus.INFO, PI_PDEBUILD, WARNING_ELEMENT_NOT_FETCHED, Policy.bind("warning.fetchingFailed", fileDescription[DIRECTORY]), null); //$NON-NLS-1$
+				IStatus status = new Status(IStatus.INFO, PI_PDEBUILD, WARNING_ELEMENT_NOT_FETCHED, Policy.bind("error.fetchingFailed", fileDescription[DIRECTORY]), null); //$NON-NLS-1$
 				BundleHelper.getDefault().getLog().log(status);
 			} 
 		}

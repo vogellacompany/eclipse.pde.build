@@ -32,12 +32,10 @@ public class PackagerBuildScriptGenerator extends FeatureBuildScriptGenerator {
 	public void run() throws CoreException {
 		AssemblyInformation assemblageInformation = new AssemblyInformation();
 
-		//FIXME This approach is not really correct since we should have one instance.
-		// This will stay like until we are back in using static for most of the variables.
 		for (int i = 0; i < featureList.length; i++) {
 			FeatureBuildScriptGenerator generator = new PackagerBuildScriptGenerator(featureList[i], assemblageInformation);
 			generator.setGenerateIncludedFeatures(true);
-			generator.setAnalyseChildren(true);	//TODO Should not that be false?
+			generator.setAnalyseChildren(true);
 			generator.setSourceFeatureGeneration(false);
 			generator.setBinaryFeatureGeneration(true);
 			generator.setScriptGeneration(false);

@@ -86,38 +86,12 @@ public class ClasspathComputer3_0 implements IClasspathComputer, IPDEBuildConsta
 	}
 
 	/**
-	 * Return the plug-in model object from the plug-in registry for the given
-	 * plug-in identifier and version. If the plug-in is not in the registry then
-	 * throw an exception.
-	 * 
-	 * @param id the plug-in identifier
-	 * @param version the plug-in version
-	 * @return PluginModel
-	 * @throws CoreException if the specified plug-in version does not exist in the registry
-	 */
-	private BundleDescription getPlugin(String id, String version) throws CoreException {
-		if (version==null)
-			return generator.getSite(false).getRegistry().getResolvedBundle(id);
-		else 
-			return generator.getSite(false).getRegistry().getResolvedBundle(id, version);
-		//TODO Need to put back the fixes for 42444 / 43072 / 48317
-		// TODO need to handle optional plugins here.  If an optional is missing it is
-		// not an error.  For now return null and essentially ignore missing plugins.
-		//	if (plugin == null) {
-		//		String pluginName = (version == null) ? id : id + "_" + version; //$NON-NLS-1$
-		//		throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, IPDEBuildConstants.EXCEPTION_PLUGIN_MISSING, Policy.bind("exception.missingPlugin", pluginName), null)); //$NON-NLS-1$
-		//	}
-		// TODO Problem with the non-determinism of the value returned by the plugin registry when several plugin exists. Case with a "compile against" set and a "compiled" set that interleaves.		
-	}
-
-	/**
 	 * Add all fragments of the given plugin
 	 * @param plugin
 	 * @param classpath
 	 * @param baseLocation
 	 * @throws CoreException
 	 */
-	//TODO Check the position of the bin directory seems to be bogus (it appears after the jar)
 	private void addFragmentsLibraries(BundleDescription plugin, List classpath, String baseLocation) throws CoreException {
 		// if plugin is not a plugin, it's a fragment and there is no fragment for a fragment. So we return.
 		BundleDescription[] fragments = plugin.getFragments();
@@ -169,9 +143,9 @@ public class ClasspathComputer3_0 implements IClasspathComputer, IPDEBuildConsta
 
 	private void addSelf(BundleDescription model, ModelBuildScriptGenerator.CompiledEntry jar, List classpath, String location, List pluginChain, Set addedPlugins) throws CoreException {
 		// If model is a fragment, we need to add in the classpath the plugin to which it is related
-		HostSpecification host = model.getHost();
-		if (host != null) {
-			addPluginAndPrerequisites(host.getSupplier(), classpath, location, pluginChain, addedPlugins);
+		HostSpecification[] host = model.getHosts();
+		if (host.length > 0) {
+			addPluginAndPrerequisites(host[0].getSupplier(), classpath, location, pluginChain, addedPlugins);
 		}
 
 		// Add the libraries

@@ -82,7 +82,7 @@ public class FetchScriptGenerator extends AbstractScriptGenerator {
 	public void generate() throws CoreException {
 		mapInfos = processMapFileEntry(element);
 		if (mapInfos == null) {
-			IStatus warning = new Status(IStatus.WARNING, PI_PDEBUILD, WARNING_ELEMENT_NOT_FETCHED, Policy.bind("warning.fetchingFailed", element),null);
+			IStatus warning = new Status(IStatus.WARNING, PI_PDEBUILD, WARNING_ELEMENT_NOT_FETCHED, Policy.bind("error.fetchingFailed", element),null);
 			BundleHelper.getDefault().getLog().log(warning);
 			return;
 		}
@@ -184,7 +184,8 @@ public class FetchScriptGenerator extends AbstractScriptGenerator {
 		try {
 			generateFetchEntry(element, false);
 		} catch (CoreException e) {
-			// FIXME: is this ok to ignore?
+			IStatus status = new Status(IStatus.ERROR, PI_PDEBUILD, WARNING_ELEMENT_NOT_FETCHED, Policy.bind("error.fetchingFailed", element), null); 
+			BundleHelper.getDefault().getLog().log(status);
 		}
 		script.printTargetEnd();
 	}
@@ -258,11 +259,11 @@ public class FetchScriptGenerator extends AbstractScriptGenerator {
 				return;
 		}
 
-		String password = (String) mapFileEntry.get(PASSWORD); //$NON-NLS-1$
+		String password = (String) mapFileEntry.get(PASSWORD);
 		if (password != null)
 			script.printCVSPassTask((String) mapFileEntry.get(CVSROOT), password, cvsPassFileLocation); //$NON-NLS-1$
 
-		String type = (String) mapFileEntry.get(TYPE); //$NON-NLS-1$
+		String type = (String) mapFileEntry.get(TYPE);
 		String location = getElementLocation(type);
 		Map params = new HashMap(5);
 
@@ -338,7 +339,7 @@ public class FetchScriptGenerator extends AbstractScriptGenerator {
 				continue;
 			}
 
-			//TODO Improve the management of the flag: the flag should be set to false if the version number is not the generic number.
+
 			if (allChildren[i].isFragment())
 				generateFetchEntry("fragment@" + elementId, !Utils.isIn(compiledChildren, allChildren[i])); //$NON-NLS-1$
 			else

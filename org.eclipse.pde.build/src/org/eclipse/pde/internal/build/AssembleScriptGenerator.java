@@ -29,7 +29,6 @@ public class AssembleScriptGenerator extends AbstractScriptGenerator {
 
 		String filename = directory + '/' + (scriptFilename == null ? (DEFAULT_ASSEMBLE_NAME + "." + featureId + "." + DEFAULT_ASSEMBLE_ALL) : scriptFilename); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 		try {
-			// FIXME: THE FILE management can cause problem if an error occur when setting other params
 			script = new AntScript(new FileOutputStream(filename));
 		} catch (FileNotFoundException e) {
 			// ignore this exception

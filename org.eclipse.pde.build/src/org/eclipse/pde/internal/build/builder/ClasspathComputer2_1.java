@@ -116,7 +116,6 @@ public class ClasspathComputer2_1 implements IClasspathComputer, IPDEBuildConsta
 	 * @param baseLocation
 	 * @throws CoreException
 	 */
-	//TODO Check the position of the bin directory seems to be bogus (it appears after the jar)
 	private void addFragmentsLibraries(BundleDescription plugin, List classpath, String baseLocation) throws CoreException {
 		// if plugin is not a plugin, it's a fragment and there is no fragment for a fragment. So we return.
 		BundleDescription[] fragments = plugin.getFragments();
@@ -168,9 +167,9 @@ public class ClasspathComputer2_1 implements IClasspathComputer, IPDEBuildConsta
 
 	private void addSelf(BundleDescription model, ModelBuildScriptGenerator.CompiledEntry jar, List classpath, String location, List pluginChain) throws CoreException {
 		// If model is a fragment, we need to add in the classpath the plugin to which it is related
-		HostSpecification host = model.getHost();
-		if (host != null) {
-			addPluginAndPrerequisites(host.getSupplier(), classpath, location, pluginChain);
+		HostSpecification[] hosts = model.getHosts();
+		if (hosts.length > 0) {
+			addPluginAndPrerequisites(hosts[0].getSupplier(), classpath, location, pluginChain);
 		}
 
 		// Add the libraries
@@ -284,10 +283,8 @@ public class ClasspathComputer2_1 implements IClasspathComputer, IPDEBuildConsta
 				throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, EXCEPTION_MALFORMED_URL, message, e));
 			}
 		} catch (MalformedURLException e) {
-			relativePath = url;
-			//TODO remove this backward compatibility support for as soon as we go to 2.2 and put back the exception
-			//		String message = Policy.bind("exception.url", PROPERTIES_FILE + "::"+url); //$NON-NLS-1$  //$NON-NLS-2$
-			//		throw new CoreException(new Status(IStatus.ERROR,PI_PDEBUILD, IPDEBuildConstants.EXCEPTION_MALFORMED_URL, message,e));
+			String message = Policy.bind("exception.url", PROPERTIES_FILE + "::"+url); //$NON-NLS-1$  //$NON-NLS-2$
+			throw new CoreException(new Status(IStatus.ERROR,PI_PDEBUILD, IPDEBuildConstants.EXCEPTION_MALFORMED_URL, message,e));
 		}
 		return relativePath;
 	}
