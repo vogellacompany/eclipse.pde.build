@@ -305,7 +305,7 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 		//This task only support creation of archive with eclipse at the root 
 		//Need to do the copy using cp because of the link
 		List parameters = new ArrayList(2);
-		parameters.add("-r " + getPropertyFormat(PROPERTY_ASSEMBLY_TMP) + '/' + getPropertyFormat(PROPERTY_COLLECTING_FOLDER)  + '/' + configInfo.toStringReplacingAny(".", ANY_STRING) + '/' + getPropertyFormat(PROPERTY_COLLECTING_FOLDER) + getPropertyFormat(PROPERTY_ASSEMBLY_TMP) + '/' + getPropertyFormat(PROPERTY_ARCHIVE_PREFIX)); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$  
+		parameters.add("-r " + getPropertyFormat(PROPERTY_ASSEMBLY_TMP) + '/' + getPropertyFormat(PROPERTY_COLLECTING_FOLDER)  + '/' + configInfo.toStringReplacingAny(".", ANY_STRING) + '/' + getPropertyFormat(PROPERTY_COLLECTING_FOLDER) + ' ' + getPropertyFormat(PROPERTY_ASSEMBLY_TMP) + '/' + getPropertyFormat(PROPERTY_ARCHIVE_PREFIX)); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$  
 		script.printExecTask("cp", getPropertyFormat(PROPERTY_BASEDIR), parameters, "Linux"); //$NON-NLS-1$ //$NON-NLS-2$
 		
 		parameters.clear();
