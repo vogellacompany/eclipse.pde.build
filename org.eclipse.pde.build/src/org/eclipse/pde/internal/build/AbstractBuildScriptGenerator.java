@@ -274,6 +274,10 @@ private String computeExtraPath(String url, String location) throws CoreExceptio
  * no plug-in version which satisfies the matching rules.
  */
 private PluginModel internalGetPlugin(PluginPrerequisiteModel prereq) throws CoreException {
+    // if we don't know have a version to match against, it doesn't
+    // matter what the matching rules are so we will exit early with null
+    if (prereq.getVersion() == null)
+        return null;
 	PluginModel result = null;
 	PluginDescriptorModel[] plugins = getRegistry().getPlugins(prereq.getPlugin());
 	PluginVersionIdentifier searchedVersion = new PluginVersionIdentifier(prereq.getVersion());
