@@ -261,7 +261,7 @@ public class ClasspathComputer2_1 implements IClasspathComputer, IPDEBuildConsta
 
 			if (urlfragments[1].equalsIgnoreCase("resource")) { //$NON-NLS-1$
 				String message = Policy.bind("exception.url", generator.getPropertiesFileName() + "::" + url); //$NON-NLS-1$  //$NON-NLS-2$
-				throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, IPDEBuildConstants.EXCEPTION_MALFORMED_URL, message, null));
+				throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, EXCEPTION_MALFORMED_URL, message, null));
 			}
 			if (modelLocation != null) {
 				for (int i = 3; i < urlfragments.length; i++) {
@@ -281,7 +281,7 @@ public class ClasspathComputer2_1 implements IClasspathComputer, IPDEBuildConsta
 				relativePath = Utils.makeRelative(new Path(Platform.resolve(extraURL).getFile()), new Path(location)).toOSString();
 			} catch (IOException e) {
 				String message = Policy.bind("exception.url", generator.getPropertiesFileName() + "::" + url); //$NON-NLS-1$  //$NON-NLS-2$
-				throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, IPDEBuildConstants.EXCEPTION_MALFORMED_URL, message, e));
+				throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, EXCEPTION_MALFORMED_URL, message, e));
 			}
 		} catch (MalformedURLException e) {
 			relativePath = url;
@@ -299,7 +299,7 @@ public class ClasspathComputer2_1 implements IClasspathComputer, IPDEBuildConsta
 			if (target == getPlugin(PI_RUNTIME, null))
 				return;
 			String message = Policy.bind("error.pluginCycle"); //$NON-NLS-1$
-			throw new CoreException(new Status(IStatus.ERROR, IPDEBuildConstants.PI_PDEBUILD, IPDEBuildConstants.EXCEPTION_CLASSPATH_CYCLE, message, null));
+			throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, EXCEPTION_CLASSPATH_CYCLE, message, null));
 		}
 
 		//	The first prerequisite is ALWAYS runtime

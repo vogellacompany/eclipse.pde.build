@@ -19,7 +19,6 @@ import org.eclipse.pde.internal.build.*;
 import org.eclipse.pde.internal.build.ant.FileSet;
 import org.eclipse.pde.internal.build.ant.JavacTask;
 import org.eclipse.update.core.IPluginEntry;
-import org.osgi.framework.Constants;
 
 /**
  * Generic class for generating scripts for plug-ins and fragments.
@@ -130,11 +129,11 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	 */
 	private void checkBootAndRuntime() throws CoreException {
 		if (getSite(false).getRegistry().getResolvedBundle(PI_BOOT)==null) {
-			IStatus status = new Status(IStatus.ERROR, PI_PDEBUILD, IPDEBuildConstants.EXCEPTION_PLUGIN_MISSING, Policy.bind("exception.missingPlugin", PI_BOOT), null);//$NON-NLS-1$
+			IStatus status = new Status(IStatus.ERROR, PI_PDEBUILD, EXCEPTION_PLUGIN_MISSING, Policy.bind("exception.missingPlugin", PI_BOOT), null);//$NON-NLS-1$
 			throw new CoreException(status); 
 		}
 		if (getSite(false).getRegistry().getResolvedBundle(PI_RUNTIME)==null) {
-			IStatus status = new Status(IStatus.ERROR, PI_PDEBUILD, IPDEBuildConstants.EXCEPTION_PLUGIN_MISSING, Policy.bind("exception.missingPlugin", PI_RUNTIME), null);//$NON-NLS-1$
+			IStatus status = new Status(IStatus.ERROR, PI_PDEBUILD, EXCEPTION_PLUGIN_MISSING, Policy.bind("exception.missingPlugin", PI_RUNTIME), null);//$NON-NLS-1$
 			throw new CoreException(status); 
 		}
 	}
@@ -143,8 +142,9 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		fullName = model.getUniqueId() + "_" + model.getVersion(); //$NON-NLS-1$
 		pluginZipDestination = PLUGIN_DESTINATION + '/' + fullName + ".zip"; //$NON-NLS-1$ //$NON-NLS-2$
 		pluginUpdateJarDestination = PLUGIN_DESTINATION + '/' + fullName + ".jar"; //$NON-NLS-1$ //$NON-NLS-2$
-		if (".".equals(getBuildProperties().getProperty(Constants.BUNDLE_CLASSPATH))) {
-			getBuildProperties().setProperty(Constants.BUNDLE_CLASSPATH, "@dot");
+		String[] classpathInfo = getClasspathEntries(model);
+		if (classpathInfo.length>0 && ".".equals(classpathInfo[0])) {
+			getSite(false).getRegistry().getExtraData().put(new Long(model.getBundleId()), new String[]{"@dot"});
 			getBuildProperties().setProperty("source.@dot", getBuildProperties().getProperty("source.."));
 			getBuildProperties().remove("source..");
 			String outputValue = getBuildProperties().getProperty("output..");
@@ -322,7 +322,7 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		String exclude = (String) getBuildProperties().get(PROPERTY_SRC_EXCLUDES);
 		if (include != null || exclude != null) {
 			FileSet fileSet = new FileSet(getPropertyFormat(PROPERTY_BASEDIR), null, include, null, exclude, null, null);
-			script.printCopyTask(null, baseDestination.toString(), new FileSet[] { fileSet }, true);
+			script.printCopyTask(null, baseDestination.toString(), new FileSet[] { fileSet }, false);
 		}
 		script.printTargetEnd();
 	}
@@ -353,7 +353,8 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 			FileSet fileSet = new FileSet(getPropertyFormat(PROPERTY_BASEDIR), null, replaceVariables(include, true), null, replaceVariables(exclude, true), null, null);
 			script.printCopyTask(null, root, new FileSet[] { fileSet }, true);
 		}
-		if ("@dot".equalsIgnoreCase(getBuildProperties().getProperty(Constants.BUNDLE_CLASSPATH))) {
+		String[] classpathInfo = getClasspathEntries(model);
+		if (classpathInfo.length > 1 && "@dot".equalsIgnoreCase(classpathInfo[0])) {
 			FileSet fileSet = new FileSet(getPropertyFormat(PROPERTY_BASEDIR) + "/@dot", null, "**", null, null, null, null);
 			script.printCopyTask(null, root,new FileSet[] { fileSet }, true);
 		}
@@ -665,7 +666,7 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		String[] sources = entry.getSource();
 		javac.setSrcdir(sources);
 		script.print(javac);
-		script.printComment("copy necessary resources"); //$NON-NLS-1$
+		script.printComment("Copy necessary resources"); //$NON-NLS-1$
 		FileSet[] fileSets = new FileSet[sources.length];
 		for (int i = 0; i < sources.length; i++)
 			fileSets[i] = new FileSet(sources[i], null, null, null, "**/*.java", null, null); //$NON-NLS-1$

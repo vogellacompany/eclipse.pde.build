@@ -54,7 +54,7 @@ public class PDEState implements IPDEBuildConstants, IBuildPropertiesConstants {
 			bundleClasspaths.put(new Long(descriptor.getBundleId()), getClasspath(enhancedManifest));
 			state.addBundle(descriptor);
 		} catch (BundleException e) {
-			IStatus status = new Status(IStatus.WARNING,IPDEBuildConstants.PI_PDEBUILD,  IPDEBuildConstants.EXCEPTION_STATE_PROBLEM, Policy.bind("exception.stateAddition",  (String) enhancedManifest.get(Constants.BUNDLE_NAME)),e);//$NON-NLS-1$
+			IStatus status = new Status(IStatus.WARNING,IPDEBuildConstants.PI_PDEBUILD,  EXCEPTION_STATE_PROBLEM, Policy.bind("exception.stateAddition",  (String) enhancedManifest.get(Constants.BUNDLE_NAME)),e);//$NON-NLS-1$
 			BundleHelper.getDefault().getLog().log(status); 
 			return false;
 		}

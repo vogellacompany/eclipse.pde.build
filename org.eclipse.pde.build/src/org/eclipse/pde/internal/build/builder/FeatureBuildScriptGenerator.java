@@ -167,8 +167,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		}
 		initializeVariables();
 		// if the feature defines its own custom script, we do not generate a
-		// new one
-		// but we do try to update the version number
+		// new one but we do try to update the version number
 		String custom = (String) getBuildProperties().get(PROPERTY_CUSTOM);
 		if (VALUE_TRUE.equalsIgnoreCase(custom)) { //$NON-NLS-1$
 			File buildFile = new File(featureRootLocation, DEFAULT_BUILD_SCRIPT_FILENAME);
@@ -850,7 +849,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		associateExtraPlugins();
 		sourcePlugin = createSourcePlugin();
 		generateSourceFragment();
-		getSite(true);
+		getSite(true);	//TODO Here we should add the new plugin to the state directly
 	}
 	private void generateSourceFragment() throws CoreException {
 		Map fragments = sourceToGather.getElementEntries();

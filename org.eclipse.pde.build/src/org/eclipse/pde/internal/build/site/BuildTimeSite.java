@@ -52,7 +52,7 @@ public class BuildTimeSite extends Site implements ISite, IPDEBuildConstants, IX
 					for (int j = 0; j < unsatisfiedConstraint.length; j++) {
 						message += '\t' + unsatisfiedConstraint[j].toString() + '\n';
 					}
-					IStatus status = new Status(IStatus.WARNING, IPDEBuildConstants.PI_PDEBUILD,  IPDEBuildConstants.EXCEPTION_STATE_PROBLEM, Policy.bind("exception.registryResolution", message), null);//$NON-NLS-1$
+					IStatus status = new Status(IStatus.WARNING, IPDEBuildConstants.PI_PDEBUILD,  EXCEPTION_STATE_PROBLEM, Policy.bind("exception.registryResolution", message), null);//$NON-NLS-1$
 					BundleHelper.getDefault().getLog().log(status);	
 				}
 			}

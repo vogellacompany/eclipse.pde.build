@@ -21,7 +21,7 @@ public class PluginRegistryConverter extends PDEState {
 	private PluginRegistryModel getPluginRegistry(URL[] files) throws CoreException {
 		if (registry == null) {
 			// create the registry according to the site where the code to compile is, and a existing installation of eclipse 
-			MultiStatus problems = new MultiStatus(IPDEBuildConstants.PI_PDEBUILD, IPDEBuildConstants.EXCEPTION_MODEL_PARSE, Policy.bind("exception.pluginParse"), null); //$NON-NLS-1$
+			MultiStatus problems = new MultiStatus(IPDEBuildConstants.PI_PDEBUILD, EXCEPTION_MODEL_PARSE, Policy.bind("exception.pluginParse"), null); //$NON-NLS-1$
 			Factory factory = new Factory(problems);
 			registry = PluginRegistryModel.parsePlugins(files, factory);
 			registry.resolve(true, false);
@@ -85,7 +85,7 @@ public class PluginRegistryConverter extends PDEState {
 		try {
 			getPluginRegistry(Utils.asURL((String[]) bundles.toArray()));
 		} catch (CoreException e) {
-			IStatus status = new Status(IStatus.ERROR, IPDEBuildConstants.PI_PDEBUILD, IPDEBuildConstants.EXCEPTION_STATE_PROBLEM, Policy.bind("exception.registryResolution"), e);
+			IStatus status = new Status(IStatus.ERROR, IPDEBuildConstants.PI_PDEBUILD, EXCEPTION_STATE_PROBLEM, Policy.bind("exception.registryResolution"), e);
 			BundleHelper.getDefault().getLog().log(status);
 		}
 		for (Iterator iter = bundles.iterator(); iter.hasNext();) {

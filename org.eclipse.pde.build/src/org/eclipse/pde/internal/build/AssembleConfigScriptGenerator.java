@@ -232,7 +232,7 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 		final int parameterSize = 15;
 		List parameters = new ArrayList(parameterSize + 1);
 		for (int i = 0; i < plugins.length; i++) {
-			parameters.add(getPropertyFormat(PROPERTY_COLLECTING_PLACE) + '/' + DEFAULT_PLUGIN_LOCATION + '/' + plugins[i].getUniqueId() + '_' + plugins[i].getVersion() + (getFinalShape(plugins[i].getUniqueId(), plugins[i].getVersion().toString(), BUNDLE) == FOLDER ? '*': '*'));
+			parameters.add(getPropertyFormat(PROPERTY_COLLECTING_PLACE) + '/' + DEFAULT_PLUGIN_LOCATION + '/' + plugins[i].getUniqueId() + '_' + plugins[i].getVersion() + (getFinalShape(plugins[i].getUniqueId(), plugins[i].getVersion().toString(), BUNDLE) == FOLDER ? '/': '*'));
 			if (i % parameterSize == 0) {
 				createZipExecCommand(parameters);
 				parameters.clear();

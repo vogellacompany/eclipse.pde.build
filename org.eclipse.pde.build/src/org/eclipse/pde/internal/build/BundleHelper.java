@@ -45,6 +45,7 @@ public class BundleHelper  {
 			throw new RuntimeException("Can not instantiate bundle helper"); 
 		this.context = context;
 		defaultInstance = this;
+		bundle = context.getBundle(); 
 	}
 	
 	public final URL find(IPath path) {
