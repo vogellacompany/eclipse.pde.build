@@ -47,6 +47,7 @@ public class BuildTimeSiteFactory extends BaseSiteFactory implements ISiteFactor
 		if (site != null && urlsChanged == false)
 			return site;
 
+		urlsChanged = false;
 		site = (Site) createSiteMapModel();
 
 		// Here we find the features in the URLs
@@ -116,14 +117,16 @@ public class BuildTimeSiteFactory extends BaseSiteFactory implements ISiteFactor
 	public void setSitePaths(URL[] urls) {
 		if (sitePaths == null) {
 			sitePaths = urls;
+			urlsChanged = true;
 			return;
 		}
 
+		//Check if urls are not the same than sitePaths.  
 		int i = 0;
 		boolean found = true;
 		while (found && i < sitePaths.length) {
 			found = false;
-			for (int j = 0; j < sitePaths.length; j++) {
+			for (int j = 0; j < urls.length; j++) {
 				if (sitePaths[i].sameFile(urls[j])) {
 					found = true;
 					break;
@@ -133,7 +136,7 @@ public class BuildTimeSiteFactory extends BaseSiteFactory implements ISiteFactor
 		}
 		if (!found) {
 			sitePaths = urls;
-			site = null;
+			urlsChanged = true;
 		}
 	}
 
