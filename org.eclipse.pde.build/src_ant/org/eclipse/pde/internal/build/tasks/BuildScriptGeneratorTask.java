@@ -53,7 +53,7 @@ public class BuildScriptGeneratorTask extends Task {
 	 * 
 	 * @param pluginPath the plug-in path
 	 */
-	public void setPluginPath(String pluginPath) {
+	public void setPluginPath(String pluginPath) throws CoreException {
 		generator.setPluginPath(Utils.getArrayFromString(pluginPath));
 	}
 

@@ -15,5 +15,5 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.osgi.service.resolver.BundleDescription;
 
 public interface IClasspathComputer {
-	public List getClasspath(BundleDescription model, ModelBuildScriptGenerator.JAR jar) throws CoreException;
+	public List getClasspath(BundleDescription model, ModelBuildScriptGenerator.CompiledEntry jar) throws CoreException;
 }

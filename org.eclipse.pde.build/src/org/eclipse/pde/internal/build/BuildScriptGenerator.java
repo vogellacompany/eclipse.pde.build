@@ -10,6 +10,7 @@
  **********************************************************************/
 package org.eclipse.pde.internal.build;
 
+import java.net.URL;
 import java.util.*;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.pde.internal.build.builder.*;
@@ -37,7 +38,7 @@ public class BuildScriptGenerator extends AbstractScriptGenerator {
 	/**
 	 * Plugin path. URLs that point where to find the plugins.
 	 */
-	protected String[] pluginPath;
+	protected URL[] pluginPath;
 
 	protected boolean recursiveGeneration = true;
 
@@ -105,7 +106,7 @@ public class BuildScriptGenerator extends AbstractScriptGenerator {
 			generator.setBinaryFeatureGeneration(true);
 			generator.setScriptGeneration(true);
 			generator.getSite(true); // Force the site to be refreshed
-			generator.setPluginPath(Utils.asURL(pluginPath));
+			generator.setPluginPath(pluginPath);
 			generator.setBuildSiteFactory(null);
 			generator.setDevEntries(devEntries);
 			generator.setSourceToGather(new SourceFeatureInformation());
@@ -146,8 +147,12 @@ public class BuildScriptGenerator extends AbstractScriptGenerator {
 	 * @param pluginPath
 	 */
 	//TODO Shoudn't we get path instead of url?
-	public void setPluginPath(String[] pluginPath) {
-		this.pluginPath = pluginPath;
+	public void setPluginPath(String[] pluginPath) throws CoreException {
+		this.pluginPath = Utils.asURL(pluginPath);
+	}
+
+	public void setPluginPath(URL[] pathURLs) throws CoreException {
+		this.pluginPath = pathURLs;
 	}
 
 	/**

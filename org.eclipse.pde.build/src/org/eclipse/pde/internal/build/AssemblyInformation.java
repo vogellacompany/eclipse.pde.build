@@ -33,7 +33,7 @@ public class AssemblyInformation {
 		AssemblyLevelConfigInfo entry = (AssemblyLevelConfigInfo) assembleInformation.get(config);
 		entry.addFeature(feature);
 	}
-
+	
 	public void addPlugin(Config config, BundleDescription plugin) {
 		AssemblyLevelConfigInfo entry = (AssemblyLevelConfigInfo) assembleInformation.get(config);
 		entry.addPlugin(plugin);

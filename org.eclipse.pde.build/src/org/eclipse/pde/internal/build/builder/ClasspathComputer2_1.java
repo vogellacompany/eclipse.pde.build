@@ -42,7 +42,7 @@ public class ClasspathComputer2_1 implements IClasspathComputer, IPDEBuildConsta
 	 * @return String the classpath
 	 * @throws CoreException
 	 */
-	public List getClasspath(BundleDescription model, ModelBuildScriptGenerator.JAR jar) throws CoreException {
+	public List getClasspath(BundleDescription model, ModelBuildScriptGenerator.CompiledEntry jar) throws CoreException {
 		List classpath = new ArrayList(20);
 		List pluginChain = new ArrayList(10);
 		String location = generator.getLocation(model);
@@ -169,7 +169,7 @@ public class ClasspathComputer2_1 implements IClasspathComputer, IPDEBuildConsta
 			classpath.add(path);
 	}
 
-	private void addSelf(BundleDescription model, ModelBuildScriptGenerator.JAR jar, List classpath, String location, List pluginChain) throws CoreException {
+	private void addSelf(BundleDescription model, ModelBuildScriptGenerator.CompiledEntry jar, List classpath, String location, List pluginChain) throws CoreException {
 		// If model is a fragment, we need to add in the classpath the plugin to which it is related
 		HostSpecification host = model.getHost();
 		if (host != null) {

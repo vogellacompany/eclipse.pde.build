@@ -173,7 +173,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		// new one
 		// but we do try to update the version number
 		String custom = (String) getBuildProperties().get(PROPERTY_CUSTOM);
-		if (custom != null && custom.equalsIgnoreCase("true")) { //$NON-NLS-1$
+		if ("true".equalsIgnoreCase(custom)) { //$NON-NLS-1$
 			File buildFile = new File(featureRootLocation, DEFAULT_BUILD_SCRIPT_FILENAME);
 			try {
 				updateVersion(buildFile, PROPERTY_FEATURE_VERSION_SUFFIX, feature.getVersionedIdentifier().getVersion().toString());
@@ -633,17 +633,17 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	 */
 	protected void generateAllPluginsTarget() throws CoreException {
 		List plugins = computeElements();
-		String[] sortedPlugins = Utils.computePrerequisiteOrder(plugins);
+		plugins = Utils.computePrerequisiteOrder2(plugins);
 		script.println();
 		script.printTargetDeclaration(TARGET_ALL_PLUGINS, TARGET_INIT, null, null, null);
 		Set writtenCalls = new HashSet(plugins.size());
-		for (int i = 0; i < sortedPlugins.length; i++) {
-			BundleDescription plugin = getSite(false).getRegistry().getResolvedBundle(sortedPlugins[i]);
+		for (Iterator iter = plugins.iterator(); iter.hasNext();) {
+			BundleDescription current = (BundleDescription) iter.next();
 			// Get the os / ws / arch to pass as a parameter to the plugin
-			if (writtenCalls.contains(sortedPlugins[i]))
+			if (writtenCalls.contains(current))
 				continue;
-			writtenCalls.add(sortedPlugins[i]);
-			IPluginEntry[] entries = Utils.getPluginEntry(feature, sortedPlugins[i]);
+			writtenCalls.add(current);
+			IPluginEntry[] entries = Utils.getPluginEntry(feature, current.getUniqueId());
 			for (int j = 0; j < entries.length; j++) {
 				List list = selectConfigs(entries[j]);
 				if (list.size() == 0)
@@ -657,7 +657,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 					params.put(PROPERTY_WS, aMatchingConfig.getWs());
 				if (!aMatchingConfig.getArch().equals(Config.ANY))
 					params.put(PROPERTY_ARCH, aMatchingConfig.getArch());
-				IPath location = Utils.makeRelative(new Path(getLocation(plugin)), new Path(featureRootLocation));
+				IPath location = Utils.makeRelative(new Path(getLocation(current)), new Path(featureRootLocation));
 				script.printAntTask(DEFAULT_BUILD_SCRIPT_FILENAME, location.toString(), getPropertyFormat(PROPERTY_TARGET), null, null, params);
 			}
 		}
@@ -711,7 +711,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	 */
 	private void generateChildrenScripts() throws CoreException {
 		List plugins = computeElements();
-		generateModels(plugins);
+		generateModels(Utils.computePrerequisiteOrder2(plugins));
 	}
 	/**
 	 * @param generator

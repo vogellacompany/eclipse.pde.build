@@ -1,11 +1,10 @@
-Generated-from: 1077318098000
 Bundle-Name: %pluginName
 Bundle-Version: 3.0
 Bundle-GlobalName: org.eclipse.pde.build
 Bundle-Vendor: %providerName
 Bundle-ClassPath: pdebuild.jar
-Legacy: true
 Bundle-Activator: org.eclipse.pde.internal.build.BuildActivator
+Legacy: true
 Require-Bundle: 
  org.eclipse.core.runtime,
  org.eclipse.ant.core,

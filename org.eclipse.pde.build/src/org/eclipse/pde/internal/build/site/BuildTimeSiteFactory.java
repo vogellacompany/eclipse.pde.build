@@ -38,7 +38,7 @@ public class BuildTimeSiteFactory extends BaseSiteFactory implements ISiteFactor
 
 	/** 
 	 * Create a build time site, using the sitePaths, and the installedBaseLocation.
-	 * Note that the site object is not recomputed is no change has been done.
+	 * Note that the site object is not recomputed if no change has been done.
 	 * 
 	 * @return ISite
 	 * @throws CoreException

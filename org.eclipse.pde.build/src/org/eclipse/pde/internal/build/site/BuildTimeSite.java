@@ -26,7 +26,7 @@ import org.eclipse.update.core.*;
  */
 public class BuildTimeSite extends Site implements ISite, IPDEBuildConstants, IXMLConstants {
 	private PDEState state;
-	private boolean compile21 = AbstractScriptGenerator.isBuildingOSGi();
+	private boolean compile21 = false;// ! AbstractScriptGenerator.isBuildingOSGi();
 	
 	public PDEState getRegistry() throws CoreException {
 		if (state == null) {
@@ -34,7 +34,7 @@ public class BuildTimeSite extends Site implements ISite, IPDEBuildConstants, IX
 			BuildTimeSiteContentProvider contentProvider = (BuildTimeSiteContentProvider) getSiteContentProvider();
 			state = new PDEState();
 			
-			if (compile21)
+			if (compile21) //TODO Need to filter the features that could be included 
 				new PluginRegistryConverter(contentProvider.getPluginPaths()).addRegistryToState(state);
 			else 
 				state.addBundles(contentProvider.getPluginPaths());

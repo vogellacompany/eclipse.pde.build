@@ -61,7 +61,8 @@ public class JavacTask implements ITask {
 			script.printTab();
 			script.print("<pathelement"); //$NON-NLS-1$
 			script.printAttribute("path", path, false); //$NON-NLS-1$
-			script.println("/>"); //$NON-NLS-1$			
+			script.print("/>"); //$NON-NLS-1$
+			script.println();
 		}
 		script.indent--;
 		script.printEndTag("classpath");

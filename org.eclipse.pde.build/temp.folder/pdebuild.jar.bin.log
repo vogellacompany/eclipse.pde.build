@@ -1,0 +1,7 @@
+----------
+1. WARNING in D:\work\workspaces\towardM8\org.eclipse.pde.build\src\org\eclipse\pde\internal\build\builder\ClasspathComputer3_0.java (at line 28)
+	import sun.security.action.GetBooleanAction;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import sun.security.action.GetBooleanAction is never used
+----------
+1 problem (1 warning)

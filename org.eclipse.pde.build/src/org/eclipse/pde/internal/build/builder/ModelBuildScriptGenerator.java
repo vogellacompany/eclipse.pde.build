@@ -19,6 +19,7 @@ import org.eclipse.pde.internal.build.*;
 import org.eclipse.pde.internal.build.ant.FileSet;
 import org.eclipse.pde.internal.build.ant.JavacTask;
 import org.eclipse.update.core.IPluginEntry;
+import org.osgi.framework.Constants;
 
 /**
  * Generic class for generating scripts for plug-ins and fragments.
@@ -26,20 +27,24 @@ import org.eclipse.update.core.IPluginEntry;
 public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 
 	/**
-	 * Represents a JAR file which is listed in the build.properties file.
+	 * Represents a entry that must be compiled and which is listed in the build.properties file.
 	 */
-	protected class JAR {
+	protected class CompiledEntry {
+		static final byte JAR = 0; 
+		static final byte FOLDER = 1;
 		private String name;
 		private String resolvedName;
 		private String[] source;
 		private String[] output;
 		private String[] extraClasspath;
-
-		protected JAR(String name, String[] source, String[] output, String[] extraClasspath) {
-			this.name = name;
-			this.source = source;
-			this.output = output;
-			this.extraClasspath = extraClasspath;
+		private byte type;
+		
+		protected CompiledEntry(String entryName, String[] entrySource, String[] entryOutput, String[] entryExtraClasspath, byte entryType) {
+			this.name = entryName;
+			this.source = entrySource;
+			this.output = entryOutput;
+			this.extraClasspath = entryExtraClasspath;
+			this.type = entryType;
 		}
 		protected String getName(boolean resolved) {
 			if (!resolved)
@@ -59,7 +64,9 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		public String[] getExtraClasspath() {
 			return extraClasspath;
 		}
-
+		public byte getType() {
+			return type;
+		}
 	}
 
 	/**
@@ -81,7 +88,7 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	private String propertiesFileName = PROPERTIES_FILE;
 	private String buildScriptFileName = DEFAULT_BUILD_SCRIPT_FILENAME;
 
-	private boolean compile21 = isBuildingOSGi();
+	private boolean compile21 = false;//! isBuildingOSGi();
 
 	/**
 	 * @see AbstractScriptGenerator#generate()
@@ -132,10 +139,17 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		}
 	}
 
-	private void initializeVariables() {
+	private void initializeVariables() throws CoreException {
 		fullName = model.getUniqueId() + "_" + model.getVersion(); //$NON-NLS-1$
 		pluginZipDestination = PLUGIN_DESTINATION + "/" + fullName + ".zip"; //$NON-NLS-1$ //$NON-NLS-2$
 		pluginUpdateJarDestination = PLUGIN_DESTINATION + "/" + fullName + ".jar"; //$NON-NLS-1$ //$NON-NLS-2$
+		if (".".equals(getBuildProperties().getProperty(Constants.BUNDLE_CLASSPATH))) {
+			getBuildProperties().setProperty(Constants.BUNDLE_CLASSPATH, "@dot");
+			getBuildProperties().setProperty("source.@dot", getBuildProperties().getProperty("source.."));
+			getBuildProperties().setProperty("output.@dot", getBuildProperties().getProperty("output.."));
+			getBuildProperties().remove("source..");
+			getBuildProperties().remove("output..");
+		}
 	}
 
 	/**
@@ -212,7 +226,7 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	private void generateCleanTarget() throws CoreException {
 		script.println();
 		Properties properties = getBuildProperties();
-		JAR[] availableJars = extractJars(properties);
+		CompiledEntry[] availableJars = extractEntriesToCompile(properties);
 		script.printTargetDeclaration(TARGET_CLEAN, TARGET_INIT, null, null, Policy.bind("build.plugin.clean", model.getUniqueId())); //$NON-NLS-1$
 		for (int i = 0; i < availableJars.length; i++) {
 			String jarName = availableJars[i].getName(true);
@@ -238,7 +252,7 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		baseDestination = baseDestination.append(fullName);
 		List destinations = new ArrayList(5);
 		Properties properties = getBuildProperties();
-		JAR[] availableJars = extractJars(properties);
+		CompiledEntry[] availableJars = extractEntriesToCompile(properties);
 		for (int i = 0; i < availableJars.length; i++) {
 			String name = availableJars[i].getName(true);
 			IPath destination = baseDestination.append(name).removeLastSegments(1); // remove the jar name
@@ -279,7 +293,7 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		baseDestination = baseDestination.append(fullName);
 		List destinations = new ArrayList(5);
 		Properties properties = getBuildProperties();
-		JAR[] availableJars = extractJars(properties);
+		CompiledEntry[] availableJars = extractEntriesToCompile(properties);
 		for (int i = 0; i < availableJars.length; i++) {
 			String jar = availableJars[i].getName(true);
 			IPath destination = baseDestination.append(jar).removeLastSegments(1); // remove the jar name
@@ -323,6 +337,10 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		if (include != null || exclude != null) {
 			FileSet fileSet = new FileSet(getPropertyFormat(PROPERTY_BASEDIR), null, replaceVariables(include, true), null, replaceVariables(exclude, true), null, null);
 			script.printCopyTask(null, root, new FileSet[] { fileSet });
+		}
+		if ("@dot".equalsIgnoreCase(getBuildProperties().getProperty(Constants.BUNDLE_CLASSPATH))) {
+			FileSet fileSet = new FileSet(getPropertyFormat(PROPERTY_BASEDIR) + "/@dot", null, "**", null, null, null, null);
+			script.printCopyTask(null, root,new FileSet[] { fileSet });
 		}
 		generatePermissionProperties(root);
 		genarateIdReplacementCall(destination.toString());
@@ -548,7 +566,7 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	 */
 	private void generateBuildJarsTarget(BundleDescription pluginModel) throws CoreException {
 		Properties properties = getBuildProperties();
-		JAR[] availableJars = extractJars(properties);
+		CompiledEntry[] availableJars = extractEntriesToCompile(properties);
 		List jarNames = new ArrayList(availableJars.length);
 		Map jars = new HashMap(availableJars.length);
 		for (int i = 0; i < availableJars.length; i++)
@@ -565,22 +583,22 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		if (jarOrder != null) {
 			String[] order = Utils.getArrayFromString(jarOrder);
 			for (int i = 0; i < order.length; i++) {
-				JAR jar = (JAR) jars.get(order[i]);
+				CompiledEntry jar = (CompiledEntry) jars.get(order[i]);
 				if (jar == null)
 					continue;
 				String name = jar.getName(false);
 				jarNames.add(name);
-				generateJARTarget(classpath.getClasspath(pluginModel, jar), jar);
-				generateSRCTarget(jar);
+				generateCompilationTarget(classpath.getClasspath(pluginModel, jar), jar);
+//				generateSRCTarget(jar);
 				jars.remove(order[i]);
 			}
 		}
 		for (Iterator iterator = jars.values().iterator(); iterator.hasNext();) {
-			JAR jar = (JAR) iterator.next();
+			CompiledEntry jar = (CompiledEntry) iterator.next();
 			String name = jar.getName(false);
 			jarNames.add(name);
-			generateJARTarget(classpath.getClasspath(pluginModel, jar), jar);
-			generateSRCTarget(jar);
+			generateCompilationTarget(classpath.getClasspath(pluginModel, jar), jar);
+//			generateSRCTarget(jar);
 		}
 		script.println();
 		script.printTargetDeclaration(TARGET_BUILD_JARS, TARGET_INIT, null, null, Policy.bind("build.plugin.buildJars", pluginModel.getUniqueId())); //$NON-NLS-1$
@@ -607,14 +625,14 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	 * jar as parameters.
 	 * 
 	 * @param classpath the classpath for the jar command
-	 * @param jar
+	 * @param entry
 	 * @throws CoreException
 	 */
-	private void generateJARTarget(List classpath, JAR jar) throws CoreException {
+	private void generateCompilationTarget(List classpath, CompiledEntry entry) throws CoreException {
 		script.println();
-		String name = jar.getName(false);
-		script.printTargetDeclaration(name, TARGET_INIT, null, jar.getName(true), Policy.bind("build.plugin.jar", name)); //$NON-NLS-1$
-		String destdir = getTempJARFolderLocation(jar.getName(true));
+		String name = entry.getName(false);
+		script.printTargetDeclaration(name, TARGET_INIT, null, entry.getName(true), Policy.bind("build.plugin.jar", name)); //$NON-NLS-1$
+		String destdir = getTempJARFolderLocation(entry.getName(true));
 		script.printDeleteTask(destdir, null, null);
 		script.printMkdirTask(destdir);
 		script.printComment("compile the source code"); //$NON-NLS-1$
@@ -628,7 +646,7 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		javac.setIncludeAntRuntime("no"); //$NON-NLS-1$
 		javac.setSource(getPropertyFormat(PROPERTY_JAVAC_SOURCE));
 		javac.setTarget(getPropertyFormat(PROPERTY_JAVAC_TARGET));
-		String[] sources = jar.getSource();
+		String[] sources = entry.getSource();
 		javac.setSrcdir(sources);
 		script.print(javac);
 		script.printComment("copy necessary resources"); //$NON-NLS-1$
@@ -636,9 +654,16 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		for (int i = 0; i < sources.length; i++)
 			fileSets[i] = new FileSet(sources[i], null, null, null, "**/*.java", null, null); //$NON-NLS-1$
 		script.printCopyTask(null, destdir, fileSets);
-		String jarLocation = getJARLocation(jar.getName(true));
+		
+		String jarLocation = getJARLocation(entry.getName(true));
 		script.printMkdirTask(new Path(jarLocation).removeLastSegments(1).toString());
-		script.printJarTask(jarLocation, destdir);
+		
+		if (entry.getType()==CompiledEntry.FOLDER) {
+			FileSet[] binFolder = new FileSet[] { new FileSet(destdir, null, null, null, null, null, null) };
+			script.printCopyTask(null, jarLocation, binFolder);
+		} else {
+			script.printJarTask(jarLocation, destdir);
+		}
 		script.printDeleteTask(destdir, null, null);
 		script.printTargetEnd();
 	}
@@ -648,22 +673,22 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	 * @param properties
 	 * @return JAR[]
 	 */
-	protected JAR[] extractJars(Properties properties) {
+	protected CompiledEntry[] extractEntriesToCompile(Properties properties) {
 		List result = new ArrayList(5);
 		int prefixLength = PROPERTY_SOURCE_PREFIX.length();
 		for (Iterator iterator = properties.entrySet().iterator(); iterator.hasNext();) {
 			Map.Entry entry = (Map.Entry) iterator.next();
 			String key = (String) entry.getKey();
-			if (!(key.startsWith(PROPERTY_SOURCE_PREFIX) && key.endsWith(PROPERTY_JAR_SUFFIX)))
+			if (!(key.startsWith(PROPERTY_SOURCE_PREFIX)))
 				continue;
 			key = key.substring(prefixLength);
 			String[] source = Utils.getArrayFromString((String) entry.getValue());
 			String[] output = Utils.getArrayFromString(properties.getProperty(PROPERTY_OUTPUT_PREFIX + key));
 			String[] extraClasspath = Utils.getArrayFromString(properties.getProperty(PROPERTY_EXTRAPATH_PREFIX + key));
-			JAR jar = new JAR(key, source, output, extraClasspath);
-			result.add(jar);
+			CompiledEntry newEntry = new CompiledEntry(key, source, output, extraClasspath, key.endsWith(PROPERTY_JAR_SUFFIX) ? CompiledEntry.JAR : CompiledEntry.FOLDER);
+			result.add(newEntry);
 		}
-		return (JAR[]) result.toArray(new JAR[result.size()]);
+		return (CompiledEntry[]) result.toArray(new CompiledEntry[result.size()]);
 	}
 
 	/**
@@ -672,7 +697,7 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	 * @param jar
 	 * @throws CoreException
 	 */
-	private void generateSRCTarget(JAR jar) throws CoreException {
+	private void generateSRCTarget(CompiledEntry jar) throws CoreException {
 		script.println();
 		String name = jar.getName(false);
 		String srcName = getSRCName(name);
@@ -758,7 +783,7 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	 * @return String
 	 */
 	protected String getSRCName(String jarName) {
-		return jarName.substring(0, jarName.length() - 4) + "src.zip"; //$NON-NLS-1$
+		return jarName;//jarName.substring(0, jarName.length() - 4) + "src.zip"; //$NON-NLS-1$ //TODO Need to fix so the right thing is returned for folders
 	}
 
 	/**

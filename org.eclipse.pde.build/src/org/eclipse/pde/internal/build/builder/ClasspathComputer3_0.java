@@ -25,6 +25,7 @@ import org.eclipse.pde.internal.build.*;
 import org.eclipse.pde.internal.build.site.PDEState;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.Constants;
+import sun.security.action.GetBooleanAction;
 
 public class ClasspathComputer3_0 implements IClasspathComputer, IPDEBuildConstants, IXMLConstants {
 	private ModelBuildScriptGenerator generator;
@@ -42,7 +43,7 @@ public class ClasspathComputer3_0 implements IClasspathComputer, IPDEBuildConsta
 	 * @return String the classpath
 	 * @throws CoreException
 	 */
-	public List getClasspath(BundleDescription model, ModelBuildScriptGenerator.JAR jar) throws CoreException {
+	public List getClasspath(BundleDescription model, ModelBuildScriptGenerator.CompiledEntry jar) throws CoreException {
 		List classpath = new ArrayList(20);
 		List pluginChain = new ArrayList(10);
 		String location = generator.getLocation(model);
@@ -81,7 +82,7 @@ public class ClasspathComputer3_0 implements IClasspathComputer, IPDEBuildConsta
 		String root = generator.getLocation(model);
 		IPath base = Utils.makeRelative(new Path(root), new Path(baseLocation));
 		for (int i = 0; i < libraries.length; i++) {
-			addDevEntries(model, baseLocation, classpath, Utils.getArrayFromString(generator.getBuildProperties().getProperty(PROPERTY_OUTPUT_PREFIX + libraries[i])));
+			addDevEntries(model, baseLocation, classpath, Utils.getArrayFromString(((Properties) model.getUserObject()).getProperty(PROPERTY_OUTPUT_PREFIX + libraries[i])));
 			String library = base.append(libraries[i]).toString();
 			addPathAndCheck(model.getUniqueId(), library, classpath);
 		}
@@ -169,7 +170,7 @@ public class ClasspathComputer3_0 implements IClasspathComputer, IPDEBuildConsta
 			classpath.add(path);
 	}
 
-	private void addSelf(BundleDescription model, ModelBuildScriptGenerator.JAR jar, List classpath, String location, List pluginChain) throws CoreException {
+	private void addSelf(BundleDescription model, ModelBuildScriptGenerator.CompiledEntry jar, List classpath, String location, List pluginChain) throws CoreException {
 		// If model is a fragment, we need to add in the classpath the plugin to which it is related
 		HostSpecification host = model.getHost();
 		if (host != null) {
