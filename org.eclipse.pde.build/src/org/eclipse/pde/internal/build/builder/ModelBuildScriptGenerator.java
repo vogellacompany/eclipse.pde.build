@@ -501,9 +501,20 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 
 		script.println();
 		script.printTargetDeclaration(TARGET_INIT, TARGET_PROPERTIES, null, null, null);
+		
+		script.println("<condition property=\"pluginTemp\" value=\"${tmpFolder}/plugins\">");
+		script.println("<isset property=\"tmpFolder\"/>");
+		script.println("</condition>");
+		script.println("<property name=\"pluginTemp\" value=\"${basedir}\"/>");
+		
+		script.println("<condition property=\"build.result.folder\" value=\"${pluginTemp}/" + new Path(model.getLocation()).lastSegment() + "\">");
+		script.println("<isset property=\"tmpFolder\"/>");
+		script.println("</condition>");
+		script.println("<property name=\"build.result.folder\" value=\"${basedir}\"/>");
+		
 		script.printProperty(PROPERTY_TEMP_FOLDER, getPropertyFormat(PROPERTY_BASEDIR) + '/' + PROPERTY_TEMP_FOLDER); //$NON-NLS-1$
 		script.printProperty(PROPERTY_PLUGIN_DESTINATION, getPropertyFormat(PROPERTY_BASEDIR));
-		script.printProperty(PROPERTY_BUILD_RESULT_FOLDER, getPropertyFormat(PROPERTY_BASEDIR));
+//		script.printProperty(PROPERTY_BUILD_RESULT_FOLDER, getPropertyFormat(PROPERTY_BASEDIR));
 		script.printTargetEnd();
 		script.println();
 		script.printTargetDeclaration(TARGET_PROPERTIES, null, PROPERTY_ECLIPSE_RUNNING, null, null);

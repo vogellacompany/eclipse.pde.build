@@ -137,6 +137,9 @@ public class ClasspathComputer3_0 implements IClasspathComputer, IPDEBuildConsta
 	// classpath : The classpath in which we want to add this path 
 	private void addPathAndCheck(String pluginId, String path, List classpath) {
 		path = generator.replaceVariables(path, pluginId == null ? false : generator.getCompiledElements().contains(pluginId));
+		if (generator.getCompiledElements().contains(pluginId)) {
+			path = "${pluginTemp}/" + path;
+		}
 		if (!classpath.contains(path))
 			classpath.add(path);
 	}
