@@ -127,7 +127,7 @@ public class FetchFileGenerator extends AbstractScriptGenerator {
 				generateFetchFileFor(fileName, fileDescription[URL], userInfos);
 				collectedFiles += fileName + ", " + (fileDescription[DIRECTORY].equals("") ? "." : fileDescription[DIRECTORY]) + " & "; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$				
 			} else {
-				IStatus status = new Status(IStatus.INFO, PI_PDEBUILD, EXCEPTION_GENERIC, Policy.bind("warning.fetchingFile", fileDescription[DIRECTORY]), null); //$NON-NLS-1$
+				IStatus status = new Status(IStatus.INFO, PI_PDEBUILD, WARNING_ELEMENT_NOT_FETCHED, Policy.bind("warning.fetchingFailed", fileDescription[DIRECTORY]), null); //$NON-NLS-1$
 				BundleHelper.getDefault().getLog().log(status);
 			} 
 		}
