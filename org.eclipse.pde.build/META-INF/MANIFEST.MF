@@ -16,4 +16,6 @@ Provide-Package:
  org.eclipse.pde.internal.build,
  org.eclipse.pde.internal.build.ant,
  org.eclipse.pde.internal.build.builder
-Bundle-Localization: plugin.properties
+Bundle-Localization: plugin
+Eclipse-AutoStart: true
+Eclipse-AutoStop: true
