@@ -587,7 +587,6 @@ public abstract class ModelBuildScriptGenerator extends AbstractBuildScriptGener
 		String name = jar.getName(false);
 		script.printTargetDeclaration(name, TARGET_INIT, null, jar.getName(true), Policy.bind("build.plugin.jar", name)); //$NON-NLS-1$
 		String destdir = getTempJARFolderLocation(jar.getName(true));
-		script.printProperty("destdir", destdir); //$NON-NLS-1$
 		script.printDeleteTask(destdir, null, null);
 		script.printMkdirTask(destdir);
 		script.printComment("compile the source code"); //$NON-NLS-1$
@@ -612,6 +611,7 @@ public abstract class ModelBuildScriptGenerator extends AbstractBuildScriptGener
 		String jarLocation = getJARLocation(jar.getName(true));
 		script.printMkdirTask(new Path(jarLocation).removeLastSegments(1).toString());
 		script.printJarTask(jarLocation, destdir);
+		script.printDeleteTask(destdir, null, null);
 		script.printTargetEnd();
 	}
 
