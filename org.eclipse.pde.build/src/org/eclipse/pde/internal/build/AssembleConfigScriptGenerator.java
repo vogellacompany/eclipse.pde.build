@@ -67,7 +67,7 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 		this.plugins = new BundleDescription[elementList.size()];
 		this.plugins = (BundleDescription[]) elementList.toArray(this.plugins);
 
-		filename = directory + '/' + (scriptName != null ? scriptName : getFilename()); //$NON-NLS-1$
+		filename = directory + '/' + (scriptName != null ? scriptName : getTargetName() + ".xml"); //TODO To put in a constant
 		try {
 			script = new AntScript(new FileOutputStream(filename));
 		} catch (FileNotFoundException e) {
@@ -346,7 +346,7 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 	}
 
 	public String getFilename() {
-		return getTargetName() + ".xml"; //$NON-NLS-1$
+		return filename;
 	}
 
 	public String getTargetName() {

@@ -15,24 +15,19 @@ import org.apache.tools.ant.Task;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.pde.internal.build.AbstractScriptGenerator;
 import org.eclipse.pde.internal.build.Utils;
-import org.eclipse.pde.internal.build.packager.PackagerBuildScriptGenerator;
+import org.eclipse.pde.internal.build.packager.PackagerGenerator;
 
 /** 
  * Internal task.
  * Generate assemble scripts to repackage binary distributions.
  * @since 3.0
  */
-public class AssemblerTask extends Task {
+public class PackagerTask extends Task {
 
-	protected PackagerBuildScriptGenerator generator;
+	protected PackagerGenerator generator;
 
 	{
-		generator = new PackagerBuildScriptGenerator();
-		generator.setGenerateIncludedFeatures(true);
-		generator.setAnalyseChildren(true);
-		generator.setSourceFeatureGeneration(false);
-		generator.setBinaryFeatureGeneration(true);
-		generator.setScriptGeneration(false);
+		generator = new PackagerGenerator();
 		generator.setReportResolutionErrors(true);
 		generator.setIgnoreMissingPropertiesFile(true);
 	}
@@ -73,7 +68,7 @@ public class AssemblerTask extends Task {
 
 	public void execute() throws BuildException {
 		try {
-			generator.run();
+			generator.generate();
 		} catch (CoreException e) {
 			throw new BuildException(e);
 		}

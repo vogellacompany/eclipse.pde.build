@@ -8,14 +8,16 @@
  * Contributors: 
  * IBM - Initial API and implementation
  **********************************************************************/
-package org.eclipse.pde.internal.build;
+package org.eclipse.pde.internal.build.packager;
 
 import java.util.*;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.pde.internal.build.*;
+import org.eclipse.pde.internal.build.AbstractScriptGenerator;
+import org.eclipse.pde.internal.build.AssemblyInformation;
 import org.eclipse.pde.internal.build.builder.*;
-import org.eclipse.pde.internal.build.packager.PackageScriptGenerator;
 
-public class BuildScriptGenerator extends AbstractScriptGenerator {
+public class PackagerGenerator extends AbstractScriptGenerator {
 	/**
 	 * Indicates whether the assemble script should contain the archive
 	 * generation statement.
@@ -59,36 +61,18 @@ public class BuildScriptGenerator extends AbstractScriptGenerator {
 	/** flag indicating if missing properties file should be logged */
 	private boolean ignoreMissingPropertiesFile = false;
 	
+	private String[] featureList;
+	private String propertyFile;
+	
 	/**
 	 * 
 	 * @throws CoreException
 	 */
 	public void generate() throws CoreException {
-		List plugins = new ArrayList(5);
 		List features = new ArrayList(5);
-		sortElements(features, plugins);
-
-		// It is not required to filter in the two first generateModels, since
-		// it is only for the building of a single plugin
-		generateModels(plugins);
 		generateFeatures(features);
 	}
-
-	/**
-	 * Separate elements by kind.
-	 */
-	protected void sortElements(List features, List plugins) {
-		for (int i = 0; i < elements.length; i++) {
-			int index = elements[i].indexOf('@');
-			String type = elements[i].substring(0, index);
-			String element = elements[i].substring(index + 1);
-			if (type.equals("plugin") || type.equals("fragment")) //$NON-NLS-1$ //$NON-NLS-2$
-				plugins.add(element);
-			else if (type.equals("feature")) //$NON-NLS-1$
-				features.add(element);
-		}
-	}
-
+	
 	/**
 	 * 
 	 * @param models
@@ -123,37 +107,31 @@ public class BuildScriptGenerator extends AbstractScriptGenerator {
 		AssemblyInformation assemblageInformation = null;
 		assemblageInformation = new AssemblyInformation();
 		
-		for (Iterator i = features.iterator(); i.hasNext();) {
-			String[] featureInfo = getNameAndVersion((String) i.next());
-			FeatureBuildScriptGenerator generator = new FeatureBuildScriptGenerator(featureInfo[0], featureInfo[1], assemblageInformation);
-			generator.setGenerateIncludedFeatures(this.recursiveGeneration);
-			generator.setAnalyseChildren(this.children);
+		for (int i = 0; i < featureList.length; i++) {
+			String[] featureInfo = getNameAndVersion(featureList[i]);			
+			FeatureBuildScriptGenerator generator = new ElementCollector(featureInfo[0], assemblageInformation);
+			generator.setGenerateIncludedFeatures(true);
+			generator.setAnalyseChildren(true);
 			generator.setSourceFeatureGeneration(false);
 			generator.setBinaryFeatureGeneration(true);
-			generator.setScriptGeneration(true);
+			generator.setScriptGeneration(false);
 			generator.setPluginPath(pluginPath);
 			generator.setBuildSiteFactory(null);
 			generator.setDevEntries(devEntries);
-			generator.setSourceToGather(new SourceFeatureInformation());
-			generator.setCompiledElements(generator.getCompiledElements());
+			generator.setCompiledElements(null);
 			generator.setBuildingOSGi(isBuildingOSGi());
-			generator.includePlatformIndependent(true);
+//			generator.includePlatformIndependent(isPlatformIndependentIncluded());
+//			generator.setIgnoreMissingPropertiesFile(isIgnoreMissingPropertiesFile());
+//			setFeature(featureList[i]);
 			generator.setReportResolutionErrors(reportResolutionErrors);
 			generator.setIgnoreMissingPropertiesFile(ignoreMissingPropertiesFile);
 			generator.setSignJars(signJars);
-			generator.setGenerateJnlp(generateJnlp);			
+			generator.setGenerateJnlp(generateJnlp);		
 			generator.generate();
 		}
 		
 		if (generateAssembleScript == true) {
 			String[] featureInfo = null;
-			if (features.size() == 1)
-				featureInfo = getNameAndVersion((String) features.get(0));
-			else
-				featureInfo = new String[] {"all"};
-			
-			generateAssembleScripts(assemblageInformation, featureInfo);
-			
 			if (features.size() == 1)
 				featureInfo = getNameAndVersion((String) features.get(0));
 			else
@@ -167,13 +145,7 @@ public class BuildScriptGenerator extends AbstractScriptGenerator {
 		PackageScriptGenerator assembler = new PackageScriptGenerator(workingDirectory, assemblageInformation, featureInfo[0], null);
 		assembler.setSignJars(signJars);
 		assembler.setGenerateJnlp(generateJnlp);
-		assembler.generate();
-	}
-	
-	private void generateAssembleScripts(AssemblyInformation assemblageInformation, String[] featureInfo) throws CoreException {
-		AssembleScriptGenerator assembler = new AssembleScriptGenerator(workingDirectory, assemblageInformation, featureInfo[0], null);
-		assembler.setSignJars(signJars);
-		assembler.setGenerateJnlp(generateJnlp);
+		assembler.setPropertyFile(propertyFile);
 		assembler.generate();
 	}
 
@@ -247,5 +219,23 @@ public class BuildScriptGenerator extends AbstractScriptGenerator {
 
 	public void setGenerateJnlp(boolean value) {
 		generateJnlp = value;
+	}
+
+	public void includePlatformIndependent(boolean b) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public void groupConfigs(boolean value) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public void setPropertyFile(String propertyFile) {
+		this.propertyFile = propertyFile;
+	}
+	
+	public void setFeatureList(String features) {
+		featureList = Utils.getArrayFromString(features, ","); //$NON-NLS-1$
 	}
 }

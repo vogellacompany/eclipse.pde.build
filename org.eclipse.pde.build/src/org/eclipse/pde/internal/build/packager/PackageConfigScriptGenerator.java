@@ -17,7 +17,7 @@ import org.eclipse.osgi.util.NLS;
 import org.eclipse.pde.internal.build.*;
 import org.eclipse.pde.internal.build.ant.*;
 
-public class PackagingConfigScriptGenerator extends AssembleConfigScriptGenerator {
+public class PackageConfigScriptGenerator extends AssembleConfigScriptGenerator {
 	private Properties packagingProperties;
 	private String[] rootFiles;
 	private String[] rootDirs;
@@ -25,18 +25,18 @@ public class PackagingConfigScriptGenerator extends AssembleConfigScriptGenerato
 
 	public void generate() throws CoreException {
 		generatePrologue();
-		generateMainTarget();
+//		generateMainTarget();
 		generateAssembleTarget();
 		generateEpilogue();
 	}
 
 	private void generatePrologue() {
-		script.printProjectDeclaration("Package " + featureId, TARGET_MAIN, null); //$NON-NLS-1$
+		script.printProjectDeclaration("Package " + featureId, "assemble", null); //$NON-NLS-1$
 		script.printProperty(PROPERTY_ARCHIVE_NAME, computeArchiveName());
 	}
 
 	private void generateMainTarget() {
-		script.printTargetDeclaration(TARGET_MAIN, null, null, null, null);
+//		script.printTargetDeclaration(TARGET_MAIN, null, null, null, null);
 
 		if (BundleHelper.getDefault().isDebugging()) {
 			script.printEchoTask(PROPERTY_BASEDIR + ": " + getPropertyFormat(PROPERTY_BASEDIR)); //$NON-NLS-1$
@@ -58,15 +58,16 @@ public class PackagingConfigScriptGenerator extends AssembleConfigScriptGenerato
 		script.println("</condition>"); //$NON-NLS-1$
 		script.printProperty(PROPERTY_FEATURE_ARCHIVE_PREFIX, getPropertyFormat(PROPERTY_ARCHIVE_PREFIX) + '/' + DEFAULT_FEATURE_LOCATION);
 
-		Map parameters = new HashMap(1);
-		parameters.put("assembleScriptName", filename); //$NON-NLS-1$
+//		Map parameters = new HashMap(1);
+//		parameters.put("assembleScriptName", filename); //$NON-NLS-1$
 		//TODO Improve the name handling
-		script.printAntTask(getPropertyFormat(DEFAULT_CUSTOM_TARGETS), null, "assemble." + configInfo.toStringReplacingAny(".", ANY_STRING) + ".xml", null, null, parameters); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-		script.printTargetEnd();
+//		script.printAntTask(getPropertyFormat(DEFAULT_CUSTOM_TARGETS), null, "assemble." + configInfo.toStringReplacingAny(".", ANY_STRING) + ".xml", null, null, parameters); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+//		script.printTargetEnd();
 	}
 
 	private void generateAssembleTarget() {
-		script.printTargetDeclaration("assemble", null, null, null, null); //$NON-NLS-1$
+		script.printTargetDeclaration("assemble", null, null, null, null); //TODO To put in a variable
+		generateMainTarget();
 		if (output.equalsIgnoreCase("tarGz")) { //$NON-NLS-1$
 			generateAntTarTarget();
 		} else if (output.equalsIgnoreCase("antZip")) { //$NON-NLS-1$
@@ -224,6 +225,7 @@ public class PackagingConfigScriptGenerator extends AssembleConfigScriptGenerato
 
 		for (int i = 0; i < features.length; i++) {
 			IPath featureLocation = new Path(features[i].getURL().getPath()); // Here we assume that all the features are local
+			//TODO we should check to see if the feature is a folder
 			featureLocation = featureLocation.removeLastSegments(1);
 			files[index++] = new ZipFileSet(featureLocation.toOSString(), false, null, null, null, null, null, getPropertyFormat(PROPERTY_FEATURE_ARCHIVE_PREFIX) + '/' + featureLocation.lastSegment(), null);
 		}
@@ -231,7 +233,7 @@ public class PackagingConfigScriptGenerator extends AssembleConfigScriptGenerato
 		if (rootFileProviders.size() == 0) {
 			FileSet[] filesCorrectSize = new FileSet[plugins.length + features.length];
 			System.arraycopy(files, 0, filesCorrectSize, 0, plugins.length + features.length);
-			script.printZipTask(getPropertyFormat(PROPERTY_ARCHIVE_FULLPATH), null, false, true, files);
+			script.printZipTask(getPropertyFormat("archivePath") + getPropertyFormat(PROPERTY_ARCHIVE_NAME), null, false, true, files);
 			return;
 		}
 
@@ -243,7 +245,7 @@ public class PackagingConfigScriptGenerator extends AssembleConfigScriptGenerato
 			IPath dirPath = new Path(rootDirs[i]);
 			files[index++] = new ZipFileSet(dirPath.toOSString(), false, null, null, null, null, null, getPropertyFormat(PROPERTY_ARCHIVE_PREFIX) + '/' + dirPath.lastSegment(), null);
 		}
-		script.printZipTask(getPropertyFormat(PROPERTY_ARCHIVE_FULLPATH), null, false, true, files);
+		script.printZipTask(getPropertyFormat("archivePath") + getPropertyFormat(PROPERTY_ARCHIVE_NAME), null, false, true, files);
 	}
 
 	private void generateFolderTarget() {
@@ -284,5 +286,9 @@ public class PackagingConfigScriptGenerator extends AssembleConfigScriptGenerato
 
 	public void setOutput(String outputFormat) {
 		this.output = outputFormat;
+	}
+	
+	public String getTargetName() {
+		return "package" + (featureId.equals("") ? "" : ('.' + featureId)) + (configInfo.equals(Config.genericConfig()) ? "" : ('.' + configInfo.toStringReplacingAny(".", ANY_STRING))); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$
 	}
 }

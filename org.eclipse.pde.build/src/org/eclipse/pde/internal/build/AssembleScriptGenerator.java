@@ -17,17 +17,19 @@ import org.eclipse.osgi.util.NLS;
 import org.eclipse.pde.internal.build.ant.AntScript;
 
 public class AssembleScriptGenerator extends AbstractScriptGenerator {
-	private String directory; // representing the directory where to generate the file
-	private AssemblyInformation assemblageInformation;
-	private String featureId;
+	protected String directory; // representing the directory where to generate the file
+	protected AssemblyInformation assemblageInformation;
+	protected String featureId;
 
-	private AssembleConfigScriptGenerator configScriptGenerator = new AssembleConfigScriptGenerator();
+	protected AssembleConfigScriptGenerator configScriptGenerator;
 
 	public AssembleScriptGenerator(String directory, AssemblyInformation assemblageInformation, String featureId, String scriptFilename) throws CoreException {
 		this.directory = directory;
 		this.assemblageInformation = assemblageInformation;
 		this.featureId = featureId;
+		configScriptGenerator = new AssembleConfigScriptGenerator();
 
+		//TODO We should use openScript()
 		String filename = directory + '/' + (scriptFilename == null ? (DEFAULT_ASSEMBLE_NAME + "." + featureId + "." + DEFAULT_ASSEMBLE_ALL) : scriptFilename); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 		try {
 			script = new AntScript(new FileOutputStream(filename));
