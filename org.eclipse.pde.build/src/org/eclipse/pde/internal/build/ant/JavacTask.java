@@ -29,7 +29,7 @@ public class JavacTask implements ITask {
 	protected String debug;
 	protected String source;
 	protected String target;
-	protected String[] compileArgs;
+	protected String compileArgs;
 	
 	/**
 	 * Default constructor for the class.
@@ -58,13 +58,7 @@ public class JavacTask implements ITask {
 		script.indent++;
 		
 		if (compileArgs != null) {
-			script.printStartTag("compilerarg");
-			script.indent++;
-			for (int i = 0; i < compileArgs.length; i++) {
-				script.println("<arg line=\"" + compileArgs[i] + "\"/>");
-			}
-			script.indent--;
-			script.printEndTag("compilerarg");	
+			script.println("<compilerarg line=\"" + compileArgs + "\"/>");	
 		}
 		
 		
@@ -195,7 +189,7 @@ public class JavacTask implements ITask {
 		this.target = target;
 	}
 	
-	public void setCompileArgs(String[] args) {
+	public void setCompileArgs(String args) {
 		this.compileArgs = args;
 	}
 }
