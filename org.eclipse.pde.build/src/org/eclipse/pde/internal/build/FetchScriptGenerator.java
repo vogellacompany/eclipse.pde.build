@@ -377,7 +377,7 @@ public class FetchScriptGenerator extends AbstractScriptGenerator {
 					moduleFeatureProperties = new Path(path).append(PROPERTIES_FILE);
 				} else {
 					moduleFeatureFile = new Path(elementName).append(DEFAULT_FEATURE_FILENAME_DESCRIPTOR);
-					moduleFeatureProperties = new Path(path).append(PROPERTIES_FILE);
+					moduleFeatureProperties = new Path(elementName).append(PROPERTIES_FILE);
 				}
 
 				if (password != null)
