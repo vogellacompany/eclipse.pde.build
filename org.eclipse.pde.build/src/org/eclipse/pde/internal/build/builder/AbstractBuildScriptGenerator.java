@@ -62,8 +62,17 @@ public abstract class AbstractBuildScriptGenerator extends AbstractScriptGenerat
 		pluginPath = path;
 	}
 
+	/**
+	 * Return a build time site referencing things to be built.   
+	 * @param refresh : indicate if a refresh must be performed. Although this flag is set to true, a new site is not rebuild if the urls of the site did not changed 
+	 * @return
+	 * @throws CoreException
+	 */
 	public BuildTimeSite getSite(boolean refresh) throws CoreException {
-		if (siteFactory == null || refresh == true)
+		if (siteFactory != null && refresh == false)
+			return (BuildTimeSite) siteFactory.createSite();
+		
+		if (siteFactory == null)	
 			siteFactory = new BuildTimeSiteFactory();
 
 		try {
