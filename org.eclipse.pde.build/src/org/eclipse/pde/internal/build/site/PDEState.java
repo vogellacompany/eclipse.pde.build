@@ -79,10 +79,13 @@ public class PDEState implements IPDEBuildConstants, IBuildPropertiesConstants {
 	}
 	private void loadPluginVersionFile() {
 		repositoryVersions = new Properties();
-		FileInputStream input;
 		try {
-			input = new FileInputStream(AbstractScriptGenerator.getWorkingDirectory() + '/' + DEFAULT_PLUGIN_VERSION_FILENAME_DESCRIPTOR); //$NON-NLS-1$
-			repositoryVersions.load(input);
+			InputStream input = new BufferedInputStream(new FileInputStream(AbstractScriptGenerator.getWorkingDirectory() + '/' + DEFAULT_PLUGIN_VERSION_FILENAME_DESCRIPTOR));
+			try {
+				repositoryVersions.load(input);
+			} finally {
+				input.close();
+			}
 		} catch (IOException e) {
 			//Ignore
 		}
@@ -289,19 +292,15 @@ public class PDEState implements IPDEBuildConstants, IBuildPropertiesConstants {
 	public Properties loadPropertyFileIn(Map toMerge, File location) {
 		Properties result = new Properties();
 		result.putAll(toMerge);
-		InputStream propertyStream = null;
 		try {
-			propertyStream = new BufferedInputStream(new FileInputStream(new File(location, PROPERTIES_FILE)));
-			result.load(propertyStream);
+			InputStream propertyStream = new BufferedInputStream(new FileInputStream(new File(location, PROPERTIES_FILE)));
+			try {
+				result.load(propertyStream);
+			} finally {
+				propertyStream.close();
+			}
 		} catch (Exception e) {
 			//ignore because compiled plug-ins do not have such files
-		} finally {
-			try {
-				if (propertyStream != null)
-					propertyStream.close();
-			} catch (IOException e1) {
-				//Ignore
-			}
 		}
 		return result;
 	}

@@ -808,9 +808,9 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	 */
 	protected String getSRCName(String jarName) {
 		if (jarName.endsWith(".jar")) {
-			return jarName.substring(0, jarName.length()-4) + ".src.zip";
+			return jarName.substring(0, jarName.length()-4) + "src.zip";
 		}
-		return jarName.replace('/','.') + ".src.zip"; //$NON-NLS-1$
+		return jarName.replace('/','.') + "src.zip"; //$NON-NLS-1$
 	}
 
 	/**

@@ -41,15 +41,13 @@ public class ManifestModifier extends Task {
 		OutputStream os = null;
 		try {
 			os = new BufferedOutputStream(new FileOutputStream(manifestLocation));
-			manifest.write(os);
+			try {
+				manifest.write(os);	
+			} finally {
+				os.close();
+			}			
 		} catch (IOException e1) {
 			new BuildException("Problem writing the content of the manifest : " + manifestLocation);	//$NON-NLS-1$
-		} finally {
-			try {
-				os.close();
-			} catch (IOException e) {
-				//Ignore
-			}
 		}
 	}
 
@@ -66,23 +64,16 @@ public class ManifestModifier extends Task {
 		}
 	}
 
-	/**
-	 * 
-	 */
 	private void loadManifest() {
-		InputStream is = null;
 		try {
-			is = new BufferedInputStream(new FileInputStream(manifestLocation));
-			manifest = new Manifest(is);
+			InputStream is = new BufferedInputStream(new FileInputStream(manifestLocation));
+			try {
+				manifest = new Manifest(is);
+			} finally {
+				is.close();
+			}
 		} catch (IOException e) {
 			new BuildException("Problem reading the content of the manifest : " + manifestLocation); //$NON-NLS-1$
-		} finally {
-			if (is != null)
-				try {
-					is.close();
-				} catch (IOException e2) {
-					//ignore exception
-				}
 		}
 	}
 

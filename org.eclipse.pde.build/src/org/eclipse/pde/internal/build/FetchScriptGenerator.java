@@ -102,38 +102,27 @@ public class FetchScriptGenerator extends AbstractScriptGenerator {
 	}
 
 	private void saveRepositoryVersions() throws CoreException {
-		FileInputStream fis = null;
 		try {
-			fis = new FileInputStream(workingDirectory + '/' + DEFAULT_PLUGIN_VERSION_FILENAME_DESCRIPTOR); //$NON-NLS-1$
-			InputStream is = new BufferedInputStream(fis);
-			repositoryVersions.load(is);
+			InputStream input = new BufferedInputStream(new FileInputStream(workingDirectory + '/' + DEFAULT_PLUGIN_VERSION_FILENAME_DESCRIPTOR)); //$NON-NLS-1$
+			try {
+				repositoryVersions.load(input);
+			} finally {
+				input.close();
+			}
 		} catch (IOException e) {
 			//ignore the exception, the same may not exist
-		} finally {
-			if(fis != null)
-				try {
-					fis.close();
-				} catch (IOException e1) {
-					// ignore
-				}
 		}
 		
-		FileOutputStream fos = null;
 		try {
-			fos = new FileOutputStream(workingDirectory + '/' + DEFAULT_PLUGIN_VERSION_FILENAME_DESCRIPTOR);//$NON-NLS-1$
-			OutputStream os = new BufferedOutputStream(fos);
-			repositoryVersions.store(os,null);
+			OutputStream os = new BufferedOutputStream(new FileOutputStream(workingDirectory + '/' + DEFAULT_PLUGIN_VERSION_FILENAME_DESCRIPTOR));
+			try {
+				repositoryVersions.store(os,null);
+			} finally {
+				os.close();
+			}
 		} catch (IOException e) {
 			String message = Policy.bind("exception.writingFile", directoryLocation + '/' + DEFAULT_PLUGIN_VERSION_FILENAME_DESCRIPTOR); //$NON-NLS-1$
 			throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, EXCEPTION_WRITING_FILE, message, null));
-		} finally {
-			if (fos != null) {
-				try {
-					fos.close();
-				} catch (IOException e1) {
-					//Ignore
-				}
-			}
 		}
 		
 	}
