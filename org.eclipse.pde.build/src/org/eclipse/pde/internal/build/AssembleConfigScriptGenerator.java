@@ -136,7 +136,7 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 			if (j != -1)
 				placeToGather = placeToGather.substring(0, j);
 			Map properties = new HashMap(1);
-			properties.put(getPropertyFormat(PROPERTY_FEATURE_BASE), getPropertyFormat(PROPERTY_ECLIPSE_BASE));
+			properties.put(PROPERTY_FEATURE_BASE, getPropertyFormat(PROPERTY_ECLIPSE_BASE));
 			script.printAntTask(DEFAULT_BUILD_SCRIPT_FILENAME, Utils.makeRelative(new Path(placeToGather), new Path(workingDirectory)).toOSString(), TARGET_GATHER_BIN_PARTS, null, null, properties);
 			generatePostProcessingSteps(feature.getVersionedIdentifier().getIdentifier(), feature.getVersionedIdentifier().getVersion().toString(), FEATURE);
 		}
