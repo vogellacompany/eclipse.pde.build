@@ -291,6 +291,11 @@ public abstract class ModelBuildScriptGenerator extends AbstractBuildScriptGener
 		destinations.add(destination);
 		String include = (String) getBuildProperties().get(PROPERTY_BIN_INCLUDES);
 		String exclude = (String) getBuildProperties().get(PROPERTY_BIN_EXCLUDES);
+		//Fix for Bug 38943 - This is not really satisfactory because it copies much more than what it should
+		if (include != null || exclude != null) {
+			FileSet fileSet = new FileSet(getPropertyFormat(PROPERTY_BUILD_RESULT_FOLDER), null, replaceVariables(include, true), null, replaceVariables(exclude, true), null, null);
+			script.printCopyTask(null, root, new FileSet[] { fileSet });
+		}
 		if (include != null || exclude != null) {
 			FileSet fileSet = new FileSet(getPropertyFormat(PROPERTY_BASEDIR), null, replaceVariables(include, true), null, replaceVariables(exclude, true), null, null);
 			script.printCopyTask(null, root, new FileSet[] { fileSet });
