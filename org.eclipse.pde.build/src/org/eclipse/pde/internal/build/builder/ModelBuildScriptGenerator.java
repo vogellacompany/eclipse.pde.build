@@ -316,7 +316,7 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 				script.printMkdirTask(destination.toString());
 				destinations.add(destination);
 			}
-			script.printCopyTask(getSRCLocation(jar), destination.toString(), null, true);
+			script.printCopyTask(getSRCLocation(jar), destination.toString(), null, false);
 		}
 		String include = (String) getBuildProperties().get(PROPERTY_SRC_INCLUDES);
 		String exclude = (String) getBuildProperties().get(PROPERTY_SRC_EXCLUDES);
