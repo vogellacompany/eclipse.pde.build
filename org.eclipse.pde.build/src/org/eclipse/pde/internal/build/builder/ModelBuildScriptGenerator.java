@@ -458,6 +458,7 @@ public abstract class ModelBuildScriptGenerator extends AbstractBuildScriptGener
 			throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, EXCEPTION_ELEMENT_MISSING, message, null));
 		}
 		this.model = model;
+		getCompiledElements().add(model.getId());
 	}
 
 	/**
