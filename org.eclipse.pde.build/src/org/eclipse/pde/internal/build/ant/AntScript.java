@@ -251,11 +251,12 @@ public class AntScript {
 	 * @param todir the destination directory
 	 * @param fileSets the inclusion/exclusion rules to use when copying
 	 */
-	public void printCopyTask(String file, String todir, FileSet[] fileSets) {
+	public void printCopyTask(String file, String todir, FileSet[] fileSets, boolean failOnError) {
 		printTab();
 		output.print("<copy"); //$NON-NLS-1$
 		printAttribute("file", file, false); //$NON-NLS-1$
 		printAttribute("todir", todir, false); //$NON-NLS-1$
+		printAttribute("failonerror", failOnError ? "true" : "false", true); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 		if (fileSets == null)
 			output.println("/>"); //$NON-NLS-1$
 		else {

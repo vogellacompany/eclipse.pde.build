@@ -165,7 +165,7 @@ public class PDEState implements IPDEBuildConstants, IXMLConstants {
 				PluginConverter converter;
 				try {
 					converter = acquirePluginConverter();
-					converter.convertManifest(new File(bundleLocation.getFile()), manifestLocation);
+					converter.convertManifest(bundleLocation, manifestLocation, false);
 				} catch (Exception e) {
 					e.printStackTrace(); 
 				}

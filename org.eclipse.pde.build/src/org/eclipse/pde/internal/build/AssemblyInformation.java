@@ -42,16 +42,7 @@ public class AssemblyInformation {
 	public Collection getPlugins(Config config) {
 		return ((AssemblyLevelConfigInfo) assembleInformation.get(config)).getPlugins();
 	}
-
-	public void addFragment(Config config, BundleDescription fragment) {
-		AssemblyLevelConfigInfo entry = (AssemblyLevelConfigInfo) assembleInformation.get(config);
-		entry.addFragment(fragment);
-	}
-
-	public Collection getFragments(Config config) {
-		return ((AssemblyLevelConfigInfo) assembleInformation.get(config)).getFragments();
-	}
-
+	
 	public Collection getFeatures(Config config) {
 		return ((AssemblyLevelConfigInfo) assembleInformation.get(config)).getFeatures();
 	}
@@ -68,8 +59,6 @@ public class AssemblyInformation {
 	private class AssemblyLevelConfigInfo {
 		// the plugins that are contained into this config
 		private Collection plugins = new HashSet(20);
-		//	the fragments that are contained into this config
-		private Collection fragments = new HashSet(10);
 		// the features that are contained into this config
 		private Collection features = new HashSet(7);
 		// indicate whether root files needs to be copied
@@ -87,10 +76,6 @@ public class AssemblyInformation {
 
 		public Collection getPlugins() {
 			return plugins;
-		}
-
-		public Collection getFragments() {
-			return fragments;
 		}
 
 		public void addFeature(IFeature feature) {
@@ -111,16 +96,5 @@ public class AssemblyInformation {
 			}
 			plugins.add(plugin);
 		}
-
-		public void addFragment(BundleDescription fragment) {
-			//TODO Could be improve if PluginModel could be compared
-			for (Iterator iter = fragments.iterator(); iter.hasNext(); ) {
-				BundleDescription descriptor = (BundleDescription) iter.next();
-				if (descriptor.getUniqueId().equals(fragment.getUniqueId()) && descriptor.getVersion().equals(fragment.getVersion()))
-					return;				
-			}
-			fragments.add(fragment);
-		}
-
 	}
 }

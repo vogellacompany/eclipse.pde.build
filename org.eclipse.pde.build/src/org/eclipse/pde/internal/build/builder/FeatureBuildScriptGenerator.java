@@ -428,7 +428,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		script.printMkdirTask(root);
 		if (include != null || exclude != null) {
 			FileSet fileSet = new FileSet(getPropertyFormat(PROPERTY_BASEDIR), null, include, null, exclude, null, null);
-			script.printCopyTask(null, root, new FileSet[]{fileSet});
+			script.printCopyTask(null, root, new FileSet[]{fileSet}, true);
 		}
 		// Generate the parameters for the Id Replacer.
 		String featureVersionInfo = ""; //$NON-NLS-1$
@@ -500,7 +500,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 				fileSet[i] = new FileSet(fromDir + file, null, "**", null, null, null, null); //$NON-NLS-1$
 			}
 		}
-		script.printCopyTask(null, getPropertyFormat(PROPERTY_FEATURE_BASE) + "/" + configName + "/" + getPropertyFormat(PROPERTY_COLLECTING_PLACE), fileSet); //$NON-NLS-1$ //$NON-NLS-2$
+		script.printCopyTask(null, getPropertyFormat(PROPERTY_FEATURE_BASE) + "/" + configName + "/" + getPropertyFormat(PROPERTY_COLLECTING_PLACE), fileSet, true); //$NON-NLS-1$ //$NON-NLS-2$
 	}
 	private void generatePermissions(Config aConfig) throws CoreException {
 		String configInfix = aConfig.toString("."); //$NON-NLS-1$
@@ -1157,10 +1157,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		BundleDescription effectivePlugin = null;
 		effectivePlugin = getSite(false).getRegistry().getResolvedBundle(entryToCollect.getVersionedIdentifier().getIdentifier(), versionRequested);
 		for (Iterator iter = correctConfigs.iterator(); iter.hasNext();) {
-			if (entryToCollect.isFragment())
-				assemblyData.addFragment((Config) iter.next(), effectivePlugin);
-			else
-				assemblyData.addPlugin((Config) iter.next(), effectivePlugin);
+			assemblyData.addPlugin((Config) iter.next(), effectivePlugin);
 		}
 	}
 	// Create a feature object representing a source feature based on the featureExample

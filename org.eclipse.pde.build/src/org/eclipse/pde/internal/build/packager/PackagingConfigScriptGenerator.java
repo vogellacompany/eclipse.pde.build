@@ -86,13 +86,6 @@ public class PackagingConfigScriptGenerator extends AssembleConfigScriptGenerato
 			parameters.clear();
 		}
 
-		for (int i = 0; i < fragments.length; i++) {
-			parameters.add(getPropertyFormat(PROPERTY_COLLECTING_PLACE) + "/" + DEFAULT_PLUGIN_LOCATION + "/" + fragments[i].getUniqueId() + "_" + fragments[i].getVersion()); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-			if (i % parameterSize == 0) {
-				createZipExecCommand(parameters);
-				parameters.clear();
-			}
-		}
 		if (!parameters.isEmpty()) {
 			createZipExecCommand(parameters);
 			parameters.clear();

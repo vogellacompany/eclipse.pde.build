@@ -12,13 +12,11 @@ package org.eclipse.pde.internal.build;
 
 import java.io.*;
 import java.util.*;
-
-import org.eclipse.osgi.service.resolver.BundleDescription;
 import org.eclipse.core.runtime.*;
+import org.eclipse.osgi.service.resolver.BundleDescription;
 import org.eclipse.pde.internal.build.ant.AntScript;
 import org.eclipse.update.core.IFeature;
 
-//FIXME This whole hierarchy of assembler needs to be polished... creation of an interface, etc...
 /**
  * Generate an assemble script for a given feature and a given config. It
  * generates all the instruction to zip the listed plugins and features.
@@ -29,16 +27,19 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 	protected Config configInfo;
 	protected IFeature[] features;
 	protected BundleDescription[] plugins;
-	protected BundleDescription[] fragments;
 	protected String filename;
 	protected boolean copyRootFile;
-	private String PROPERTY_TMP_DIR = "tmp_dir"; //$NON-NLS-1$	
-	
+	private static final String PROPERTY_TMP_DIR = "tmp_dir"; //$NON-NLS-1$	
+	private static final String PROPERTY_SOURCE = "source"; //$NON-NLS-1$
+	private static final String PROPERTY_ELEMENT_NAME = "elementName"; //$NON-NLS-1$
+	private static final byte BUNDLE = 0;  
+	private static final byte FEATURE =  1;
+	 
 	public AssembleConfigScriptGenerator() {
 		super();
 	}
 
-	public void initialize(String directoryName, String scriptName, String feature, Config configurationInformation, Collection pluginList, Collection fragmentList, Collection featureList, boolean rootFileCopy) throws CoreException {
+	public void initialize(String directoryName, String scriptName, String feature, Config configurationInformation, Collection elementList, Collection featureList, boolean rootFileCopy) throws CoreException {
 		this.directory = directoryName;
 		this.featureId = feature;
 		this.configInfo = configurationInformation;
@@ -47,11 +48,8 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 		this.features = new IFeature[featureList.size()];
 		featureList.toArray(this.features);
 
-		this.plugins = new BundleDescription[pluginList.size()];
-		pluginList.toArray(this.plugins);
-
-		this.fragments = new BundleDescription[fragmentList.size()];
-		fragmentList.toArray(this.fragments);
+		this.plugins = new BundleDescription[elementList.size()];
+		this.plugins = (BundleDescription[]) elementList.toArray(this.plugins);
 
 		filename = directory + "/" + (scriptName != null ? scriptName : getFilename()); //$NON-NLS-1$
 		try {
@@ -78,9 +76,10 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 	}
 
 	private void generatePackagingTargets() {
-		script.printTargetDeclaration("jarUp", null, null, null, "Create a jar from the given location");
-		script.printZipTask("${sourceFolder}/${pluginName}.jar", "${sourceFolder}/${pluginName}", false, null);
-		script.printDeleteTask("${sourceFolder}/${pluginName}", null, null);
+		script.printTargetDeclaration(TARGET_JARUP, null, null, null, Policy.bind("assemble.jarUp")); //$NON-NLS-1$
+		String prefix = getPropertyFormat(PROPERTY_SOURCE) + '/' + getPropertyFormat(PROPERTY_ELEMENT_NAME);
+		script.printZipTask(prefix + ".jar", prefix, false, null); //$NON-NLS-1$
+		script.printDeleteTask(prefix, null, null);
 		script.printTargetEnd();
 	}
 
@@ -103,7 +102,7 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 	}
 
 	private void generatePrologue() {
-		script.printProjectDeclaration("Assemble " + featureId, TARGET_MAIN, null); //$NON-NLS-1$
+		script.printProjectDeclaration("Assemble " + featureId, TARGET_MAIN, Policy.bind("assemble.projectName", computeArchiveName())); //$NON-NLS-1$ //$NON-NLS-2$  
 		script.printProperty(PROPERTY_ARCHIVE_NAME, computeArchiveName());
 		script.printProperty(PROPERTY_OS, configInfo.getOs());
 		script.printProperty(PROPERTY_WS, configInfo.getWs());
@@ -127,20 +126,9 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 			BundleDescription plugin = plugins[i];
 			String placeToGather = getLocation(plugin);
 			script.printAntTask(DEFAULT_BUILD_SCRIPT_FILENAME, Utils.makeRelative(new Path(placeToGather), new Path(workingDirectory)).toOSString(), TARGET_GATHER_BIN_PARTS, null, null, null);
-			Map properties = new HashMap(2);
-			properties.put("sourceFolder", "${destination.temp.folder}");
-			properties.put("pluginName", plugin.getUniqueId() + "_" + plugin.getVersion());
-			script.printAntCallTask("jarUp", null, properties);
+			generatePostProcessingSteps(plugin.getUniqueId(), plugin.getVersion().toString(), BUNDLE); 
 		}
-		for (int i = 0; i < fragments.length; i++) {
-			BundleDescription fragment = fragments[i];
-			String placeToGather = getLocation(fragment);
-			script.printAntTask(DEFAULT_BUILD_SCRIPT_FILENAME, Utils.makeRelative(new Path(placeToGather), new Path(workingDirectory)).toOSString(), TARGET_GATHER_BIN_PARTS, null, null, null);
-			Map properties = new HashMap(2);
-			properties.put("sourceFolder", "${destination.temp.folder}");
-			properties.put("pluginName", fragment.getUniqueId() + "_" + fragment.getVersion());
-			script.printAntCallTask("jarUp", null, properties);
-		}
+		
 		for (int i = 0; i < features.length; i++) {
 			IFeature feature = features[i];
 			String placeToGather = feature.getURL().getPath();
@@ -148,11 +136,37 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 			if (j != -1)
 				placeToGather = placeToGather.substring(0, j);
 			Map properties = new HashMap(1);
-			properties.put("feature.base", "${eclipse.base}");
+			properties.put(getPropertyFormat(PROPERTY_FEATURE_BASE), getPropertyFormat(PROPERTY_ECLIPSE_BASE));
 			script.printAntTask(DEFAULT_BUILD_SCRIPT_FILENAME, Utils.makeRelative(new Path(placeToGather), new Path(workingDirectory)).toOSString(), TARGET_GATHER_BIN_PARTS, null, null, properties);
+			generatePostProcessingSteps(feature.getVersionedIdentifier().getIdentifier(), feature.getVersionedIdentifier().getVersion().toString(), FEATURE);
 		}
 	}
 
+	private void generatePostProcessingSteps(String name, String version, byte type) {
+		final String updateJar = "updateJar";	//$NON-NLS-1$	//TODO Need to be made available as a property?
+		final String flat = "flat";	//$NON-NLS-1$
+		Properties postProcessingSteps = new Properties();
+		String style = postProcessingSteps.getProperty(name);
+		if(style==null)
+			return;
+			
+		if (flat.equalsIgnoreCase(style)) {
+			//do nothing
+			return;
+		}
+		if (updateJar.equalsIgnoreCase(style)) {
+			generateJarUpCall(name, version);
+			return;
+		}
+	}
+
+	private void generateJarUpCall(String name, String version) {
+		Map properties = new HashMap(2);
+		properties.put(PROPERTY_SOURCE, getPropertyFormat(PROPERTY_DESTINATION_TEMP_FOLDER));
+		properties.put(PROPERTY_ELEMENT_NAME, name + "_" + version);
+		script.printAntCallTask(TARGET_JARUP, null, properties);
+	}
+	
 	private void generateEpilogue() {
 		script.printTargetEnd();
 		script.printProjectEnd();
@@ -181,14 +195,7 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 			createZipExecCommand(parameters);
 			parameters.clear();
 		}
-
-		for (int i = 0; i < fragments.length; i++) {
-			parameters.add(getPropertyFormat(PROPERTY_COLLECTING_PLACE) + "/" + DEFAULT_PLUGIN_LOCATION + "/" + fragments[i].getUniqueId() + "_" + fragments[i].getVersion() + "*"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-			if (i % parameterSize == 0) {
-				createZipExecCommand(parameters);
-				parameters.clear();
-			}
-		}
+		
 		if (!parameters.isEmpty()) {
 			createZipExecCommand(parameters);
 			parameters.clear();
@@ -218,7 +225,7 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 			
 		List parameters = new ArrayList(1);
 		parameters.add("-r -q ${zipargs} " + getPropertyFormat(PROPERTY_ARCHIVE_FULLPATH) + " . "); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-		script.printExecTask("zip", getPropertyFormat("eclipse.base") + "/" + configInfo.toStringReplacingAny(".", ANY_STRING) + "/" + getPropertyFormat(PROPERTY_COLLECTING_BASE), parameters, null); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+		script.printExecTask("zip", getPropertyFormat(PROPERTY_ECLIPSE_BASE) + "/" + configInfo.toStringReplacingAny(".", ANY_STRING) + "/" + getPropertyFormat(PROPERTY_COLLECTING_BASE), parameters, null); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
 	
 	}
 	private void createZipExecCommand(List parameters) {

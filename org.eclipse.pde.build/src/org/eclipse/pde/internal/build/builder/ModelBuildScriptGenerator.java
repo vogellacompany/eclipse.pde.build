@@ -260,7 +260,7 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 				script.printMkdirTask(destination.toString());
 				destinations.add(destination);
 			}
-			script.printCopyTask(getTempJARFolderLocation(name) + ".log", destination.toString(), null); //$NON-NLS-1$
+			script.printCopyTask(getTempJARFolderLocation(name) + ".log", destination.toString(), null, false); //$NON-NLS-1$
 		}
 		script.printTargetEnd();
 	}
@@ -301,13 +301,13 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 				script.printMkdirTask(destination.toString());
 				destinations.add(destination);
 			}
-			script.printCopyTask(getSRCLocation(jar), destination.toString(), null);
+			script.printCopyTask(getSRCLocation(jar), destination.toString(), null, true);
 		}
 		String include = (String) getBuildProperties().get(PROPERTY_SRC_INCLUDES);
 		String exclude = (String) getBuildProperties().get(PROPERTY_SRC_EXCLUDES);
 		if (include != null || exclude != null) {
 			FileSet fileSet = new FileSet(getPropertyFormat(PROPERTY_BASEDIR), null, include, null, exclude, null, null);
-			script.printCopyTask(null, baseDestination.toString(), new FileSet[] { fileSet });
+			script.printCopyTask(null, baseDestination.toString(), new FileSet[] { fileSet }, true);
 		}
 		script.printTargetEnd();
 	}
@@ -332,15 +332,15 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		//Fix for Bug 38943 - This is not really satisfactory because it copies much more than what it should
 		if (include != null || exclude != null) {
 			FileSet fileSet = new FileSet(getPropertyFormat(PROPERTY_BUILD_RESULT_FOLDER), null, replaceVariables(include, true), null, replaceVariables(exclude, true), null, null);
-			script.printCopyTask(null, root, new FileSet[] { fileSet });
+			script.printCopyTask(null, root, new FileSet[] { fileSet }, true);
 		}
 		if (include != null || exclude != null) {
 			FileSet fileSet = new FileSet(getPropertyFormat(PROPERTY_BASEDIR), null, replaceVariables(include, true), null, replaceVariables(exclude, true), null, null);
-			script.printCopyTask(null, root, new FileSet[] { fileSet });
+			script.printCopyTask(null, root, new FileSet[] { fileSet }, true);
 		}
 		if ("@dot".equalsIgnoreCase(getBuildProperties().getProperty(Constants.BUNDLE_CLASSPATH))) {
 			FileSet fileSet = new FileSet(getPropertyFormat(PROPERTY_BASEDIR) + "/@dot", null, "**", null, null, null, null);
-			script.printCopyTask(null, root,new FileSet[] { fileSet });
+			script.printCopyTask(null, root,new FileSet[] { fileSet }, true);
 		}
 		generatePermissionProperties(root);
 		genarateIdReplacementCall(destination.toString());
@@ -653,14 +653,14 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		FileSet[] fileSets = new FileSet[sources.length];
 		for (int i = 0; i < sources.length; i++)
 			fileSets[i] = new FileSet(sources[i], null, null, null, "**/*.java", null, null); //$NON-NLS-1$
-		script.printCopyTask(null, destdir, fileSets);
+		script.printCopyTask(null, destdir, fileSets, true);
 		
 		String jarLocation = getJARLocation(entry.getName(true));
 		script.printMkdirTask(new Path(jarLocation).removeLastSegments(1).toString());
 		
 		if (entry.getType()==CompiledEntry.FOLDER) {
 			FileSet[] binFolder = new FileSet[] { new FileSet(destdir, null, null, null, null, null, null) };
-			script.printCopyTask(null, jarLocation, binFolder);
+			script.printCopyTask(null, jarLocation, binFolder, true);
 		} else {
 			script.printJarTask(jarLocation, destdir);
 		}

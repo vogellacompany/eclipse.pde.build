@@ -97,7 +97,7 @@ public class BuildTimeSiteContentProvider extends SiteContentProvider implements
 		for (Iterator iter = collectedElements.iterator(); iter.hasNext();) {
 			File element = (File) iter.next();
 			try {
-				pluginURLs[i] = new URL("file:" + element.getAbsolutePath()); //$NON-NLS-1$
+				pluginURLs[i] = new URL("file:" + element.getAbsolutePath() + "/"); //$NON-NLS-1$
 			} catch (MalformedURLException e) {
 				Platform.getPlugin(PI_PDEBUILD).getLog().log(new Status(IStatus.WARNING, PI_PDEBUILD, WARNING_MISSING_SOURCE, Policy.bind("warning.cannotLocateSource", element.getAbsolutePath()), e)); //$NON-NLS-1$
 			}

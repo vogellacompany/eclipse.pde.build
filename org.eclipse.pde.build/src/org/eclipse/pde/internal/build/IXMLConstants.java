@@ -60,7 +60,8 @@ public interface IXMLConstants {
 	public static final String TARGET_FETCH_RECURSIVELY = "fetch.recursively"; //$NON-NLS-1$
 	public static final String TARGET_GET_FROM_CVS = "getFromCVS"; //$NON-NLS-1$
 	public static final String TARGET_EFFECTIVE_FETCH = "effectiveFetch"; //$NON-NLS-1$
-
+	public static final String TARGET_JARUP = "jarUp"; //$NON-NLS-1$
+	
 	// properties
 	public static final String PROPERTY_ARCH = "arch"; //$NON-NLS-1$
 	public static final String PROPERTY_BASE_ARCH = "basearch"; //$NON-NLS-1$
