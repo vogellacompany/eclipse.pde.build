@@ -48,28 +48,24 @@ public class BuildScriptGenerator extends AbstractScriptGenerator {
 	public void generate() throws CoreException {
 		// TO CHECK Does this usecase really exist? Do we really pass list of map file entry?
 		List plugins = new ArrayList(5);
-		List fragments = new ArrayList(5);
 		List features = new ArrayList(5);
-		sortElements(features, plugins, fragments);
+		sortElements(features, plugins);
 
 		// It is not required to filter in the two first generateModels, since it is only for the building of a single plugin
-		generateModels(new PluginBuildScriptGenerator(), plugins);
-		generateModels(new FragmentBuildScriptGenerator(), fragments);
+		generateModels(new ModelBuildScriptGenerator(), plugins);
 		generateFeatures(features);
 	}
 
 	/**
 	 * Separate elements by kind.
 	 */
-	protected void sortElements(List features, List plugins, List fragments) {
+	protected void sortElements(List features, List plugins) {
 		for (int i = 0; i < elements.length; i++) {
 			int index = elements[i].indexOf('@');
 			String type = elements[i].substring(0, index);
 			String element = elements[i].substring(index + 1);
-			if (type.equals("plugin")) //$NON-NLS-1$
+			if (type.equals("plugin") || type.equals("fragment")) //$NON-NLS-1$ //$NON-NLS-2$
 				plugins.add(element);
-			else if (type.equals("fragment")) //$NON-NLS-1$
-				fragments.add(element);
 			else if (type.equals("feature")) //$NON-NLS-1$
 				features.add(element);
 		}

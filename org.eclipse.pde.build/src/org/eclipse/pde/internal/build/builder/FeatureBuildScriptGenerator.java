@@ -633,7 +633,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	 */
 	protected void generateAllPluginsTarget() throws CoreException {
 		List plugins = computeElements();
-		String[] sortedPlugins = Utils.computePrerequisiteOrder(plugins, isBuildingOSGi());
+		String[] sortedPlugins = Utils.computePrerequisiteOrder(plugins);
 		script.println();
 		script.printTargetDeclaration(TARGET_ALL_PLUGINS, TARGET_INIT, null, null, null);
 		Set writtenCalls = new HashSet(plugins.size());
@@ -725,7 +725,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 			return;
 		for (Iterator iterator = models.iterator(); iterator.hasNext();) {
 			BundleDescription model = (BundleDescription) iterator.next();
-			PluginBuildScriptGenerator generator = new PluginBuildScriptGenerator();
+			ModelBuildScriptGenerator generator = new ModelBuildScriptGenerator();
 			generator.setBuildSiteFactory(siteFactory);
 			generator.setModel(model); // setModel has to be called before configurePersistentProperties because it reads the model's properties
 			generator.setFeatureGenerator(this);
@@ -739,10 +739,8 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	/**
 	 * Set this object's feature id to be the given value.
 	 * 
-	 * @param featureID
-	 *                   the feature id
-	 * @throws CoreException
-	 *                    if the given feature id is <code>null</code>
+	 * @param featureID the feature id
+	 * @throws CoreException if the given feature id is <code>null</code>
 	 */
 	public void setFeature(String featureID) throws CoreException {
 		if (featureID == null) {

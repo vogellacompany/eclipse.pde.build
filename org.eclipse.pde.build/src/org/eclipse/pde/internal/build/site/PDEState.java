@@ -20,11 +20,23 @@ public class PDEState {
 	private ServiceReference logServiceReference;
 	private ServiceReference converterServiceReference;
 	
+	protected long getNextId() {
+		return ++id;
+	}
+		
 	public PDEState() {
 		factory = Platform.getPlatformAdmin().getFactory();
 		state = factory.createState();
 		state.setResolver(Platform.getPlatformAdmin().getResolver());
 		id = 0;
+	}
+	
+	public StateObjectFactory getFactory() {
+		return factory;
+	}
+
+	public void addBundleDescription(BundleDescription toAdd) {
+		state.addBundle(toAdd);
 	}
 	
 	private FrameworkLog acquireFrameworkLogService() throws Exception{
@@ -62,8 +74,10 @@ public class PDEState {
 		try {
 			manifestStream = new BufferedInputStream(new FileInputStream(bundleLocation));
 			Dictionary manifest = Headers.parseManifest(manifestStream);
-			if (((String) manifest.get(Constants.BUNDLE_GLOBALNAME)).equals("org.eclipse.osgi")) {
-				manifest = manifestToDictionary(manifest);
+			Properties properties = manifestToDictionary(manifest);
+//			loadPropertyFileIn(properties, bundleLocation.getParentFile().getParentFile());
+			
+			if (((String) manifest.get(Constants.BUNDLE_SYMBOLICNAME)).equals("org.eclipse.osgi")) {	
 				//TODO We need to handle the special case of the osgi bundle for whom the bundle-classpath is specified in the eclipse.properties file in the osgi folder
 				manifest.put(Constants.BUNDLE_CLASSPATH, "core.jar, console.jar, osgi.jar, resolver.jar, defaultAdaptor.jar, eclipseAdaptor.jar");
 			}
@@ -91,9 +105,9 @@ public class PDEState {
 		return true;
 	}
 	
-	public Dictionary manifestToDictionary(Dictionary d) {
+	public Properties manifestToDictionary(Dictionary d) {
 		Enumeration enum = d.keys();
-		Hashtable result = new Hashtable();
+		Properties result = new Properties();
 		while (enum.hasMoreElements()) {
 			String key = (String) enum.nextElement();
 			result.put(key, d.get(key));
@@ -236,6 +250,24 @@ public class PDEState {
 		for (int i = 0; i < toAdd.length; i++) {
 			if(! source.contains(toAdd[i]))
 				source.add(toAdd[i]);
+		}
+	}
+	
+	public void loadPropertyFileIn(Properties toMerge, File location) {
+		Properties buildProperties = null;
+		InputStream propertyStream = null;
+		try {
+			propertyStream = new URL(location + "/" + "build.properties").openStream();
+			buildProperties.load(propertyStream); //$NON-NLS-1$
+		} catch (Exception e) {
+			buildProperties = new Properties();
+		} finally {
+			try {
+				if (propertyStream != null)
+					propertyStream.close();
+			} catch (IOException e1) {
+				//Ignore
+			}
 		}
 	}
 }

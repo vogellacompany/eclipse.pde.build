@@ -39,6 +39,8 @@ public abstract class AbstractBuildScriptGenerator extends AbstractScriptGenerat
 
 	private Set compiledElements; //The elements we are compiling
 
+	private HashMap repoVersion; 
+	
 	abstract protected Properties getBuildProperties() throws CoreException;
 
 	public void setDevEntries(String[] entries) {

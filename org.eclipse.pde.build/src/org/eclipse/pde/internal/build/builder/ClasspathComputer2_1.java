@@ -1,5 +1,5 @@
 /**********************************************************************
- * Copyright (c) 2000, 2004 IBM Corporation and others.
+ * Copyright (c) 2000, 2003 IBM Corporation and others.
  * All rights reserved.   This program and the accompanying materials
  * are made available under the terms of the Common Public License v1.0
  * which accompanies this distribution, and is available at
@@ -26,10 +26,10 @@ import org.eclipse.pde.internal.build.site.PDEState;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.Constants;
 
-public class ClasspathComputer implements IPDEBuildConstants, IXMLConstants {
+public class ClasspathComputer2_1 implements IClasspathComputer, IPDEBuildConstants, IXMLConstants {
 	private ModelBuildScriptGenerator generator;
 
-	public ClasspathComputer(ModelBuildScriptGenerator generator) {
+	public ClasspathComputer2_1(ModelBuildScriptGenerator generator) {
 		this.generator = generator;
 	}
 
@@ -47,11 +47,14 @@ public class ClasspathComputer implements IPDEBuildConstants, IXMLConstants {
 		List pluginChain = new ArrayList(10);
 		String location = generator.getLocation(model);
 
-		//PREREQUISITE
-		addPrerequisites(model, classpath, location, pluginChain);
+		//PARENT
+		addPlugin(getPlugin(PI_BOOT, null), classpath, location);
 
 		//SELF
 		addSelf(model, jar, classpath, location, pluginChain);
+
+		//PREREQUISITE
+		addPrerequisites(model, classpath, location, pluginChain);
 
 		return classpath;
 
@@ -94,22 +97,19 @@ public class ClasspathComputer implements IPDEBuildConstants, IXMLConstants {
 	 * 
 	 * @param id the plug-in identifier
 	 * @param version the plug-in version
-	 * @return PluginModel
+	 * @return BundleDescription
 	 * @throws CoreException if the specified plug-in version does not exist in the registry
 	 */
 	private BundleDescription getPlugin(String id, String version) throws CoreException {
-		if (version==null)
-			return generator.getSite(false).getRegistry().getResolvedBundle(id);
-		else 
-			return generator.getSite(false).getRegistry().getResolvedBundle(id, version);
-		//TODO Need to put back the fixes for 42444 / 43072 / 48317
+		BundleDescription plugin = generator.getSite(false).getRegistry().getResolvedBundle(id, version);
 		// TODO need to handle optional plugins here.  If an optional is missing it is
 		// not an error.  For now return null and essentially ignore missing plugins.
 		//	if (plugin == null) {
 		//		String pluginName = (version == null) ? id : id + "_" + version; //$NON-NLS-1$
 		//		throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, IPDEBuildConstants.EXCEPTION_PLUGIN_MISSING, Policy.bind("exception.missingPlugin", pluginName), null)); //$NON-NLS-1$
 		//	}
-		// TODO Problem with the non-determinism of the value returned by the plugin registry when several plugin exists. Case with a "compile against" set and a "compiled" set that interleaves.		
+		// TODO Problem with the non-determinism of the value returned by the plugin registry when several plugin exists. Case with a "compile against" set and a "compiled" set that interleaves. 
+		return plugin;
 	}
 
 	/**
@@ -122,11 +122,7 @@ public class ClasspathComputer implements IPDEBuildConstants, IXMLConstants {
 	//TODO Check the position of the bin directory seems to be bogus (it appears after the jar)
 	private void addFragmentsLibraries(BundleDescription plugin, List classpath, String baseLocation) throws CoreException {
 		// if plugin is not a plugin, it's a fragment and there is no fragment for a fragment. So we return.
-		if (!(plugin instanceof BundleDescription))
-			return;
-
-		BundleDescription pluginModel = (BundleDescription) plugin;
-		BundleDescription[] fragments = pluginModel.getFragments();
+		BundleDescription[] fragments = plugin.getFragments();
 		if (fragments == null)
 			return;
 
@@ -154,8 +150,8 @@ public class ClasspathComputer implements IPDEBuildConstants, IXMLConstants {
 		//If we reintroduce the test below, we reintroduce the problem 35544	
 		//	if (fragment.getRuntime() != null)
 		//		return;
-		String[] libraries = getClasspathEntries(plugin);
 
+		String[] libraries = getClasspathEntries(plugin);
 		String root = generator.getLocation(fragment);
 		IPath base = Utils.makeRelative(new Path(root), new Path(baseLocation));
 		for (int i = 0; i < libraries.length; i++) {
@@ -301,19 +297,30 @@ public class ClasspathComputer implements IPDEBuildConstants, IXMLConstants {
 
 	//Add the prerequisite of a given plugin (target)
 	private void addPrerequisites(BundleDescription target, List classpath, String baseLocation, List pluginChain) throws CoreException {
-		if (pluginChain.contains(target)) {		
+
+		if (pluginChain.contains(target)) {
+			if (target == getPlugin(PI_RUNTIME, null))
+				return;
 			String message = Policy.bind("error.pluginCycle"); //$NON-NLS-1$
 			throw new CoreException(new Status(IStatus.ERROR, IPDEBuildConstants.PI_PDEBUILD, IPDEBuildConstants.EXCEPTION_CLASSPATH_CYCLE, message, null));
 		}
 
+		//	The first prerequisite is ALWAYS runtime
+		if (target != getPlugin(PI_RUNTIME, null))
+			addPluginAndPrerequisites(getPlugin(PI_RUNTIME, null), classpath, baseLocation, pluginChain);
+
 		// add libraries from pre-requisite plug-ins.  Don't worry about the export flag
 		// as all required plugins may be required for compilation.
 		BundleDescription[] requires = PDEState.getDependentBundles(target);
-		pluginChain.add(target);
-		for (int i = 0; i < requires.length; i++) {
-			addPluginAndPrerequisites(requires[i], classpath, baseLocation, pluginChain);
+		if (requires != null) {
+			pluginChain.add(target);
+			for (int i = 0; i < requires.length; i++) {
+				BundleDescription plugin = getPlugin(requires[i].getUniqueId(), requires[i].getVersion().toString());
+				if (plugin != null)
+					addPluginAndPrerequisites(plugin, classpath, baseLocation, pluginChain);
+			}
+			pluginChain.remove(target);
 		}
-		pluginChain.remove(target);
 	}
 
 	/**
@@ -362,7 +369,6 @@ public class ClasspathComputer implements IPDEBuildConstants, IXMLConstants {
 		}
 	}
 	
-	//Return the jar name from the classpath 
 	private String[] getClasspathEntries(BundleDescription bundle) {
 		ManifestElement[] modelClasspath = null;
 		try {

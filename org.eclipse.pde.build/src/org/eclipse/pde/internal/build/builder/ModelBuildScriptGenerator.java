@@ -23,7 +23,7 @@ import org.eclipse.update.core.IPluginEntry;
 /**
  * Generic class for generating scripts for plug-ins and fragments.
  */
-public abstract class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
+public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 
 	/**
 	 * Represents a JAR file which is listed in the build.properties file.
@@ -81,6 +81,8 @@ public abstract class ModelBuildScriptGenerator extends AbstractBuildScriptGener
 	private String propertiesFileName = PROPERTIES_FILE;
 	private String buildScriptFileName = DEFAULT_BUILD_SCRIPT_FILENAME;
 
+	private boolean compile21 = false;
+
 	/**
 	 * @see AbstractScriptGenerator#generate()
 	 */
@@ -96,7 +98,9 @@ public abstract class ModelBuildScriptGenerator extends AbstractBuildScriptGener
 		if (featureGenerator != null && featureGenerator.isSourceFeatureGeneration() == false && featureGenerator.getBuildProperties().containsKey(GENERATION_SOURCE_PLUGIN_PREFIX + model.getUniqueId()))
 			return;
 
-		checkBootAndRuntime();	//FIXME This need to be made optional.
+		if (compile21)
+			checkBootAndRuntime();	//FIXME This need to be made optional.	If running for 2.1
+		
 		initializeVariables();
 
 		String custom = (String) getBuildProperties().get(PROPERTY_CUSTOM);
@@ -320,7 +324,19 @@ public abstract class ModelBuildScriptGenerator extends AbstractBuildScriptGener
 			script.printCopyTask(null, root, new FileSet[] { fileSet });
 		}
 		generatePermissionProperties(root);
+		genarateIdReplacementCall();
 		script.printTargetEnd();
+	}
+
+	private void genarateIdReplacementCall() throws CoreException {
+		String qualifier = (String) getBuildProperties().get("qualifier");
+		if (qualifier == null || qualifier.equalsIgnoreCase("NONE"))
+			return;
+		if (qualifier.equalsIgnoreCase("context")) {
+			
+		}
+			
+		script.print("<eclipse.PluginVersionReplacer pluginFilePath=\"asdasdasd\" versionNumber=\"foo\"/>");
 	}
 
 	private void generatePermissionProperties(String directory) throws CoreException {
@@ -465,12 +481,6 @@ public abstract class ModelBuildScriptGenerator extends AbstractBuildScriptGener
 	}
 
 	/**
-	 * 
-	 * @return String
-	 */
-	protected abstract String getModelTypeName();
-
-	/**
 	 * Sets the PluginModel to generate script from.
 	 * 
 	 * @param model
@@ -499,15 +509,6 @@ public abstract class ModelBuildScriptGenerator extends AbstractBuildScriptGener
 		}
 		setModel(newModel);
 	}
-
-	/**
-	 * Returns the model object which is associated with the given identifier.
-	 * Returns <code>null</code> if the model object cannot be found.
-	 * 
-	 * @param modelId the identifier of the model object to lookup
-	 * @return the model object or <code>null</code>
-	 */
-	protected abstract BundleDescription getModel(String modelId) throws CoreException;
 
 	/**
 	 * Add the <code>build.zips</code> target to the given Ant script.
@@ -558,7 +559,12 @@ public abstract class ModelBuildScriptGenerator extends AbstractBuildScriptGener
 		
 		// Put the jars in a correct compile order
 		String jarOrder = (String) getBuildProperties().get(PROPERTY_JAR_ORDER);
-		ClasspathComputer classpath = new ClasspathComputer(this);
+		IClasspathComputer classpath;
+		if (compile21)
+			classpath = new ClasspathComputer2_1(this);
+		else 
+			classpath = new ClasspathComputer3_0(this);
+		
 		if (jarOrder != null) {
 			String[] order = Utils.getArrayFromString(jarOrder);
 			for (int i = 0; i < order.length; i++) {
@@ -828,5 +834,16 @@ public abstract class ModelBuildScriptGenerator extends AbstractBuildScriptGener
 			// Ignore the exception and return false
 			return false;
 		} 
+	}
+
+	/**
+	 * Returns the model object which is associated with the given identifier.
+	 * Returns <code>null</code> if the model object cannot be found.
+	 * 
+	 * @param modelId the identifier of the model object to lookup
+	 * @return the model object or <code>null</code>
+	 */
+	protected BundleDescription getModel(String modelId) throws CoreException {
+		return getSite(false).getRegistry().getResolvedBundle(modelId);
 	}
 }

@@ -154,7 +154,7 @@ public final class Utils implements IPDEBuildConstants {
 		return result.toString();
 	}
 
-	public static String[] computePrerequisiteOrder(List plugins, boolean buildingOSGi) {
+	public static String[] computePrerequisiteOrder(List plugins) {
 		List prereqs = new ArrayList(plugins.size());
 		List fragments = new ArrayList();
 		
@@ -444,5 +444,79 @@ public final class Utils implements IPDEBuildConstants {
 			}
 		}
 		return copiedFiles;
+	}
+	
+	public static String[] computePrerequisiteOrder21(List plugins) {
+		List prereqs = new ArrayList(plugins.size());
+		List fragments = new ArrayList();
+		
+		// create a collection of directed edges from plugin to prereq
+		for (Iterator iter = plugins.iterator(); iter.hasNext();) {
+			BundleDescription current = (BundleDescription) iter.next();
+			String currentUniqueId = current.getUniqueId();
+			if (current.getHost() != null) {
+				fragments.add(current);
+				continue;
+			}
+			boolean boot = false;
+			boolean runtime = false;
+			boolean found = false;
+			BundleDescription[] prereqList = PDEState.getDependentBundles(current);
+			if (prereqList != null) {
+				for (int j = 0; j < prereqList.length; j++) {
+					// ensure that we only include values from the original set.
+					String prereq = prereqList[j].getUniqueId();
+					boot = boot || prereq.equals(IPDEBuildConstants.PI_BOOT);
+					runtime = runtime || prereq.equals(IPDEBuildConstants.PI_RUNTIME);
+					if (plugins.contains(prereqList[j])) {
+						found = true;
+						prereqs.add(new String[] { currentUniqueId, prereq });
+					}
+				}
+			}
+
+			// if we didn't find any prereqs for this plugin, add a null prereq
+			// to ensure the value is in the output	
+			if (!found)
+				prereqs.add(new String[] { currentUniqueId, null });
+
+			// if we didn't find the boot or runtime plugins as prereqs add prereq relations for them.  This is required since the 
+			// boot and runtime are implicitly added to a plugin's requires list by the platform runtime.
+			// Note that we should skip the xerces plugin as this would cause a circularity.
+			if (currentUniqueId.equals("org.apache.xerces")) //$NON-NLS-1$
+				continue;
+			
+			if (!boot && !currentUniqueId.equals(IPDEBuildConstants.PI_BOOT))
+				prereqs.add(new String[] { currentUniqueId, IPDEBuildConstants.PI_BOOT });
+			
+			if (!runtime && !currentUniqueId.equals(Platform.PI_RUNTIME) && !currentUniqueId.equals(IPDEBuildConstants.PI_BOOT))
+				prereqs.add(new String[] { currentUniqueId, Platform.PI_RUNTIME });
+		}
+
+		//The fragments needs to added relatively to their own prerequisite but also relatively to their host (bug #43244)
+		for (Iterator iter = fragments.iterator(); iter.hasNext();) {
+			BundleDescription element = (BundleDescription) iter.next();
+			boolean found = false;
+			BundleDescription[] prereqList = PDEState.getDependentBundles(element);
+			if (prereqList != null) {
+				for (int j = 0; j < prereqList.length; j++) {
+					// ensure that we only include values from the original set.
+					String prereq = prereqList[j].getUniqueId();
+					if (plugins.contains(prereq)) {
+						found = true;
+						prereqs.add(new String[] { element.getUniqueId(), prereq });
+					}
+				}
+			}
+			if (plugins.contains(element.getHost().getSupplier())) {
+				found = true;
+				prereqs.add(new String[] {element.getUniqueId(), element.getHost().getSupplier().getUniqueId() });
+			}
+
+		}
+		
+		// do a topological sort, insert the fragments into the sorted elements
+		String[][] prereqArray = (String[][]) prereqs.toArray(new String[prereqs.size()][]);
+		return computeNodeOrder(prereqArray);
 	}
 }
