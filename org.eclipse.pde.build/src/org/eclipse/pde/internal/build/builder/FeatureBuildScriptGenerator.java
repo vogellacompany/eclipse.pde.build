@@ -230,7 +230,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		}
 	}
 
-	private void generateIncludedFeatureBuildFile() throws CoreException {
+	protected void generateIncludedFeatureBuildFile() throws CoreException {
 		IIncludedFeatureReference[] referencedFeatures = feature.getIncludedFeatureReferences();
 		for (int i = 0; i < referencedFeatures.length; i++) {
 			String featureId = ((IncludedFeatureReferenceModel) referencedFeatures[i]).getFeatureIdentifier();
@@ -406,7 +406,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	 * 
 	 * @param script the script to add the target to
 	 */
-	private void generateZipSourcesTarget() {
+	protected void generateZipSourcesTarget() {
 		script.println();
 		script.printTargetDeclaration(TARGET_ZIP_SOURCES, TARGET_INIT, null, null, null);
 		script.printDeleteTask(featureTempFolder, null, null);
@@ -610,7 +610,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	 * 
 	 * @param script the script to add the target to
 	 */
-	private void generateZipDistributionWholeTarget() {
+	protected void generateZipDistributionWholeTarget() {
 		script.println();
 		script.printTargetDeclaration(TARGET_ZIP_DISTRIBUTION, TARGET_INIT, null, null, Policy.bind("build.feature.zips", featureIdentifier)); //$NON-NLS-1$
 		script.printDeleteTask(featureTempFolder, null, null);
@@ -651,7 +651,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	 * @param script the script to add the target to
 	 * @throws CoreException
 	 */
-	private void generateAllPluginsTarget() throws CoreException {
+	protected void generateAllPluginsTarget() throws CoreException {
 		List plugins = computeElements(false);
 		List fragments = computeElements(true);
 
