@@ -143,6 +143,10 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		pluginZipDestination = PLUGIN_DESTINATION + '/' + fullName + ".zip"; //$NON-NLS-1$ //$NON-NLS-2$
 		pluginUpdateJarDestination = PLUGIN_DESTINATION + '/' + fullName + ".jar"; //$NON-NLS-1$ //$NON-NLS-2$
 		String[] classpathInfo = getClasspathEntries(model);
+		specialDotProcessing(classpathInfo);
+	}
+
+	private void specialDotProcessing(String[] classpathInfo) throws CoreException {
 		if (classpathInfo.length>0 && ".".equals(classpathInfo[0])) {
 			getSite(false).getRegistry().getExtraData().put(new Long(model.getBundleId()), new String[]{"@dot"});
 			getBuildProperties().setProperty("source.@dot", getBuildProperties().getProperty("source.."));
@@ -162,7 +166,7 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 			}
 		}
 	}
-		
+
 	/**
 	 * Main call for generating the script.
 	 * 
@@ -350,13 +354,24 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 			script.printCopyTask(null, root, new FileSet[] { fileSet }, true);
 		}
 		if (include != null || exclude != null) {
+			if (include!=null) {
+				String[] splitIncludes = Utils.getArrayFromString(include);
+				boolean found = false; 
+				for (int i = 0; i < splitIncludes.length; i++) {
+					if (splitIncludes[i].equals(".")) {
+						splitIncludes[i] = "";
+						found = true;
+						break;
+					}
+				}
+				if (found) {
+					include = Utils.getStringFromArray(splitIncludes, ",");
+					FileSet fileSet = new FileSet(getPropertyFormat(PROPERTY_BASEDIR) + "/@dot", null, "**", null, null, null, null);
+					script.printCopyTask(null, root,new FileSet[] { fileSet }, true);
+				}
+			}
 			FileSet fileSet = new FileSet(getPropertyFormat(PROPERTY_BASEDIR), null, replaceVariables(include, true), null, replaceVariables(exclude, true), null, null);
 			script.printCopyTask(null, root, new FileSet[] { fileSet }, true);
-		}
-		String[] classpathInfo = getClasspathEntries(model);
-		if (classpathInfo.length > 1 && "@dot".equalsIgnoreCase(classpathInfo[0])) {
-			FileSet fileSet = new FileSet(getPropertyFormat(PROPERTY_BASEDIR) + "/@dot", null, "**", null, null, null, null);
-			script.printCopyTask(null, root,new FileSet[] { fileSet }, true);
 		}
 		generatePermissionProperties(root);
 		genarateIdReplacementCall(destination.toString());

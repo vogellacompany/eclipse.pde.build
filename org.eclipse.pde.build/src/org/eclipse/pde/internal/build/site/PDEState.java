@@ -1,4 +1,15 @@
+/**********************************************************************
+ * Copyright (c) 2000, 2003 IBM Corporation and others.
+ * All rights reserved.   This program and the accompanying materials
+ * are made available under the terms of the Common Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/cpl-v10.html
+ * 
+ * Contributors: 
+ * IBM - Initial API and implementation
+ **********************************************************************/
 package org.eclipse.pde.internal.build.site;
+
 import java.io.*;
 import java.net.URL;
 import java.util.*;
@@ -90,6 +101,28 @@ public class PDEState implements IPDEBuildConstants, IBuildPropertiesConstants {
 			//Ignore
 		}
 	}
+	
+	public boolean addBundle(File bundleLocation) {
+		Dictionary manifest;
+		manifest = loadManifest(bundleLocation);
+		if (manifest == null) {
+			IStatus status = new Status(IStatus.INFO, PI_PDEBUILD, IPDEBuildConstants.EXCEPTION_READING_FILE, Policy.bind("exception.missingFile"), null);	//$NON-NLS-1$
+			BundleHelper.getDefault().getLog().log(status);
+			return false;
+		}
+		try {
+			String symbolicHeader = (String) manifest.get(Constants.BUNDLE_SYMBOLICNAME);
+			if (symbolicHeader != null && ManifestElement.parseHeader(Constants.BUNDLE_SYMBOLICNAME, symbolicHeader)[0].getValue().equals("org.eclipse.osgi")) {
+				//TODO We need to handle the special case of the osgi bundle for whose bundle-classpath is specified in the eclipse.properties file in the osgi folder
+				manifest.put(Constants.BUNDLE_CLASSPATH, "core.jar, console.jar, osgi.jar, resolver.jar, defaultAdaptor.jar, eclipseAdaptor.jar");
+			}
+			hasQualifier(bundleLocation, manifest);
+		} catch(BundleException e) {
+			//should not happen since we know the header
+		}
+		return addBundle(manifest, bundleLocation);
+	}
+	
 	private void updateVersionNumber(Dictionary manifest) {
 		String q = (String) manifest.get(PROPERTY_QUALIFIER);
 		if (q == null)
@@ -107,24 +140,24 @@ public class PDEState implements IPDEBuildConstants, IBuildPropertiesConstants {
 		String oldVersion = (String) manifest.get(Constants.BUNDLE_VERSION);
 		manifest.put(Constants.BUNDLE_VERSION, oldVersion.replaceFirst(PROPERTY_QUALIFIER, newQualifier));
 	}
-	public boolean addBundle(File bundleLocation) {
-		Dictionary manifest;
-		manifest = loadManifest(bundleLocation);
-		if (manifest == null) {
-			IStatus status = new Status(IStatus.INFO, PI_PDEBUILD, IPDEBuildConstants.EXCEPTION_READING_FILE, Policy.bind("exception.missingFile"), null);	//$NON-NLS-1$
-			BundleHelper.getDefault().getLog().log(status);
-			return false;
-		}
-		try {
-			String symbolicHeader = (String) manifest.get(Constants.BUNDLE_SYMBOLICNAME);
-			if (symbolicHeader != null && ManifestElement.parseHeader(Constants.BUNDLE_SYMBOLICNAME, symbolicHeader)[0].getValue().equals("org.eclipse.osgi")) {
-				//TODO We need to handle the special case of the osgi bundle for whose bundle-classpath is specified in the eclipse.properties file in the osgi folder
-				manifest.put(Constants.BUNDLE_CLASSPATH, "core.jar, console.jar, osgi.jar, resolver.jar, defaultAdaptor.jar, eclipseAdaptor.jar");
+	
+	/**
+	 * @param bundleLocation
+	 * @param manifest
+	 * @throws BundleException
+	 */
+	private void hasQualifier(File bundleLocation, Dictionary manifest) throws BundleException {
+		ManifestElement[] versionInfo = ManifestElement.parseHeader(Constants.BUNDLE_VERSION, (String) manifest.get(Constants.BUNDLE_VERSION));
+		if (versionInfo != null) {
+			if(versionInfo[0].getValue().endsWith(PROPERTY_QUALIFIER)) {
+				try {
+					String qualifierInfo = AbstractScriptGenerator.readProperties(bundleLocation.getAbsolutePath(), IPDEBuildConstants.PROPERTIES_FILE).getProperty(PROPERTY_QUALIFIER);
+					manifest.put(PROPERTY_QUALIFIER, qualifierInfo);
+				} catch (CoreException e1) {
+					//Ignore
+				}
 			}
-		} catch(BundleException e) {
-			//should not happen since we know the header
 		}
-		return addBundle(manifest, bundleLocation);
 	}
 	
 	private Dictionary loadManifest(File bundleLocation) {

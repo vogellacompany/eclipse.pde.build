@@ -34,8 +34,6 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 	protected boolean copyRootFile;
 	protected Properties pluginsPostProcessingSteps;
 	protected Properties featuresPostProcessingSteps;
-	protected String outputFormat;
-	protected boolean generateArchive;
 	
 	private static final String PROPERTY_TMP_DIR = "assemblyTempDir"; //$NON-NLS-1$	
 	private static final String PROPERTY_SOURCE = "source"; //$NON-NLS-1$
@@ -54,13 +52,11 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 		super();
 	}
 
-	public void initialize(String directoryName, String scriptName, String feature, Config configurationInformation, Collection elementList, Collection featureList, boolean rootFileCopy, String outputFormat, boolean generateArchive) throws CoreException {
+	public void initialize(String directoryName, String scriptName, String feature, Config configurationInformation, Collection elementList, Collection featureList, boolean rootFileCopy) throws CoreException {
 		this.directory = directoryName;
 		this.featureId = feature;
 		this.configInfo = configurationInformation;
 		this.copyRootFile = rootFileCopy;
-		this.outputFormat = outputFormat;
-		this.generateArchive = generateArchive;
 		
 		this.features = new IFeature[featureList.size()];
 		featureList.toArray(this.features);
@@ -91,7 +87,7 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 		generatePrologue();
 		generateInitializationSteps();
 		generateGatherBinPartsCalls();
-		if (generateArchive) {
+		if (! outputFormat.equalsIgnoreCase("folder")) {
 			if (configInfo.getOs().equalsIgnoreCase("macosx")) { //$NON-NLS-1$
 				generateTarTarget();
 				generateGZipTarget();
@@ -251,7 +247,7 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 		final int parameterSize = 15;
 		List parameters = new ArrayList(parameterSize + 1);
 		for (int i = 0; i < plugins.length; i++) {
-			parameters.add(getPropertyFormat(PROPERTY_ARCHIVE_PREFIX) + '/' + DEFAULT_PLUGIN_LOCATION + '/' + plugins[i].getUniqueId() + '_' + plugins[i].getVersion() + '*');
+			parameters.add(getPropertyFormat(PROPERTY_ARCHIVE_PREFIX) + '/' + DEFAULT_PLUGIN_LOCATION + '/' + (String) getFinalShape(plugins[i].getUniqueId(), plugins[i].getVersion().toString(), BUNDLE)[0] );
 			if (i % parameterSize == 0) {
 				createZipExecCommand(parameters);
 				parameters.clear();
@@ -268,7 +264,7 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 		}
 
 		for (int i = 0; i < features.length; i++) {
-			parameters.add(getPropertyFormat(PROPERTY_ARCHIVE_PREFIX) + '/' + DEFAULT_FEATURE_LOCATION + '/' + features[i].getVersionedIdentifier().toString() + '*');
+			parameters.add(getPropertyFormat(PROPERTY_ARCHIVE_PREFIX) + '/' + DEFAULT_FEATURE_LOCATION + '/' + (String) getFinalShape(features[i].getVersionedIdentifier().getIdentifier(), features[i].getVersionedIdentifier().getVersion().toString(), FEATURE)[0] );
 			if (i % parameterSize == 0) {
 				createZipExecCommand(parameters);
 				parameters.clear();
@@ -321,7 +317,7 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 //		<zipfileset dir="d:/tmp/platform/tmp/eclipse/plugins/org.eclipse.core.variables_3.0.0" prefix="eclipse/plugins/org.eclipse.core.variables_3.0.0"/>
 //		<zipfileset file="d:/tmp/platform/tmp/eclipse/plugins/org.eclipse.core.runtime_3.0.0.jar" fullpath="eclipse/plugins/org.eclipse.core.runtime_3.0.0.jar"/>
 // </zip>
-	public void generateAntZipTarget() {
+	private void generateAntZipTarget() {
 		FileSet[] filesPlugins = new FileSet[plugins.length];
 		for (int i = 0; i < plugins.length; i++) {
 			Object[] shape = getFinalShape(plugins[i].getUniqueId(), plugins[i].getVersion().toString(), BUNDLE);
@@ -335,7 +331,6 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 			filesFeatures[i] = new ZipFileSet(getPropertyFormat(PROPERTY_ECLIPSE_BASE) + '/' + DEFAULT_FEATURE_LOCATION +'/' + (String) shape[0], shape[1].equals(new Byte(FILE)), null, null, null, null, null, getPropertyFormat(PROPERTY_ARCHIVE_PREFIX) + '/' + DEFAULT_FEATURE_LOCATION + '/' + (String) shape[0], null); 
 		}
 		script.printZipTask(getPropertyFormat(PROPERTY_ARCHIVE_FULLPATH), null, false, true, filesFeatures);
-		
 		
 		if (! copyRootFile)
 			return;

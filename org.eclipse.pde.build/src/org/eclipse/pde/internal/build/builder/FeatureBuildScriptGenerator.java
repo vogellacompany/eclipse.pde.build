@@ -417,7 +417,17 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		String include = (String) getBuildProperties().get(PROPERTY_BIN_INCLUDES);
 		String exclude = (String) getBuildProperties().get(PROPERTY_BIN_EXCLUDES);
 		String root = getPropertyFormat(PROPERTY_FEATURE_BASE) + '/' + featureFolderName; //$NON-NLS-1$
-		script.printMkdirTask(root);
+		
+		//TODO Ugly handling to not create the feature folder if nothing is being gathered
+		if (AbstractScriptGenerator.outputFormat.equalsIgnoreCase("folder") && include != null)
+			script.printMkdirTask(root);
+		
+		if (AbstractScriptGenerator.outputFormat.equalsIgnoreCase("antzip"))
+			script.printMkdirTask(root);
+		
+		if (AbstractScriptGenerator.outputFormat.equalsIgnoreCase("zip") && include != null)
+			script.printMkdirTask(root);
+			
 		if (include != null) {
 			if (include != null || exclude != null) {
 				FileSet fileSet = new FileSet(getPropertyFormat(PROPERTY_BASEDIR), null, include, null, exclude, null, null);

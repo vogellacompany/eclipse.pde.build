@@ -19,17 +19,13 @@ public class AssembleScriptGenerator extends AbstractScriptGenerator {
 	private String directory; // representing the directory where to generate the file
 	private AssemblyInformation assemblageInformation;
 	private String featureId;
-	private String outputFormat;
-	private boolean generateArchive;
 	
 	private AssembleConfigScriptGenerator configScriptGenerator = new AssembleConfigScriptGenerator();
 
-	public AssembleScriptGenerator(String directory, AssemblyInformation assemblageInformation, String featureId, String scriptFilename, String outputFormat, boolean generateArchive) throws CoreException {
+	public AssembleScriptGenerator(String directory, AssemblyInformation assemblageInformation, String featureId, String scriptFilename) throws CoreException {
 		this.directory = directory;
 		this.assemblageInformation = assemblageInformation;
 		this.featureId = featureId;
-		this.outputFormat = outputFormat;
-		this.generateArchive = generateArchive;
 		
 		String filename = directory + '/' + (scriptFilename == null ? (DEFAULT_ASSEMBLE_NAME + "." + featureId + "." + DEFAULT_ASSEMBLE_ALL) : scriptFilename); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 		try {
@@ -61,7 +57,7 @@ public class AssembleScriptGenerator extends AbstractScriptGenerator {
 
 	protected void generateAssembleConfigFileTargetCall(Config aConfig) throws CoreException {
 		// generate the script for a configuration
-		configScriptGenerator.initialize(directory, null, featureId, aConfig, assemblageInformation.getPlugins(aConfig), assemblageInformation.getFeatures(aConfig), assemblageInformation.copyRootFile(aConfig), outputFormat, generateArchive);
+		configScriptGenerator.initialize(directory, null, featureId, aConfig, assemblageInformation.getPlugins(aConfig), assemblageInformation.getFeatures(aConfig), assemblageInformation.copyRootFile(aConfig));
 		configScriptGenerator.generate();
 
 		Map params = new HashMap(1);

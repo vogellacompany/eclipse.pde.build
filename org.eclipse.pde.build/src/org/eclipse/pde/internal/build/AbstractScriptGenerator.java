@@ -23,12 +23,13 @@ import org.eclipse.update.core.SiteManager;
  */
 public abstract class AbstractScriptGenerator implements IXMLConstants, IPDEBuildConstants, IBuildPropertiesConstants {
 
-	private static String targetStyle = "folder"; 
+	protected static String outputFormat = "zip"; 
 	private static List configInfos;
 	protected static String workingDirectory;
 	protected static boolean buildingOSGi = false;
 	protected AntScript script;
-
+ 
+	
 	static {
 		// By default, a generic configuration is set
 		configInfos = new ArrayList(1);
@@ -100,7 +101,7 @@ public abstract class AbstractScriptGenerator implements IXMLConstants, IPDEBuil
 		return model.getLocation();		
 	}
 
-	protected Properties readProperties(String location, String fileName) throws CoreException {
+	public static Properties readProperties(String location, String fileName) throws CoreException {
 		Properties result = new Properties();
 		File file = new File(location, fileName);
 		try {
