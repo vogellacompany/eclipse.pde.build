@@ -287,7 +287,11 @@ public class ClasspathComputer2_1 implements IClasspathComputer, IPDEBuildConsta
 		if (pluginChain.contains(target)) {
 			if (target == getPlugin(PI_RUNTIME, null))
 				return;
-			String message = Policy.bind("error.pluginCycle"); //$NON-NLS-1$
+			String cycleString = "";	//$NON-NLS-1$
+			for (Iterator iter = pluginChain.iterator(); iter.hasNext();)
+				cycleString +=  iter.next().toString() + ", "; //$NON-NLS-1$
+			cycleString += target.toString(); 
+			String message = Policy.bind("error.pluginCycle", cycleString); //$NON-NLS-1$
 			throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, EXCEPTION_CLASSPATH_CYCLE, message, null));
 		}
 

@@ -108,7 +108,7 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		
 		initializeVariables();
 		if (BundleHelper.getDefault().isDebugging())
-			System.out.println("Generating plugin" + model.getUniqueId());
+			System.out.println("Generating plugin " + model.getUniqueId());
 
 		String custom = (String) getBuildProperties().get(PROPERTY_CUSTOM);
 		if (custom != null && custom.equalsIgnoreCase("true")) { //$NON-NLS-1$

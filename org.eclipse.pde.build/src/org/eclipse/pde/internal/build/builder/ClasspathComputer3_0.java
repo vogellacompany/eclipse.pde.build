@@ -272,8 +272,12 @@ public class ClasspathComputer3_0 implements IClasspathComputer, IPDEBuildConsta
 
 	//Add the prerequisite of a given plugin (target)
 	private void addPrerequisites(BundleDescription target, List classpath, String baseLocation, List pluginChain, Set addedPlugins) throws CoreException {
-		if (pluginChain.contains(target)) {		
-			String message = Policy.bind("error.pluginCycle"); //$NON-NLS-1$
+		if (pluginChain.contains(target)) {
+			String cycleString = "";	//$NON-NLS-1$
+			for (Iterator iter = pluginChain.iterator(); iter.hasNext();)
+				cycleString +=  iter.next().toString() + ", "; //$NON-NLS-1$
+			cycleString += target.toString(); 
+			String message = Policy.bind("error.pluginCycle", cycleString); //$NON-NLS-1$
 			throw new CoreException(new Status(IStatus.ERROR, IPDEBuildConstants.PI_PDEBUILD, EXCEPTION_CLASSPATH_CYCLE, message, null));
 		}
 		if (addedPlugins.contains(target))	//the plugins we are considering has already been added	
