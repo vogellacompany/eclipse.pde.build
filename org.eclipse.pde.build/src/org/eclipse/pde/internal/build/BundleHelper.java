@@ -16,6 +16,7 @@ import java.net.URL;
 import java.util.Map;
 import org.eclipse.core.internal.runtime.FindSupport;
 import org.eclipse.core.internal.runtime.InternalPlatform;
+import org.eclipse.core.runtime.*;
 import org.eclipse.core.runtime.ILog;
 import org.eclipse.core.runtime.IPath;
 import org.osgi.framework.*;
@@ -61,7 +62,7 @@ public class BundleHelper  {
 	}
 
 	public final IPath getStateLocation() throws IllegalStateException {
-		return InternalPlatform.getDefault().getStateLocation(bundle,true);
+		return Platform.getStateLocation(getDefault().bundle);
 	}
 	
 	public final InputStream openStream(IPath file) throws IOException {
