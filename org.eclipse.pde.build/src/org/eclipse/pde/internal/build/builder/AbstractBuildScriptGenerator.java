@@ -69,6 +69,9 @@ public abstract class AbstractBuildScriptGenerator extends AbstractScriptGenerat
 	 * @throws CoreException
 	 */
 	public BuildTimeSite getSite(boolean refresh) throws CoreException {
+		if (siteFactory != null && refresh == false)
+			return (BuildTimeSite) siteFactory.createSite();
+		
 		if (siteFactory == null || refresh == true)
 			siteFactory = new BuildTimeSiteFactory();
 
