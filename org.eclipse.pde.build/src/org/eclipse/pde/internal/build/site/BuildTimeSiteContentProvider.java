@@ -38,6 +38,7 @@ public class BuildTimeSiteContentProvider extends SiteContentProvider implements
 	public Collection getPluginPaths() {
 		Collection pluginsToCompile = findPluginXML(urls);
 		if (installedBaseURL != null) {
+			pluginsToCompile.addAll(findPluginXML(PluginPathFinder.getPluginPaths(installedBaseURL)));
 			pluginsToCompile.addAll(findPluginXML(new String[] { installedBaseURL }));	
 		}
 		return pluginsToCompile;
@@ -60,4 +61,5 @@ public class BuildTimeSiteContentProvider extends SiteContentProvider implements
 		}  
 		return collectedElements;
 	}
+	
 }

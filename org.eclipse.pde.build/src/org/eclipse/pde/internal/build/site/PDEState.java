@@ -139,7 +139,7 @@ public class PDEState implements IPDEBuildConstants, IBuildPropertiesConstants {
 			PluginConverter converter;
 			try {
 				converter = acquirePluginConverter();
-				return converter.convertManifest(bundleLocation, false);
+				return converter.convertManifest(bundleLocation, false, null);
 			} catch (Exception e1) {
 				return null;
 			}

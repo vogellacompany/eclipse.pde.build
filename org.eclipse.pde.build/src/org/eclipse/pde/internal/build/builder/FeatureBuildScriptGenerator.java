@@ -83,7 +83,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	 */
 	protected List computeElements() throws CoreException {
 		List result = new ArrayList(5);
-		IPluginEntry[] pluginList = feature.getRawPluginEntries();
+		IPluginEntry[] pluginList = feature.getPluginEntries();//getRawPluginEntries();
 		for (int i = 0; i < pluginList.length; i++) {
 			IPluginEntry entry = pluginList[i];
 			VersionedIdentifier identifier = entry.getVersionedIdentifier();
@@ -435,8 +435,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		for (int i = 0; i < pluginsIncluded.length; i++) {
 			VersionedIdentifier identifier = pluginsIncluded[i].getVersionedIdentifier();
 			BundleDescription model;
-			// If we ask for 0.0.0, the call to the registry must have null as
-			// a parameter
+			// If we ask for 0.0.0, the call to the registry must have null as a parameter
 			String versionRequested = identifier.getVersion().toString();
 			if (versionRequested.equals(GENERIC_VERSION_NUMBER))
 				versionRequested = null;
@@ -476,7 +475,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 			return;
 		assemblyData.setCopyRootFile(aConfig);
 		configName = aConfig.toStringReplacingAny(".", ANY_STRING); //$NON-NLS-1$
-		script.printMkdirTask(getPropertyFormat(PROPERTY_FEATURE_BASE) + '/' + configName + '/' + getPropertyFormat(PROPERTY_COLLECTING_PLACE)); //$NON-NLS-1$ //$NON-NLS-2$
+		script.printMkdirTask(getPropertyFormat(PROPERTY_FEATURE_BASE) + '/' + configName + '/' + getPropertyFormat(PROPERTY_ARCHIVE_PREFIX)); //$NON-NLS-1$ //$NON-NLS-2$
 		String[] files = Utils.getArrayFromString(fileList, ","); //$NON-NLS-1$
 		FileSet[] fileSet = new FileSet[files.length];
 		for (int i = 0; i < files.length; i++) {
@@ -489,7 +488,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 				fileSet[i] = new FileSet(fromDir + file, null, "**", null, null, null, null); //$NON-NLS-1$
 			}
 		}
-		script.printCopyTask(null, getPropertyFormat(PROPERTY_FEATURE_BASE) + '/' + configName + '/' + getPropertyFormat(PROPERTY_COLLECTING_PLACE), fileSet, true);
+		script.printCopyTask(null, getPropertyFormat(PROPERTY_FEATURE_BASE) + '/' + configName + '/' + getPropertyFormat(PROPERTY_ARCHIVE_PREFIX), fileSet, true);
 	}
 	private void generatePermissions(Config aConfig) throws CoreException {
 		String configInfix = aConfig.toString("."); //$NON-NLS-1$
@@ -503,19 +502,19 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 			String instruction = (String) permission.getKey();
 			String parameters = (String) permission.getValue();
 			if (instruction.startsWith(prefixPermissions)) {
-				generateChmodInstruction(getPropertyFormat(PROPERTY_FEATURE_BASE) + '/' + configInfix + '/' + getPropertyFormat(PROPERTY_COLLECTING_PLACE), instruction.substring(prefixPermissions.length()), parameters); //$NON-NLS-1$ //$NON-NLS-2$
+				generateChmodInstruction(getPropertyFormat(PROPERTY_FEATURE_BASE) + '/' + configInfix + '/' + getPropertyFormat(PROPERTY_ARCHIVE_PREFIX), instruction.substring(prefixPermissions.length()), parameters); //$NON-NLS-1$ //$NON-NLS-2$
 				continue;
 			}
 			if (instruction.startsWith(prefixLinks)) {
-				generateLinkInstruction(getPropertyFormat(PROPERTY_FEATURE_BASE) + '/' + configInfix + '/' + getPropertyFormat(PROPERTY_COLLECTING_PLACE), parameters);
+				generateLinkInstruction(getPropertyFormat(PROPERTY_FEATURE_BASE) + '/' + configInfix + '/' + getPropertyFormat(PROPERTY_ARCHIVE_PREFIX), parameters);
 				continue;
 			}
 			if (instruction.startsWith(commonPermissions)) {
-				generateChmodInstruction(getPropertyFormat(PROPERTY_FEATURE_BASE) + '/' + configInfix + '/' + getPropertyFormat(PROPERTY_COLLECTING_PLACE), instruction.substring(commonPermissions.length()), parameters);
+				generateChmodInstruction(getPropertyFormat(PROPERTY_FEATURE_BASE) + '/' + configInfix + '/' + getPropertyFormat(PROPERTY_ARCHIVE_PREFIX), instruction.substring(commonPermissions.length()), parameters);
 				continue;
 			}
 			if (instruction.startsWith(commonLinks)) {
-				generateLinkInstruction(getPropertyFormat(PROPERTY_FEATURE_BASE) + '/' + configInfix + '/' + getPropertyFormat(PROPERTY_COLLECTING_PLACE), parameters);
+				generateLinkInstruction(getPropertyFormat(PROPERTY_FEATURE_BASE) + '/' + configInfix + '/' + getPropertyFormat(PROPERTY_ARCHIVE_PREFIX), parameters);
 				continue;
 			}
 		}
@@ -615,13 +614,11 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	 * scripts. Plugins are sorted according to the requires chain. Fragments
 	 * are inserted afterward
 	 * 
-	 * @param script
-	 *                   the script to add the target to
 	 * @throws CoreException
 	 */
 	protected void generateAllPluginsTarget() throws CoreException {
 		List plugins = computeElements();
-		plugins = Utils.computePrerequisiteOrder(plugins);
+		plugins = Utils.extractPlugins(getSite(false).getRegistry().getSortedBundles(), plugins);
 		script.println();
 		script.printTargetDeclaration(TARGET_ALL_PLUGINS, TARGET_INIT, null, null, null);
 		Set writtenCalls = new HashSet(plugins.size());
@@ -699,8 +696,9 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	 */
 	private void generateChildrenScripts() throws CoreException {
 		List plugins = computeElements();
-		generateModels(Utils.computePrerequisiteOrder(plugins));
+		generateModels(Utils.extractPlugins(getSite(false).getRegistry().getSortedBundles(), plugins));
 	}
+	
 	/**
 	 * @param generator
 	 * @param models

@@ -315,7 +315,7 @@ public class ClasspathComputer3_0 implements IClasspathComputer, IPDEBuildConsta
 	 */
 	private void addDevEntries(BundleDescription model, String baseLocation, List classpath, String[] jarSpecificEntries) throws CoreException {
 		// first we verify if the addition of dev entries is required
-		if (generator.devEntries != null && generator.devEntries.length == 0)
+		if (generator.devEntries != null)
 			return;
 
 		if (generator.devEntries == null && (jarSpecificEntries == null || jarSpecificEntries.length == 0))
@@ -326,7 +326,7 @@ public class ClasspathComputer3_0 implements IClasspathComputer, IPDEBuildConsta
 		if (jarSpecificEntries != null && jarSpecificEntries.length > 0)
 			entries = jarSpecificEntries;
 		else
-			entries = generator.devEntries;
+			entries = generator.devEntries.getDevClassPath(model.getUniqueId());
 
 		IPath root = Utils.makeRelative(new Path(generator.getLocation(model)), new Path(baseLocation));
 		String path;

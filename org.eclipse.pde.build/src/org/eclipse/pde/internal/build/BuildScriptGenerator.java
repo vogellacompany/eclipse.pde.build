@@ -12,6 +12,7 @@ package org.eclipse.pde.internal.build;
 
 import java.util.*;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.pde.internal.build.builder.*;
 import org.eclipse.pde.internal.build.builder.FeatureBuildScriptGenerator;
 import org.eclipse.pde.internal.build.builder.ModelBuildScriptGenerator;
 
@@ -33,7 +34,7 @@ public class BuildScriptGenerator extends AbstractScriptGenerator {
 	/**
 	 * Additional dev entries for the compile classpath.
 	 */
-	protected String[] devEntries = new String[0];
+	protected DevClassPathHelper devEntries;
 
 	/**
 	 * Plugin path. URLs that point where to find the plugins.
@@ -130,8 +131,9 @@ public class BuildScriptGenerator extends AbstractScriptGenerator {
 	 * 
 	 * @param devEntries
 	 */
-	public void setDevEntries(String[] devEntries) {
-		this.devEntries = devEntries;
+	public void setDevEntries(String devEntries) {
+		if (devEntries != null)
+			this.devEntries = new DevClassPathHelper(devEntries);
 	}
 
 	/**

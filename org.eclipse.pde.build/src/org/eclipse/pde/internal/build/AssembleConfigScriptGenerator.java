@@ -36,7 +36,7 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 	protected Properties featuresPostProcessingSteps;
 	protected String outputFormat;
 	
-	private static final String PROPERTY_TMP_DIR = "tmp_dir"; //$NON-NLS-1$	
+	private static final String PROPERTY_TMP_DIR = "assemblyTempDir"; //$NON-NLS-1$	
 	private static final String PROPERTY_SOURCE = "source"; //$NON-NLS-1$
 	private static final String PROPERTY_ELEMENT_NAME = "elementName"; //$NON-NLS-1$
 	
@@ -116,10 +116,10 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 				+ "\" tofile=\"" //$NON-NLS-1$
 				+ getPropertyFormat(PROPERTY_TMP_DIR)
 				+ '/' //$NON-NLS-1$
-				+ getPropertyFormat(PROPERTY_COLLECTING_BASE)
+				+ getPropertyFormat(PROPERTY_COLLECTING_FOLDER)
 				+ "/tmp.tar\"/>"); //$NON-NLS-1$
 		script.printGZip(
-			getPropertyFormat(PROPERTY_TMP_DIR) + '/' + getPropertyFormat(PROPERTY_COLLECTING_BASE) + "/tmp.tar", //$NON-NLS-1$ //$NON-NLS-2$
+			getPropertyFormat(PROPERTY_TMP_DIR) + '/' + getPropertyFormat(PROPERTY_COLLECTING_FOLDER) + "/tmp.tar", //$NON-NLS-1$ //$NON-NLS-2$
 			getPropertyFormat(PROPERTY_ARCHIVE_FULLPATH)); 
 		List args = new ArrayList(2);
 		args.add("-rf"); //$NON-NLS-1$
@@ -134,7 +134,7 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 		script.printProperty(PROPERTY_WS, configInfo.getWs());
 		script.printProperty(PROPERTY_ARCH, configInfo.getArch());
 		script.printProperty(PROPERTY_TMP_DIR, getPropertyFormat(PROPERTY_BUILD_DIRECTORY) + "/tmp"); //$NON-NLS-1$
-		script.printProperty(PROPERTY_ECLIPSE_BASE, getPropertyFormat(PROPERTY_TMP_DIR) + '/' + getPropertyFormat(PROPERTY_COLLECTING_BASE)); //$NON-NLS-1$ //$NON-NLS-2$
+		script.printProperty(PROPERTY_ECLIPSE_BASE, getPropertyFormat(PROPERTY_TMP_DIR) + '/' + getPropertyFormat(PROPERTY_COLLECTING_FOLDER)); //$NON-NLS-1$ //$NON-NLS-2$
 		script.printProperty(PROPERTY_DESTINATION_TEMP_FOLDER, getPropertyFormat(PROPERTY_ECLIPSE_BASE) + '/' + DEFAULT_PLUGIN_LOCATION); //$NON-NLS-1$
 		script.printProperty(PROPERTY_ARCHIVE_FULLPATH, getPropertyFormat(PROPERTY_BASEDIR) + '/' + getPropertyFormat(PROPERTY_BUILD_LABEL) + '/' + getPropertyFormat(PROPERTY_ARCHIVE_NAME)); //$NON-NLS-1$ //$NON-NLS-2$
 		generatePackagingTargets();
@@ -142,6 +142,13 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 	}
 
 	private void generateInitializationSteps() {
+		script.printEchoTask("baseDir: " + getPropertyFormat(PROPERTY_BASEDIR));
+		script.printEchoTask("collectingFolder: " + getPropertyFormat(PROPERTY_COLLECTING_FOLDER));
+		script.printEchoTask("archivePrefix: " + getPropertyFormat(PROPERTY_ARCHIVE_PREFIX));
+		script.println("<echo message=\"eclipse.base: ${eclipse.base}\"/>");
+		script.println("<echo message=\"tmp_dir: ${assemblyTempDir}\"/>");
+		script.println("<echo message=\"destination.temp.folder ${destination.temp.folder}\"/>");
+		
 		script.printDeleteTask(getPropertyFormat(PROPERTY_TMP_DIR), null, null);
 		script.printMkdirTask(getPropertyFormat(PROPERTY_TMP_DIR));
 		script.printMkdirTask(getPropertyFormat(PROPERTY_BUILD_LABEL));
@@ -239,7 +246,7 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 		final int parameterSize = 15;
 		List parameters = new ArrayList(parameterSize + 1);
 		for (int i = 0; i < plugins.length; i++) {
-			parameters.add(getPropertyFormat(PROPERTY_COLLECTING_PLACE) + '/' + DEFAULT_PLUGIN_LOCATION + '/' + plugins[i].getUniqueId() + '_' + plugins[i].getVersion() + (getFinalShape(plugins[i].getUniqueId(), plugins[i].getVersion().toString(), BUNDLE)[0].equals(new Byte(FOLDER)) ? '/': '*'));
+			parameters.add(getPropertyFormat(PROPERTY_ARCHIVE_PREFIX) + '/' + DEFAULT_PLUGIN_LOCATION + '/' + plugins[i].getUniqueId() + '_' + plugins[i].getVersion() + '*');
 			if (i % parameterSize == 0) {
 				createZipExecCommand(parameters);
 				parameters.clear();
@@ -256,7 +263,7 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 		}
 
 		for (int i = 0; i < features.length; i++) {
-			parameters.add(getPropertyFormat(PROPERTY_COLLECTING_PLACE) + '/' + DEFAULT_FEATURE_LOCATION + '/' + features[i].getVersionedIdentifier().toString() +  (getFinalShape(features[i].getVersionedIdentifier().getIdentifier(), features[i].getVersionedIdentifier().getVersion().toString(), FEATURE)[0].equals(new Byte(FOLDER)) ? '/' : '*'));
+			parameters.add(getPropertyFormat(PROPERTY_ARCHIVE_PREFIX) + '/' + DEFAULT_FEATURE_LOCATION + '/' + features[i].getVersionedIdentifier().toString() + '*');
 			if (i % parameterSize == 0) {
 				createZipExecCommand(parameters);
 				parameters.clear();
@@ -279,12 +286,12 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 			
 		List parameters = new ArrayList(1);
 		parameters.add("-r -q ${zipargs} " + getPropertyFormat(PROPERTY_ARCHIVE_FULLPATH) + " . "); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-		script.printExecTask("zip", getPropertyFormat(PROPERTY_ECLIPSE_BASE) + '/' + configInfo.toStringReplacingAny(".", ANY_STRING) + '/' + getPropertyFormat(PROPERTY_COLLECTING_BASE), parameters, null); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+		script.printExecTask("zip", getPropertyFormat(PROPERTY_ECLIPSE_BASE) + '/' + configInfo.toStringReplacingAny(".", ANY_STRING), parameters, null); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
 	
 	}
 	private void createZipExecCommand(List parameters) {
 		parameters.add(0, "-r -q " + getPropertyFormat(PROPERTY_ZIP_ARGS) + " " + getPropertyFormat(PROPERTY_ARCHIVE_FULLPATH)); //$NON-NLS-1$ //$NON-NLS-2$
-		script.printExecTask("zip", getPropertyFormat(PROPERTY_TMP_DIR) + '/' + getPropertyFormat(PROPERTY_COLLECTING_BASE), parameters, null); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+		script.printExecTask("zip", getPropertyFormat(PROPERTY_TMP_DIR), parameters, null); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 	}
 
 	protected String computeArchiveName() {
@@ -293,16 +300,16 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 
 	public void generateTarTarget() {
 		List parameters = new ArrayList(2);
-		parameters.add("-r " + getPropertyFormat(PROPERTY_TMP_DIR) + '/' + getPropertyFormat(PROPERTY_COLLECTING_BASE)  + '/' + getPropertyFormat(PROPERTY_COLLECTING_PLACE) + '/' + configInfo.toStringReplacingAny(".", ANY_STRING) + "/eclipse " + getPropertyFormat(PROPERTY_TMP_DIR) + '/' + getPropertyFormat(PROPERTY_COLLECTING_BASE)); //$NON-NLS-1$ //$NON-NLS-2$  
+		parameters.add("-r " + getPropertyFormat(PROPERTY_TMP_DIR) + '/' + getPropertyFormat(PROPERTY_COLLECTING_FOLDER)  + '/' + getPropertyFormat(PROPERTY_ARCHIVE_PREFIX) + '/' + configInfo.toStringReplacingAny(".", ANY_STRING) + "/eclipse " + getPropertyFormat(PROPERTY_TMP_DIR) + '/' + getPropertyFormat(PROPERTY_COLLECTING_FOLDER)); //$NON-NLS-1$ //$NON-NLS-2$  
 		script.printExecTask("cp", getPropertyFormat(PROPERTY_BASEDIR), parameters, "Linux"); //$NON-NLS-1$ //$NON-NLS-2$
 		
 		parameters.clear();
-		parameters.add("-rf " + getPropertyFormat(PROPERTY_TMP_DIR) + '/' + getPropertyFormat(PROPERTY_COLLECTING_BASE) + '/' + getPropertyFormat(PROPERTY_COLLECTING_PLACE) + '/' +  configInfo.toStringReplacingAny(".", ANY_STRING)); //$NON-NLS-1$ //$NON-NLS-2$
+		parameters.add("-rf " + getPropertyFormat(PROPERTY_TMP_DIR) + '/' + getPropertyFormat(PROPERTY_COLLECTING_FOLDER) + '/' + getPropertyFormat(PROPERTY_ARCHIVE_PREFIX) + '/' +  configInfo.toStringReplacingAny(".", ANY_STRING)); //$NON-NLS-1$ //$NON-NLS-2$
 		script.printExecTask("rm", getPropertyFormat(PROPERTY_BASEDIR), parameters, "Linux"); //$NON-NLS-1$ //$NON-NLS-2$
 		
 		parameters.clear();
 		parameters.add("-cvf " + getPropertyFormat(PROPERTY_ARCHIVE_FULLPATH) + " eclipse "); //$NON-NLS-1$ //$NON-NLS-2$
-		script.printExecTask("tar", getPropertyFormat(PROPERTY_TMP_DIR) + '/' +getPropertyFormat(PROPERTY_COLLECTING_BASE), parameters, "Linux"); //$NON-NLS-1$ //$NON-NLS-2$
+		script.printExecTask("tar", getPropertyFormat(PROPERTY_TMP_DIR) + '/' +getPropertyFormat(PROPERTY_COLLECTING_FOLDER), parameters, "Linux"); //$NON-NLS-1$ //$NON-NLS-2$
 	}
 	
 //	<zip destfile="d:/tmp/eclipse.zip">
@@ -313,14 +320,14 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 		FileSet[] filesPlugins = new FileSet[plugins.length];
 		for (int i = 0; i < plugins.length; i++) {
 			Object[] shape = getFinalShape(plugins[i].getUniqueId(), plugins[i].getVersion().toString(), BUNDLE);
-			filesPlugins[i] = new ZipFileSet(getPropertyFormat(PROPERTY_ECLIPSE_BASE) + '/' + DEFAULT_PLUGIN_LOCATION + '/' + (String) shape[0], shape[1].equals(new Byte(FILE)), null, null, null, null, null, getPropertyFormat(PROPERTY_COLLECTING_PLACE) + '/' + DEFAULT_PLUGIN_LOCATION + '/' + (String) shape[0], null); 
+			filesPlugins[i] = new ZipFileSet(getPropertyFormat(PROPERTY_ECLIPSE_BASE) + '/' + DEFAULT_PLUGIN_LOCATION + '/' + (String) shape[0], shape[1].equals(new Byte(FILE)), null, null, null, null, null, getPropertyFormat(PROPERTY_ARCHIVE_PREFIX) + '/' + DEFAULT_PLUGIN_LOCATION + '/' + (String) shape[0], null); 
 		}
 		script.printZipTask(getPropertyFormat(PROPERTY_ARCHIVE_FULLPATH), null, false, true, filesPlugins);
 		
 		FileSet[] filesFeatures = new FileSet[features.length];
 		for (int i = 0; i < features.length; i++) {
 			Object[] shape = getFinalShape(features[i].getVersionedIdentifier().getIdentifier(), features[i].getVersionedIdentifier().getVersion().toString(), FEATURE);
-			filesFeatures[i] = new ZipFileSet(getPropertyFormat(PROPERTY_ECLIPSE_BASE) + '/' + DEFAULT_FEATURE_LOCATION +'/' + (String) shape[0], shape[1].equals(new Byte(FILE)), null, null, null, null, null, getPropertyFormat(PROPERTY_COLLECTING_PLACE) + '/' + DEFAULT_FEATURE_LOCATION + '/' + (String) shape[0], null); 
+			filesFeatures[i] = new ZipFileSet(getPropertyFormat(PROPERTY_ECLIPSE_BASE) + '/' + DEFAULT_FEATURE_LOCATION +'/' + (String) shape[0], shape[1].equals(new Byte(FILE)), null, null, null, null, null, getPropertyFormat(PROPERTY_ARCHIVE_PREFIX) + '/' + DEFAULT_FEATURE_LOCATION + '/' + (String) shape[0], null); 
 		}
 		script.printZipTask(getPropertyFormat(PROPERTY_ARCHIVE_FULLPATH), null, false, true, filesFeatures);
 		
@@ -329,7 +336,7 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 			return;
 		
 		FileSet[] rootFiles = new FileSet[1];
-		rootFiles[0] = new ZipFileSet(getPropertyFormat(PROPERTY_ECLIPSE_BASE) + '/' + configInfo.toStringReplacingAny(".", ANY_STRING) + '/' + getPropertyFormat(PROPERTY_COLLECTING_BASE), false, null, "**/**", null, null, null, getPropertyFormat(PROPERTY_COLLECTING_BASE), null);
+		rootFiles[0] = new ZipFileSet(getPropertyFormat(PROPERTY_ECLIPSE_BASE) + '/' + configInfo.toStringReplacingAny(".", ANY_STRING) + '/' + getPropertyFormat(PROPERTY_COLLECTING_FOLDER), false, null, "**/**", null, null, null, getPropertyFormat(PROPERTY_COLLECTING_FOLDER), null);
 		script.printZipTask(getPropertyFormat(PROPERTY_ARCHIVE_FULLPATH), null, false, true, rootFiles);
 	}
 }

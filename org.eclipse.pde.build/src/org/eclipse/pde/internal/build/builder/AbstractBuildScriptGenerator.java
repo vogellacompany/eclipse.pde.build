@@ -26,7 +26,7 @@ public abstract class AbstractBuildScriptGenerator extends AbstractScriptGenerat
 	/** Location of the plug-ins and fragments. */
 	protected String[] pluginPath;
 	/** Additional dev entries for the compile classpath. */
-	protected String[] devEntries;
+	protected DevClassPathHelper devEntries;
 
 	/** Contain the elements that will be assembled */
 	protected AssemblyInformation assemblyData;
@@ -42,7 +42,7 @@ public abstract class AbstractBuildScriptGenerator extends AbstractScriptGenerat
 	
 	abstract protected Properties getBuildProperties() throws CoreException;
 
-	public void setDevEntries(String[] entries) {
+	public void setDevEntries(DevClassPathHelper entries) {
 		devEntries = entries;
 	}
 

@@ -45,7 +45,7 @@ public class BuildScriptGeneratorTask extends Task {
 	 * @param devEntries the classpath dev entries
 	 */
 	public void setDevEntries(String devEntries) {
-		generator.setDevEntries(Utils.getArrayFromString(devEntries));
+		generator.setDevEntries(devEntries);
 	}
 
 	/**
