@@ -58,13 +58,13 @@ public class JavacTask implements ITask {
 		script.indent++;
 		
 		if (compileArgs != null) {
-			script.printStartTag("compileArgs");
+			script.printStartTag("compilerarg");
 			script.indent++;
 			for (int i = 0; i < compileArgs.length; i++) {
 				script.println("<arg line=\"" + compileArgs[i] + "\"/>");
 			}
 			script.indent--;
-			script.printEndTag("compileArgs");	
+			script.printEndTag("compilerarg");	
 		}
 		
 		

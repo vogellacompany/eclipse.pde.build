@@ -514,7 +514,7 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		script.printProperty(PROPERTY_JAVAC_VERBOSE, "true"); //$NON-NLS-1$
 		script.printProperty(PROPERTY_JAVAC_SOURCE, "1.3"); //$NON-NLS-1$
 		script.printProperty(PROPERTY_JAVAC_TARGET, "1.2"); //$NON-NLS-1$  
-		script.printProperty(PROPERTY_JAVAC_COMPILEARGS, ""); //$NON-NLS-1$  
+		script.printProperty(PROPERTY_JAVAC_COMPILERARG, ""); //$NON-NLS-1$  
 		
 		script.println();
 		script.printTargetDeclaration(TARGET_INIT, TARGET_PROPERTIES, null, null, null);
@@ -690,7 +690,7 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		javac.setIncludeAntRuntime("no"); //$NON-NLS-1$
 		javac.setSource(getPropertyFormat(PROPERTY_JAVAC_SOURCE));
 		javac.setTarget(getPropertyFormat(PROPERTY_JAVAC_TARGET));
-		javac.setCompileArgs(new String[] { getPropertyFormat(PROPERTY_JAVAC_COMPILEARGS )});
+		javac.setCompileArgs(new String[] { getPropertyFormat(PROPERTY_JAVAC_COMPILERARG )});
 		String[] sources = entry.getSource();
 		javac.setSrcdir(sources);
 		script.print(javac);
