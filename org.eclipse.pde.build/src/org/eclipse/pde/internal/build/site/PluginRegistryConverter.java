@@ -1,9 +1,9 @@
 
 package org.eclipse.pde.internal.build.site;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.*;
+import java.io.File;
+import java.util.Collection;
+import java.util.Properties;
 import org.eclipse.core.runtime.*;
 import org.eclipse.core.runtime.model.*;
 import org.eclipse.osgi.service.resolver.*;
@@ -13,10 +13,10 @@ import org.osgi.framework.Constants;
 
 public class PluginRegistryConverter {
 	private PluginRegistryModel registry;
-	private URL[] paths;
+	private Collection files;
 	
-	public PluginRegistryConverter(URL[] paths) throws CoreException {
-		this.paths = paths;
+	public PluginRegistryConverter(Collection files) throws CoreException {
+		this.files = files;
 		registry = getPluginRegistry();
 	}
 	
@@ -25,7 +25,7 @@ public class PluginRegistryConverter {
 			// create the registry according to the site where the code to compile is, and a existing installation of eclipse 
 			MultiStatus problems = new MultiStatus(IPDEBuildConstants.PI_PDEBUILD, IPDEBuildConstants.EXCEPTION_MODEL_PARSE, Policy.bind("exception.pluginParse"), null); //$NON-NLS-1$
 			Factory factory = new Factory(problems);
-			registry = PluginRegistryModel.parsePlugins(paths, factory);
+			registry = PluginRegistryModel.parsePlugins(files, factory);
 			registry.resolve(true, false);
 			IStatus status = factory.getStatus();
 			if (!status.isOK())
@@ -44,12 +44,7 @@ public class PluginRegistryConverter {
 			Properties manifest = new Properties();
 			if(libs != null)
 				manifest.put(Constants.BUNDLE_CLASSPATH, libs);
-			try {
-				state.loadPropertyFileIn(manifest, new URL(fragments[i].getLocation()));
-			} catch (MalformedURLException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			state.loadPropertyFileIn(manifest, new File(fragments[i].getLocation()));
 			bd.setUserObject(manifest);
 			state.addBundleDescription(bd);
 		}
@@ -61,12 +56,7 @@ public class PluginRegistryConverter {
 			Properties manifest = new Properties();
 			if(libs != null)
 				manifest.put(Constants.BUNDLE_CLASSPATH, libs);
-			try {
-				state.loadPropertyFileIn(manifest, new URL(fragments[i].getLocation()));
-			} catch (MalformedURLException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			state.loadPropertyFileIn(manifest, new File(fragments[i].getLocation()));
 			bd.setUserObject(manifest);
 			state.addBundleDescription(bd);
 		}

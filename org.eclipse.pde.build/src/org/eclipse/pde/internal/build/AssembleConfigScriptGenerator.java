@@ -102,7 +102,7 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 	}
 
 	private void generatePrologue() {
-		script.printProjectDeclaration("Assemble " + featureId, TARGET_MAIN, Policy.bind("assemble.projectName", computeArchiveName())); //$NON-NLS-1$ //$NON-NLS-2$  
+		script.printProjectDeclaration("Assemble " + featureId, TARGET_MAIN, null); //$NON-NLS-1$  
 		script.printProperty(PROPERTY_ARCHIVE_NAME, computeArchiveName());
 		script.printProperty(PROPERTY_OS, configInfo.getOs());
 		script.printProperty(PROPERTY_WS, configInfo.getWs());

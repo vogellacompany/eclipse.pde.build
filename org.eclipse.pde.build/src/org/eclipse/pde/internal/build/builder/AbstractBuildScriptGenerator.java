@@ -25,7 +25,7 @@ import org.eclipse.update.core.IPlatformEnvironment;
  */
 public abstract class AbstractBuildScriptGenerator extends AbstractScriptGenerator {
 	/** Location of the plug-ins and fragments. */
-	protected URL[] pluginPath;
+	protected String[] pluginPath;
 	/** Additional dev entries for the compile classpath. */
 	protected String[] devEntries;
 
@@ -51,7 +51,7 @@ public abstract class AbstractBuildScriptGenerator extends AbstractScriptGenerat
 	 * Return the path of the plugins		//TODO Do we need to add support for features, or do we simply consider one list of URL? It is just a matter of style/
 	 * @return URL[]
 	 */
-	protected URL[] getPluginPath() {
+	protected String[] getPluginPath() {
 		return pluginPath;
 	}
 
@@ -60,7 +60,7 @@ public abstract class AbstractBuildScriptGenerator extends AbstractScriptGenerat
 	 * 
 	 * @param pluginPath
 	 */
-	public void setPluginPath(URL[] path) {
+	public void setPluginPath(String[] path) {
 		pluginPath = path;
 	}
 
@@ -90,18 +90,18 @@ public abstract class AbstractBuildScriptGenerator extends AbstractScriptGenerat
 	 * Method getPaths. 
 	 * @return URL[]
 	 */
-	private URL[] getPaths() throws MalformedURLException {
-		URL[] paths;
+	private String[] getPaths() throws MalformedURLException {
+		String[] paths;
 		if (pluginPath != null && workingDirectory != null) {
-			paths = new URL[pluginPath.length + 1];
+			paths = new String[pluginPath.length + 1];
 			System.arraycopy(pluginPath, 0, paths, 0, pluginPath.length);
-			paths[pluginPath.length] = new URL("file:" + workingDirectory); //$NON-NLS-1$
+			paths[pluginPath.length] = workingDirectory; //$NON-NLS-1$
 			return paths;
 		}
 		if (pluginPath != null)
 			return pluginPath;
 
-		return new URL[] { new URL("file:" + workingDirectory)}; //$NON-NLS-1$
+		return new String[] { workingDirectory };
 	}
 
 	public void setBuildSiteFactory(BuildTimeSiteFactory siteFactory) {

@@ -98,12 +98,7 @@ public abstract class AbstractScriptGenerator implements IXMLConstants, IPDEBuil
 	 * @throws CoreException if a valid file-system location could not be constructed
 	 */
 	public String getLocation(BundleDescription model) throws CoreException {
-		try {
-			return new URL(model.getLocation()).getFile();
-		} catch (MalformedURLException e) {
-			String message = Policy.bind("exception.url"); //$NON-NLS-1$
-			throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, EXCEPTION_MALFORMED_URL, message, e));
-		}
+		return model.getLocation();		
 	}
 
 	protected Properties readProperties(String location, String fileName) throws CoreException {

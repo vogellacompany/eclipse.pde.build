@@ -13,7 +13,6 @@ package org.eclipse.pde.internal.build.site;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.osgi.service.resolver.BundleDescription;
 import org.eclipse.osgi.service.resolver.VersionConstraint;
-import org.eclipse.pde.internal.build.*;
 import org.eclipse.pde.internal.build.IPDEBuildConstants;
 import org.eclipse.pde.internal.build.IXMLConstants;
 import org.eclipse.update.core.*;

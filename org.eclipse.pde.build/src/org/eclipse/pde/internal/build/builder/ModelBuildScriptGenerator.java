@@ -146,12 +146,23 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		if (".".equals(getBuildProperties().getProperty(Constants.BUNDLE_CLASSPATH))) {
 			getBuildProperties().setProperty(Constants.BUNDLE_CLASSPATH, "@dot");
 			getBuildProperties().setProperty("source.@dot", getBuildProperties().getProperty("source.."));
-			getBuildProperties().setProperty("output.@dot", getBuildProperties().getProperty("output.."));
 			getBuildProperties().remove("source..");
-			getBuildProperties().remove("output..");
+			String outputValue = getBuildProperties().getProperty("output..");
+			if (outputValue != null) {
+				getBuildProperties().setProperty("output.@dot", outputValue);
+				getBuildProperties().remove("output..");
+			}
+			String buildOrder = getBuildProperties().getProperty(PROPERTY_JAR_ORDER);
+			if (buildOrder!=null) {
+				String[] order = Utils.getArrayFromString(buildOrder);
+				for (int i = 0; i < order.length; i++)
+					if (order[i].equals("."))
+						order[i] = "@dot";
+				getBuildProperties().setProperty(PROPERTY_JAR_ORDER,Utils.getStringFromArray(order, ","));			
+			}
 		}
 	}
-
+		
 	/**
 	 * Main call for generating the script.
 	 * 
@@ -230,7 +241,11 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		script.printTargetDeclaration(TARGET_CLEAN, TARGET_INIT, null, null, Policy.bind("build.plugin.clean", model.getUniqueId())); //$NON-NLS-1$
 		for (int i = 0; i < availableJars.length; i++) {
 			String jarName = availableJars[i].getName(true);
-			script.printDeleteTask(null, getJARLocation(jarName), null);
+			if(availableJars[i].type==CompiledEntry.JAR) {
+				script.printDeleteTask(null, getJARLocation(jarName), null);
+			} else {
+				script.printDeleteTask(getJARLocation(jarName), null, null);
+			}
 			script.printDeleteTask(null, getSRCLocation(jarName), null);
 		}
 		script.printDeleteTask(null, pluginUpdateJarDestination, null);
@@ -351,7 +366,7 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		String qualifier = getBuildProperties().getProperty(PROPERTY_QUALIFIER);
 		if (qualifier == null || qualifier.equalsIgnoreCase(PROPERTY_NONE))
 			return;
-		script.print("<eclipse.versionReplacer path=\"" +location + "\" version=\"" + model.getVersion() + "\"/>");	
+		script.print("<eclipse.versionReplacer path=\"" + location + "\" version=\"" + model.getVersion() + "\"/>");		//TODO Fix the nl  
 	}
 
 	private void generatePermissionProperties(String directory) throws CoreException {
@@ -586,10 +601,11 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 				CompiledEntry jar = (CompiledEntry) jars.get(order[i]);
 				if (jar == null)
 					continue;
+
 				String name = jar.getName(false);
 				jarNames.add(name);
 				generateCompilationTarget(classpath.getClasspath(pluginModel, jar), jar);
-//				generateSRCTarget(jar);
+				generateSRCTarget(jar);
 				jars.remove(order[i]);
 			}
 		}
@@ -598,7 +614,7 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 			String name = jar.getName(false);
 			jarNames.add(name);
 			generateCompilationTarget(classpath.getClasspath(pluginModel, jar), jar);
-//			generateSRCTarget(jar);
+			generateSRCTarget(jar);
 		}
 		script.println();
 		script.printTargetDeclaration(TARGET_BUILD_JARS, TARGET_INIT, null, null, Policy.bind("build.plugin.buildJars", pluginModel.getUniqueId())); //$NON-NLS-1$
@@ -746,7 +762,7 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	 * @return String
 	 */
 	protected String getSRCLocation(String jarName) {
-		return getSRCName(getJARLocation(jarName));
+		return getJARLocation(getSRCName(jarName));
 	}
 
 	/**
@@ -783,7 +799,10 @@ public class ModelBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	 * @return String
 	 */
 	protected String getSRCName(String jarName) {
-		return jarName;//jarName.substring(0, jarName.length() - 4) + "src.zip"; //$NON-NLS-1$ //TODO Need to fix so the right thing is returned for folders
+		if (jarName.endsWith(".jar")) {
+			return jarName.substring(0, jarName.length()-4) + ".src.zip";
+		}
+		return jarName.replace('/','.') + ".src.zip"; //$NON-NLS-1$ //TODO Need to fix so the right thing is returned for folders
 	}
 
 	/**

@@ -38,7 +38,7 @@ public class BuildScriptGenerator extends AbstractScriptGenerator {
 	/**
 	 * Plugin path. URLs that point where to find the plugins.
 	 */
-	protected URL[] pluginPath;
+	protected String[] pluginPath;
 
 	protected boolean recursiveGeneration = true;
 
@@ -142,17 +142,8 @@ public class BuildScriptGenerator extends AbstractScriptGenerator {
 		this.elements = elements;
 	}
 
-	/**
-	 * 
-	 * @param pluginPath
-	 */
-	//TODO Shoudn't we get path instead of url?
 	public void setPluginPath(String[] pluginPath) throws CoreException {
-		this.pluginPath = Utils.asURL(pluginPath);
-	}
-
-	public void setPluginPath(URL[] pathURLs) throws CoreException {
-		this.pluginPath = pathURLs;
+		this.pluginPath = pluginPath;
 	}
 
 	/**

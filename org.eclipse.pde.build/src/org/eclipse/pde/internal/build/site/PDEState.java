@@ -3,14 +3,13 @@ package org.eclipse.pde.internal.build.site;
 import java.io.*;
 import java.net.URL;
 import java.util.*;
+import java.util.jar.*;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.osgi.framework.log.FrameworkLog;
-import org.eclipse.osgi.framework.util.Headers;
+import org.eclipse.osgi.framework.log.FrameworkLogEntry;
 import org.eclipse.osgi.service.pluginconversion.PluginConverter;
 import org.eclipse.osgi.service.resolver.*;
 import org.eclipse.pde.internal.build.*;
-import org.eclipse.pde.internal.build.IPDEBuildConstants;
-import org.eclipse.pde.internal.build.Utils;
 import org.osgi.framework.*;
 
 // This class provides a higher level API on the state
@@ -57,11 +56,11 @@ public class PDEState implements IPDEBuildConstants, IXMLConstants {
 		return (PluginConverter) ctx.getService(converterServiceReference);
 	}
 	
-	public boolean addBundle(Dictionary enhancedManifest, URL bundleLocation) {
-		updateVersionNumber(enhancedManifest);
+	public boolean addBundle(Dictionary enhancedManifest, File bundleLocation) {
+//		updateVersionNumber(enhancedManifest);
 		try {
 			BundleDescription descriptor;
-			descriptor = factory.createBundleDescription(enhancedManifest, bundleLocation.toExternalForm(), getNextId());
+			descriptor = factory.createBundleDescription(enhancedManifest, bundleLocation.getAbsolutePath(), getNextId());
 			descriptor.setUserObject(enhancedManifest);
 			state.addBundle(descriptor);
 			setExtraPrerequisites(descriptor, enhancedManifest);
@@ -90,7 +89,7 @@ public class PDEState implements IPDEBuildConstants, IXMLConstants {
 		if (q.equalsIgnoreCase(PROPERTY_CONTEXT)) {
 			newQualifier = (String) repositoryVersions.get(manifest.get(Constants.BUNDLE_SYMBOLICNAME));
 			if (newQualifier==null)
-				newQualifier = "" + Calendar.getInstance().get(Calendar.YEAR) + Calendar.getInstance().get(Calendar.MONTH) +Calendar.getInstance().get(Calendar.DAY_OF_MONTH);
+				newQualifier = "" + Calendar.getInstance().get(Calendar.YEAR) + (Calendar.getInstance().get(Calendar.MONTH) + 1) +Calendar.getInstance().get(Calendar.DAY_OF_MONTH); //$NON-NLS-1$
 		} else {
 			newQualifier = q;
 		}
@@ -130,36 +129,41 @@ public class PDEState implements IPDEBuildConstants, IXMLConstants {
 	}
 	
 	
-	public boolean addBundle(URL bundleLocation) {
+	public boolean addBundle(File bundleLocation) {
 		Properties manifest;
 		try {
-			manifest = loadManifest(bundleLocation);
-			loadPropertyFileIn(manifest, bundleLocation);
+			Map realManifest = loadManifest(bundleLocation);
+			manifest = loadPropertyFileIn(realManifest, bundleLocation);
 			if (manifest.getProperty(Constants.BUNDLE_SYMBOLICNAME).equals("org.eclipse.osgi")) {	
 				//TODO We need to handle the special case of the osgi bundle for whom the bundle-classpath is specified in the eclipse.properties file in the osgi folder
 				manifest.put(Constants.BUNDLE_CLASSPATH, "core.jar, console.jar, osgi.jar, resolver.jar, defaultAdaptor.jar, eclipseAdaptor.jar");
 			}
 		} catch (IOException e) {
+//			FrameworkLog log = acquireFrameworkLogService();
+//			new FrameworkLogEntry()
 			//TODO Need to log
+			System.out.println("Ignore"  + bundleLocation);
 			return false;
 		}
 
 		return addBundle(manifest, bundleLocation);
 	}
 	
-	private Properties loadManifest(URL bundleLocation) throws IOException {
-		InputStream stream = null;
+	private Map loadManifest(File bundleLocation) throws IOException {
+		InputStream manifestStream = null;
 		try {
-			URL tmpLocation = new URL(bundleLocation, "META-INF/MANIFEST.MF");
-			 stream = tmpLocation .openStream();
+			URL manifestLocation = null;
+			if (bundleLocation.getName().endsWith("jar")) {
+				manifestLocation = new URL("jar:file" + bundleLocation + "!/" + JarFile.MANIFEST_NAME);
+				manifestStream = manifestLocation.openStream();
+			} else {
+				manifestStream = new FileInputStream(new File(bundleLocation, JarFile.MANIFEST_NAME));
+			}
 		} catch (IOException e) {
-			//We do not do any manifest generation for jared plugin
-			if (bundleLocation.getProtocol().equalsIgnoreCase("jar"))
-				throw e; 	 
+			//ignore
 		}
-		
-		if (stream == null) {
-			File manifestLocation = new File(bundleLocation.getFile(), "META-INF/MANIFEST.MF");
+		if (manifestStream == null) {
+			File manifestLocation = new File(bundleLocation, JarFile.MANIFEST_NAME);
 			if (! manifestLocation.exists()) {
 				//TODO Here we should set a temporary location or maybe not even write the file to disk
 				PluginConverter converter;
@@ -170,32 +174,31 @@ public class PDEState implements IPDEBuildConstants, IXMLConstants {
 					e.printStackTrace(); 
 				}
 			}
-			stream = new BufferedInputStream(new FileInputStream(manifestLocation));
+			manifestStream = new BufferedInputStream(new FileInputStream(manifestLocation));
 		}
+
 		try {
-			Headers manifest = Headers.parseManifest(stream);
-			return manifestToDictionary(manifest);
-		} catch (BundleException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
+			Manifest m = new Manifest(manifestStream);
+			return manifestToProperties(m.getMainAttributes());
+		} finally {
+			manifestStream.close();
 		}
-		return null;
-		
 	}
 
-	private Properties manifestToDictionary(Dictionary d) {
-		Enumeration enum = d.keys();
+	private Properties manifestToProperties(Attributes d) {
+		Iterator iter  = d.keySet().iterator();
 		Properties result = new Properties();
-		while (enum.hasMoreElements()) {
-			String key = (String) enum.nextElement();
-			result.put(key, d.get(key));
+		while (iter.hasNext()) {
+			Attributes.Name key = (Attributes.Name) iter.next();
+			result.put(key.toString(), d.get(key));
 		}
 		return result;
 	}
 	
-	public void addBundles(URL[] bundles) {
-		for (int i = 0; i < bundles.length; i++) {
-			addBundle(bundles[i]); //Need to report a better error message when the manifest is bogus
+	public void addBundles(Collection bundles) {
+		for (Iterator iter = bundles.iterator(); iter.hasNext();) {
+			File bundle = (File) iter.next();
+			addBundle(bundle); //Need to report a better error message when the manifest is bogus
 		}
 	}
 	
@@ -330,11 +333,13 @@ public class PDEState implements IPDEBuildConstants, IXMLConstants {
 		}
 	}
 	
-	public void loadPropertyFileIn(Properties toMerge, URL location) {
+	public Properties loadPropertyFileIn(Map toMerge, File location) {
+		Properties result = new Properties();
+		result.putAll(toMerge);
 		InputStream propertyStream = null;
 		try {
-			propertyStream = new URL(location.toExternalForm()+ "/" + PROPERTIES_FILE).openStream();
-			toMerge.load(propertyStream); //$NON-NLS-1$
+			propertyStream = new BufferedInputStream(new FileInputStream(new File(location, PROPERTIES_FILE)));
+			result.load(propertyStream); //$NON-NLS-1$
 		} catch (Exception e) {
 			//ignore because compiled plug-ins do not have such files
 		} finally {
@@ -345,5 +350,6 @@ public class PDEState implements IPDEBuildConstants, IXMLConstants {
 				//Ignore
 			}
 		}
+		return result;
 	}
 }

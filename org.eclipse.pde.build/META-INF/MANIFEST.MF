@@ -1,10 +1,9 @@
 Bundle-Name: %pluginName
 Bundle-Version: 3.0
-Bundle-GlobalName: org.eclipse.pde.build
+Bundle-SymbolicName: org.eclipse.pde.build
 Bundle-Vendor: %providerName
 Bundle-ClassPath: pdebuild.jar
 Bundle-Activator: org.eclipse.pde.internal.build.BuildActivator
-Legacy: true
 Require-Bundle: 
  org.eclipse.core.runtime,
  org.eclipse.ant.core,
@@ -17,3 +16,4 @@ Provide-Package:
  org.eclipse.pde.internal.build,
  org.eclipse.pde.internal.build.ant,
  org.eclipse.pde.internal.build.builder
+Bundle-Localization: plugin.properties

@@ -633,7 +633,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	 */
 	protected void generateAllPluginsTarget() throws CoreException {
 		List plugins = computeElements();
-		plugins = Utils.computePrerequisiteOrder2(plugins);
+		plugins = Utils.computePrerequisiteOrder(plugins);
 		script.println();
 		script.printTargetDeclaration(TARGET_ALL_PLUGINS, TARGET_INIT, null, null, null);
 		Set writtenCalls = new HashSet(plugins.size());
@@ -711,7 +711,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	 */
 	private void generateChildrenScripts() throws CoreException {
 		List plugins = computeElements();
-		generateModels(Utils.computePrerequisiteOrder2(plugins));
+		generateModels(Utils.computePrerequisiteOrder(plugins));
 	}
 	/**
 	 * @param generator

@@ -31,7 +31,7 @@ public class BuildTimeSiteFactory extends BaseSiteFactory implements ISiteFactor
 	private boolean urlsChanged = false;
 
 	// URLs from the the site will be built
-	private URL[] sitePaths;
+	private String[] sitePaths;
 
 	//	adress of the site used as a base
 	private static String installedBaseLocation = null;
@@ -54,21 +54,21 @@ public class BuildTimeSiteFactory extends BaseSiteFactory implements ISiteFactor
 		Collection featureXMLs = findFeatureXMLs();
 
 		// If an installed base is provided we need to look at it
-		URL installedBaseURL = null;
+		String installedBaseURL = null;
 		if (installedBaseLocation != null && !installedBaseLocation.equals("")) { //$NON-NLS-1$
-			try {
+//			try {
 				if (!new File(installedBaseLocation).exists()) {
 					String message = Policy.bind("error.incorrectDirectoryEntry", installedBaseLocation); //$NON-NLS-1$
 					throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, EXCEPTION_READ_DIRECTORY, message, null));
 				}
-				installedBaseURL = new URL("file:" + installedBaseLocation); //$NON-NLS-1$
+				installedBaseURL = installedBaseLocation; //$NON-NLS-1$
 				Collection installedFeatures = Utils.findFiles(installedBaseLocation, DEFAULT_FEATURE_LOCATION, DEFAULT_FEATURE_FILENAME_DESCRIPTOR);
 				if (installedFeatures != null)
 					featureXMLs.addAll(installedFeatures);
-			} catch (MalformedURLException e) {
-				String message = Policy.bind("error.incorrectDirectoryEntry", installedBaseURL.toExternalForm()); //$NON-NLS-1$
-				throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, EXCEPTION_READ_DIRECTORY, message, null));
-			}
+//			} catch (MalformedURLException e) {
+//				String message = Policy.bind("error.incorrectDirectoryEntry", installedBaseURL); //$NON-NLS-1$
+//				throw new CoreException(new Status(IStatus.ERROR, PI_PDEBUILD, EXCEPTION_READ_DIRECTORY, message, null));
+//			}
 		}
 
 		URL featureURL;
@@ -114,7 +114,7 @@ public class BuildTimeSiteFactory extends BaseSiteFactory implements ISiteFactor
 		BuildTimeSiteFactory.installedBaseLocation = installedBaseSite;
 	}
 
-	public void setSitePaths(URL[] urls) {
+	public void setSitePaths(String[] urls) {
 		if (sitePaths == null) {
 			sitePaths = urls;
 			urlsChanged = true;
@@ -127,7 +127,7 @@ public class BuildTimeSiteFactory extends BaseSiteFactory implements ISiteFactor
 		while (found && i < sitePaths.length) {
 			found = false;
 			for (int j = 0; j < urls.length; j++) {
-				if (sitePaths[i].sameFile(urls[j])) {
+				if (sitePaths[i].equals(urls[j])) {
 					found = true;
 					break;
 				}
@@ -148,7 +148,7 @@ public class BuildTimeSiteFactory extends BaseSiteFactory implements ISiteFactor
 	private Collection findFeatureXMLs() {
 		Collection features = new ArrayList();
 		for (int i = 0; i < sitePaths.length; i++) {
-			Collection foundFeatures = Utils.findFiles(sitePaths[i].getFile(), DEFAULT_FEATURE_LOCATION, DEFAULT_FEATURE_FILENAME_DESCRIPTOR);
+			Collection foundFeatures = Utils.findFiles(sitePaths[i], DEFAULT_FEATURE_LOCATION, DEFAULT_FEATURE_FILENAME_DESCRIPTOR);
 			if (foundFeatures != null)
 				features.addAll(foundFeatures);
 		}

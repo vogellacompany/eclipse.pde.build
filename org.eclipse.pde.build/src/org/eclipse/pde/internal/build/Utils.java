@@ -76,26 +76,6 @@ public final class Utils implements IPDEBuildConstants {
 	}
 
 	/**
-	 * Finds out if an status has the given severity. In case of a multi status,
-	 * its children are also included.
-	 * 
-	 * @param status
-	 * @param severity
-	 * @return boolean
-	 */
-	public static boolean contains(IStatus status, int severity) {
-		if (status.matches(severity))
-			return true;
-		if (status.isMultiStatus()) {
-			IStatus[] children = status.getChildren();
-			for (int i = 0; i < children.length; i++)
-				if (contains(children[i], severity))
-					return true;
-		}
-		return false;
-	}
-
-	/**
 	 * Converts an array of strings into an array of URLs.
 	 * 
 	 * @param target
@@ -154,81 +134,6 @@ public final class Utils implements IPDEBuildConstants {
 		return result.toString();
 	}
 
-	public static String[] computePrerequisiteOrder(List plugins) {
-		List prereqs = new ArrayList(plugins.size());
-		List fragments = new ArrayList();
-		
-		// create a collection of directed edges from plugin to prereq
-		for (Iterator iter = plugins.iterator(); iter.hasNext();) {
-			BundleDescription current = (BundleDescription) iter.next();
-			if (current.getHost() != null) {
-				fragments.add(current);
-				continue;
-			}
-			boolean found = false;
-			
-			BundleDescription[] prereqList = PDEState.getDependentBundles(current);
-			for (int j = 0; j < prereqList.length; j++) {
-				// ensure that we only include values from the original set.
-				if (plugins.contains(prereqList[j])) {
-					found = true;
-					prereqs.add(new String[] { current.getUniqueId(), prereqList[j].getUniqueId() });	
-				}
-			}
-
-			
-			// if we didn't find any prereqs for this plugin, add a null prereq
-			// to ensure the value is in the output	
-			if (!found)
-				prereqs.add(new String[] { current.getUniqueId(), null });
-		}
-
-		//The fragments needs to added relatively to their host and to their own prerequisite (bug #43244) 
-		for (Iterator iter = fragments.iterator(); iter.hasNext();) {
-			BundleDescription current = (BundleDescription) iter.next();
-			
-			if (plugins.contains(current.getHost().getBundle()))
-				prereqs.add(new String[] {current.getUniqueId(), current.getHost().getSupplier().getUniqueId() });
-			else 
-				System.out.println("Host not found for this fragment");	//TODO This should not happen since we only build things that are resolved
-			
-			BundleDescription[] prereqList = PDEState.getDependentBundles(current);
-			for (int j = 0; j < prereqList.length; j++) {
-				// ensure that we only include values from the original set.
-				if (plugins.contains(prereqList[j])) {
-					prereqs.add(new String[] { current.getUniqueId(), prereqList[j].getUniqueId() });
-				}
-			}		
-		}
-
-		// do a topological sort, insert the fragments into the sorted elements
-		String[][] prereqArray = (String[][]) prereqs.toArray(new String[prereqs.size()][]);
-		return computeNodeOrder(prereqArray);
-	}
-
-	/**
-	 * 
-	 * @param specs
-	 * @return String[][]
-	 */
-	protected static String[] computeNodeOrder(String[][] specs) {
-		Map counts = computeCounts(specs);
-		List nodes = new ArrayList(counts.size());
-		while (!counts.isEmpty()) {
-			List roots = findRootNodes(counts);
-			if (roots.isEmpty())
-				break;
-			for (Iterator i = roots.iterator(); i.hasNext();)
-				counts.remove(i.next());
-			nodes.addAll(roots);
-			removeArcs(specs, roots, counts);
-		}
-		String[] result = new String[nodes.size()];
-		nodes.toArray(result);
-
-		return result;
-	}
-
 	/**
 	 * 
 	 * @param counts
@@ -243,49 +148,6 @@ public final class Utils implements IPDEBuildConstants {
 				result.add(node);
 		}
 		return result;
-	}
-
-	/**
-	 * 
-	 * @param mappings
-	 * @param roots
-	 * @param counts
-	 */
-	protected static void removeArcs(String[][] mappings, List roots, Map counts) {
-		for (Iterator j = roots.iterator(); j.hasNext();) {
-			String root = (String) j.next();
-			for (int i = 0; i < mappings.length; i++) {
-				if (root.equals(mappings[i][1])) {
-					String input = mappings[i][0];
-					Integer count = (Integer) counts.get(input);
-					if (count != null)
-						counts.put(input, new Integer(count.intValue() - 1));
-				}
-			}
-		}
-	}
-
-	/**
-	 * 
-	 * @param mappings
-	 * @return HashMap
-	 */
-	protected static Map computeCounts(String[][] mappings) {
-		Map counts = new HashMap(5);
-		for (int i = 0; i < mappings.length; i++) {
-			String from = mappings[i][0];
-			Integer fromCount = (Integer) counts.get(from);
-			String to = mappings[i][1];
-			if (to == null)
-				counts.put(from, new Integer(0));
-			else {
-				if (((Integer) counts.get(to)) == null)
-					counts.put(to, new Integer(0));
-				fromCount = fromCount == null ? new Integer(1) : new Integer(fromCount.intValue() + 1);
-				counts.put(from, fromCount);
-			}
-		}
-		return counts;
 	}
 
 	/**
@@ -446,90 +308,18 @@ public final class Utils implements IPDEBuildConstants {
 		return copiedFiles;
 	}
 	
-	public static String[] computePrerequisiteOrder21(List plugins) {
-		List prereqs = new ArrayList(plugins.size());
-		List fragments = new ArrayList();
-		
-		// create a collection of directed edges from plugin to prereq
-		for (Iterator iter = plugins.iterator(); iter.hasNext();) {
-			BundleDescription current = (BundleDescription) iter.next();
-			String currentUniqueId = current.getUniqueId();
-			if (current.getHost() != null) {
-				fragments.add(current);
-				continue;
-			}
-			boolean boot = false;
-			boolean runtime = false;
-			boolean found = false;
-			BundleDescription[] prereqList = PDEState.getDependentBundles(current);
-			if (prereqList != null) {
-				for (int j = 0; j < prereqList.length; j++) {
-					// ensure that we only include values from the original set.
-					String prereq = prereqList[j].getUniqueId();
-					boot = boot || prereq.equals(IPDEBuildConstants.PI_BOOT);
-					runtime = runtime || prereq.equals(IPDEBuildConstants.PI_RUNTIME);
-					if (plugins.contains(prereqList[j])) {
-						found = true;
-						prereqs.add(new String[] { currentUniqueId, prereq });
-					}
-				}
-			}
-
-			// if we didn't find any prereqs for this plugin, add a null prereq
-			// to ensure the value is in the output	
-			if (!found)
-				prereqs.add(new String[] { currentUniqueId, null });
-
-			// if we didn't find the boot or runtime plugins as prereqs add prereq relations for them.  This is required since the 
-			// boot and runtime are implicitly added to a plugin's requires list by the platform runtime.
-			// Note that we should skip the xerces plugin as this would cause a circularity.
-			if (currentUniqueId.equals("org.apache.xerces")) //$NON-NLS-1$
-				continue;
-			
-			if (!boot && !currentUniqueId.equals(IPDEBuildConstants.PI_BOOT))
-				prereqs.add(new String[] { currentUniqueId, IPDEBuildConstants.PI_BOOT });
-			
-			if (!runtime && !currentUniqueId.equals(Platform.PI_RUNTIME) && !currentUniqueId.equals(IPDEBuildConstants.PI_BOOT))
-				prereqs.add(new String[] { currentUniqueId, Platform.PI_RUNTIME });
-		}
-
-		//The fragments needs to added relatively to their own prerequisite but also relatively to their host (bug #43244)
-		for (Iterator iter = fragments.iterator(); iter.hasNext();) {
-			BundleDescription element = (BundleDescription) iter.next();
-			boolean found = false;
-			BundleDescription[] prereqList = PDEState.getDependentBundles(element);
-			if (prereqList != null) {
-				for (int j = 0; j < prereqList.length; j++) {
-					// ensure that we only include values from the original set.
-					String prereq = prereqList[j].getUniqueId();
-					if (plugins.contains(prereq)) {
-						found = true;
-						prereqs.add(new String[] { element.getUniqueId(), prereq });
-					}
-				}
-			}
-			if (plugins.contains(element.getHost().getSupplier())) {
-				found = true;
-				prereqs.add(new String[] {element.getUniqueId(), element.getHost().getSupplier().getUniqueId() });
-			}
-
-		}
-		
-		// do a topological sort, insert the fragments into the sorted elements
-		String[][] prereqArray = (String[][]) prereqs.toArray(new String[prereqs.size()][]);
-		return computeNodeOrder(prereqArray);
-	}
-	
-	
 	static private class Relation {
 		Object from;
 		Object to;
 		Relation(Object from, Object to) {
 			this.from = from; this.to = to;
 		}
+		public String toString() {
+			return from.toString() + "->" + (to==null ? "" : to.toString());
+		}
 	}
 	
-	public static List computePrerequisiteOrder2(List plugins) {		
+	public static List computePrerequisiteOrder(List plugins) {		
 		List prereqs = new ArrayList(plugins.size());
 		List fragments = new ArrayList();
 		
