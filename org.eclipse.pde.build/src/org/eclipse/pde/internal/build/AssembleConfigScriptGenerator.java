@@ -179,7 +179,8 @@ public class AssembleConfigScriptGenerator extends AbstractScriptGenerator {
 			script.printEchoTask("archivePrefix : " + getPropertyFormat(PROPERTY_ARCHIVE_PREFIX));
 		}
 		
-		script.printDeleteTask(getPropertyFormat(PROPERTY_ASSEMBLY_TMP), null, null);
+		if (! "folder".equalsIgnoreCase(outputFormat))
+			script.printDeleteTask(getPropertyFormat(PROPERTY_ASSEMBLY_TMP), null, null);
 		script.printMkdirTask(getPropertyFormat(PROPERTY_ASSEMBLY_TMP));
 		script.printMkdirTask(getPropertyFormat(PROPERTY_BUILD_LABEL));
 	}
