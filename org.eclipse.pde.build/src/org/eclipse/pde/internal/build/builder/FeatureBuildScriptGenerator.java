@@ -845,6 +845,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 	private void generateSourceFeature() throws CoreException {
 		Feature featureExample = (Feature) feature;
 		sourceFeature = createSourceFeature(featureExample);
+		associateExtraPlugins();
 		sourcePlugin = createSourcePlugin();
 		generateSourceFragment();
 	}
@@ -863,6 +864,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 			sourceFragment.setWS(configInfo.getWs());
 			sourceFragment.setArch(configInfo.getArch());
 			sourceFragment.isFragment(true);
+			//sourceFeature.addPluginEntryModel(sourceFragment);
 			createSourceFragment(sourceFragment, sourcePlugin);
 		}
 	}
@@ -886,6 +888,7 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 			sourceFragment.setArch(configInfo.getArch());
 			sourceFragment.isFragment(true);
 			sourceFeature.addPluginEntryModel(sourceFragment);
+			//createSourceFragment(sourceFragment, sourcePlugin);
 		}
 	}
 	private void generateSourceFeatureScripts() throws CoreException {
@@ -904,7 +907,26 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		sourceScriptGenerator.setBuildingOSGi(isBuildingOSGi());
 		sourceScriptGenerator.generate();
 	}
-
+	
+	// Add extra plugins into the given feature.
+	private void associateExtraPlugins() throws CoreException {
+		for (int i = 1; i < extraPlugins.length; i++) {
+			BundleDescription model;
+			// see if we have a plug-in or a fragment
+	
+			model = getSite(false).getRegistry().getResolvedBundle(extraPlugins[i].startsWith("plugin@") ? extraPlugins[i].substring(7) : extraPlugins[i].substring(8));
+		
+			if (model == null) {
+				String message = Policy.bind("exception.missingPlugin", extraPlugins[i]); //$NON-NLS-1$
+				Platform.getPlugin(PI_PDEBUILD).getLog().log(new Status(IStatus.WARNING, extraPlugins[i], EXCEPTION_PLUGIN_MISSING, message, null));
+			}
+			PluginEntry entry = new PluginEntry();
+			entry.setPluginIdentifier(model.getUniqueId());
+			entry.setPluginVersion(model.getVersion().toString());
+			sourceFeature.addPluginEntryModel(entry);
+		}
+	}
+	
 	/**
 	 * Method createSourcePlugin.
 	 */
