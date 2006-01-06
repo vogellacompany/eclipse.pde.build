@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2005 IBM Corporation and others.
+ * Copyright (c) 2000, 2006 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -248,10 +248,11 @@ public class FeatureBuildScriptGenerator extends AbstractBuildScriptGenerator {
 		IIncludedFeatureReference[] referencedFeatures = feature.getIncludedFeatureReferences();
 		for (int i = 0; i < referencedFeatures.length; i++) {
 			String featureId = ((IncludedFeatureReferenceModel) referencedFeatures[i]).getFeatureIdentifier();
+			String featureVersion = ((IncludedFeatureReferenceModel) referencedFeatures[i]).getFeatureVersion();
 			//If the feature which is included is a source feature, then instead of calling the generation of the featureID we are
 			// calling the generation of the corresponding binary feature but without generating the  scripts (set binaryFeatureGeneration to false)
 			boolean doSourceFeatureGeneration = getBuildProperties().containsKey(GENERATION_SOURCE_FEATURE_PREFIX + featureId);
-			FeatureBuildScriptGenerator generator = new FeatureBuildScriptGenerator(doSourceFeatureGeneration == true ? Utils.getArrayFromString(getBuildProperties().getProperty(GENERATION_SOURCE_FEATURE_PREFIX + featureId))[0] : featureId, null, assemblyData);
+			FeatureBuildScriptGenerator generator = new FeatureBuildScriptGenerator(doSourceFeatureGeneration == true ? Utils.getArrayFromString(getBuildProperties().getProperty(GENERATION_SOURCE_FEATURE_PREFIX + featureId))[0] : featureId, featureVersion, assemblyData);
 			//If we are  generating a  source  feature we don't  want to go recursively
 			generator.setGenerateIncludedFeatures(doSourceFeatureGeneration ? false : true);
 			generator.setAnalyseChildren(analysePlugins);
