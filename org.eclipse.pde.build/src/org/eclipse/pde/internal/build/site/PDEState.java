@@ -696,9 +696,19 @@ public class PDEState implements IPDEBuildConstants, IBuildPropertiesConstants {
 				BundleDescription b = resolvedBundles[i];
 				unqualifiedBundles.add(state.removeBundle(b.getBundleId())); //We keep the removed bundle so we can reinsert it in the state when we are done
 				String newVersion = QualifierReplacer.replaceQualifierInVersion(b.getVersion().toString(), b.getSymbolicName(), getQualifierPropery(b.getLocation()), null);
+
+				//need to make sure we keep the execution environments
+				String[] envs = b.getExecutionEnvironments();
+				StringBuffer buffer = new StringBuffer();
+				for (int j = 0; j < envs.length; j++) {
+					if (j > 0)
+						buffer.append(","); //$NON-NLS-1$
+					buffer.append(envs[j]);
+				}
+				String ee = buffer.toString();
 				
 				//Here it is important to reuse the same bundle id than the bundle we are removing so that we don't loose the information about the classpath
-				BundleDescription newBundle = state.getFactory().createBundleDescription(b.getBundleId(), b.getSymbolicName(), new Version(newVersion), b.getLocation(), b.getRequiredBundles(), b.getHost(), b.getImportPackages(), b.getExportPackages(), null, b.isSingleton());
+				BundleDescription newBundle = state.getFactory().createBundleDescription(b.getBundleId(), b.getSymbolicName(), new Version(newVersion), b.getLocation(), b.getRequiredBundles(), b.getHost(), b.getImportPackages(), b.getExportPackages(), null, b.isSingleton(), b.attachFragments(), b.dynamicFragments(), b.getPlatformFilter(), ee, b.getGenericRequires(), b.getGenericCapabilities());
 				state.addBundle(newBundle);
 				rememberQualifierTagPresence(newBundle);
 			}
