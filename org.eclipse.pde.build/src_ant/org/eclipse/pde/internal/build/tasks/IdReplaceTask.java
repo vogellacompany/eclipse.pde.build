@@ -204,20 +204,39 @@ public class IdReplaceTask extends Task {
 				continue;
 			}
 
+			int startElementId, endElementId;
+			int startVersionWord, startVersionId, endVersionId;
+
 			startId = scan(buffer, foundElement, ID);
-			if (startId == -1)
+			startVersionWord = scan(buffer, foundElement, VERSION);
+			// Which comes first, version or id.
+			if (startId < startVersionWord) {
+				startElementId = scan(buffer, startId + 1, BACKSLASH);
+				endElementId = scan(buffer, startElementId + 1, BACKSLASH);
+
+				// search for version again since the id could have "version" in it.
+				startVersionWord = scan(buffer, endElementId + 1, VERSION);
+				startVersionId = scan(buffer, startVersionWord + 1, BACKSLASH);
+				endVersionId = scan(buffer, startVersionId + 1, BACKSLASH);
+			} else {
+				startVersionId = scan(buffer, startVersionWord + 1, BACKSLASH);
+				endVersionId = scan(buffer, startVersionId + 1, BACKSLASH);
+
+				// search for id again since the version qualifier could contain "id"
+				startId = scan(buffer, endVersionId + 1, ID);
+				startElementId = scan(buffer, startId + 1, BACKSLASH);
+				endElementId = scan(buffer, startElementId + 1, BACKSLASH);
+			}
+
+			if (startId == -1 || startVersionWord == -1)
 				break;
 
-			int startElementId = scan(buffer, startId + 1, BACKSLASH);
-			int endElementId = scan(buffer, startElementId + 1, BACKSLASH);
 			char[] elementId = new char[endElementId - startElementId - 1];
 			buffer.getChars(startElementId + 1, endElementId, elementId, 0);
 
-			int startVersionWord = scan(buffer, endElementId + 1, VERSION);
-			int startVersionId = scan(buffer, startVersionWord + 1, BACKSLASH);
-			int endVersionId = scan(buffer, startVersionId + 1, BACKSLASH);
 			char[] versionId = new char[endVersionId - startVersionId - 1];
 			buffer.getChars(startVersionId + 1, endVersionId, versionId, 0);
+			
 			if (!new String(versionId).equals(GENERIC_VERSION_NUMBER) && !new String(versionId).endsWith(QUALIFIER)) {
 				startElement = startVersionId;
 				continue;
@@ -232,14 +251,15 @@ public class IdReplaceTask extends Task {
 			} else {
 				replacementVersion = (String) featureIds.get(lookupKey);
 			}
+			int change = 0;
 			if (replacementVersion == null) {
 				System.err.println("Could not find " + new String(elementId)); //$NON-NLS-1$
 			} else {
 				buffer.replace(startVersionId, endVersionId, replacementVersion);
 				contentChanged = true;
+				change = endVersionId - startVersionId - replacementVersion.length();
 			}
-
-			startElement = startVersionId;
+			startElement = (endElementId > endVersionId) ? endElementId - change: endVersionId - change;
 		}
 
 		if (!contentChanged)

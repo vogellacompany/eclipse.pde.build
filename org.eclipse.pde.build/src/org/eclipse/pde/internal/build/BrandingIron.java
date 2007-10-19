@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c)  2005, 2006 IBM Corporation and others.
+ * Copyright (c)  2005, 2007 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -285,9 +285,17 @@ public class BrandingIron implements IXMLConstants {
 	}
 
 	private void copyMacIni(String initialRoot, String target, String iconName) {
+		File brandedIni = new File(initialRoot, "/MacOS/" + name + ".ini"); //$NON-NLS-1$ //$NON-NLS-2$
+		
 		File ini = new File(initialRoot, "/MacOS/eclipse.ini"); //$NON-NLS-1$
-		if (!ini.exists())
+		if (!ini.exists() && !brandedIni.exists())
 			return;
+		
+		if (brandedIni.exists() && ini.exists()) {
+			//take the one that is already branded
+			ini.delete();
+			ini = brandedIni;
+		}
 
 		StringBuffer buffer;
 		try {
