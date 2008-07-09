@@ -113,4 +113,63 @@ public class ProductTests extends PDETestCase {
 		IFile iniFile = buildFolder.getFile("tmp/eclipse/test.app/Contents/MacOS/test.ini");
 		assertLogContainsLine(iniFile, "-Dfoo=bar");
 	}
+	
+	public void test237922() throws Exception {
+		IFolder buildFolder = newTest("237922");
+		
+		File delta = Utils.findDeltaPack();
+		assertNotNull(delta);
+		
+		Utils.generateFeature(buildFolder, "F", null, new String[] {"rcp"});
+		
+		Properties properties = BuildConfiguration.getScriptGenerationProperties(buildFolder, "feature", "F");
+		properties.put("product", "/rcp/rcp.product");
+		properties.put("configs", "win32,win32,x86");
+		
+		generateScripts(buildFolder, properties);
+		
+			
+		IFile assembleScript = buildFolder.getFile("assemble.F.win32.win32.x86.xml");
+		
+		Map alternateTasks = new HashMap();
+		alternateTasks.put("eclipse.brand", "org.eclipse.pde.build.internal.tests.ant.TestBrandTask");
+		Project antProject = assertValidAntScript(assembleScript, alternateTasks);
+		Target main = (Target) antProject.getTargets().get("main");
+		assertNotNull(main);
+		TestBrandTask brand = (TestBrandTask) AntUtils.getFirstChildByName(main, "eclipse.brand");
+		assertNotNull(brand);
+		
+		assertTrue(brand.icons.indexOf("mail.ico") > 0);
+	}
+	
+	public void test237747() throws Exception {
+		IFolder buildFolder = newTest("237747");
+
+		File delta = Utils.findDeltaPack();
+		assertNotNull(delta);
+		
+		IFolder fooFolder = Utils.createFolder(buildFolder, "plugins/foo");
+		Utils.generateBundle(fooFolder, "foo");
+
+		StringBuffer buffer = new StringBuffer();
+		buffer.append("<product name=\"Foo\" id=\"foo.product\" application=\"org.eclipse.ant.core.antRunner\" useFeatures=\"false\">");
+		buffer.append("  <configIni use=\"default\"/>");
+		buffer.append("  <plugins>");
+		buffer.append("    <plugin id=\"org.eclipse.osgi\"/>");
+		buffer.append("  </plugins>");
+		buffer.append("</product> ");
+		Utils.writeBuffer(buildFolder.getFile("plugins/foo/foo.product"), buffer);
+
+		Properties properties = BuildConfiguration.getBuilderProperties(buildFolder);
+		properties.put("product", "/foo/foo.product");
+		properties.put("configs", "win32,win32,x86_64 & hpux, motif, ia64_32");
+		if (!delta.equals(new File((String) properties.get("baseLocation"))))
+			properties.put("pluginPath", delta.getAbsolutePath());
+		Utils.storeBuildProperties(buildFolder, properties);
+		
+		runProductBuild(buildFolder);
+		
+		assertResourceFile(buildFolder, "I.TestBuild/eclipse-hpux.motif.ia64_32.zip");
+		assertResourceFile(buildFolder, "I.TestBuild/eclipse-win32.win32.x86_64.zip");
+	}
 }
