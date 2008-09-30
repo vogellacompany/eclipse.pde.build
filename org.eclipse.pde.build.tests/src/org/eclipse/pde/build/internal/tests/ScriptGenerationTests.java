@@ -551,4 +551,30 @@ public class ScriptGenerationTests extends PDETestCase {
 		Utils.generateFeature(buildFolder, "f", new String[] {"opt;optional=true"}, new String[] { "org.eclipse.osgi"} );
 		generateScripts(buildFolder, BuildConfiguration.getScriptGenerationProperties(buildFolder, "feature", "f"));
 	}
+	
+	public void testBug248767() throws Exception {
+		IFolder rootFolder = newTest("248767");
+		IFolder build1 = rootFolder.getFolder("build1");
+		IFolder build2 = rootFolder.getFolder("build2");
+
+		// Build 1 compiles B against source A
+		Utils.generateFeature(build1, "F1", null, new String[] {"A;unpack=true", "org.eclipse.osgi", "B"});
+		Properties properties = BuildConfiguration.getBuilderProperties(build1);
+		properties.put("topLevelElementId", "F1");
+		properties.put("archivesFormat", "*,*,*-folder");
+		properties.put("pluginPath", build2.getLocation().toOSString());
+		Utils.storeBuildProperties(build1, properties);
+		runBuild(build1);
+		
+		build1.refreshLocal(IResource.DEPTH_INFINITE, null);
+		build1.getFolder("tmp/eclipse/plugins/B_1.0.0").delete(true, null);
+		
+		//Build 2 compiles B against binary A
+		Utils.generateFeature(build2, "F2", null, new String[] {"A", "B"});
+		properties = BuildConfiguration.getBuilderProperties(build2);
+		properties.put("topLevelElementId", "F2");
+		properties.put("baseLocation", build1.getFolder("tmp/eclipse").getLocation().toOSString());
+		Utils.storeBuildProperties(build2, properties);
+		runBuild(build2);
+	}
 }
