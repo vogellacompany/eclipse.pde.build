@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2007 IBM Corporation and others. All rights reserved. This
+ * Copyright (c) 2007, 2008 IBM Corporation and others. All rights reserved. This
  * program and the accompanying materials are made available under the terms of
  * the Eclipse Public License v1.0 which accompanies this distribution, and is
  * available at http://www.eclipse.org/legal/epl-v10.html
@@ -16,10 +16,14 @@ import java.util.*;
 import org.apache.tools.ant.*;
 import org.eclipse.core.resources.*;
 import org.eclipse.core.runtime.*;
+import org.eclipse.osgi.service.resolver.*;
 import org.eclipse.pde.build.internal.tests.ant.AntUtils;
 import org.eclipse.pde.build.internal.tests.ant.TestBrandTask;
 import org.eclipse.pde.build.tests.*;
+import org.eclipse.pde.internal.build.*;
+import org.eclipse.pde.internal.build.builder.BuildDirector;
 import org.eclipse.pde.internal.swt.tools.IconExe;
+import org.osgi.framework.Version;
 
 public class ProductTests extends PDETestCase {
 
@@ -213,5 +217,48 @@ public class ProductTests extends PDETestCase {
 		newErr.close();
 
 		assertEquals(new File(buildFolder.getLocation().toOSString(), "out.out").length(), 0);
+	}
+	
+	public void testBug249410() throws Exception {
+		IFolder buildFolder = newTest("249410");
+		IFile product = buildFolder.getFile("foo.product");
+		Utils.generateFeature(buildFolder, "f", null, new String[] {"a", "b", "c", "d"});
+		Utils.generateProduct(product, "foo.product", "1.0.0", new String[] {"f"}, true);
+
+		AssembleScriptGenerator.setConfigInfo("win32,win32,x86 & linux,gtk,x86");
+		Config win32 = new Config("win32,win32,x86");
+		Config linux = new Config("linux, gtk, x86");
+		AssemblyInformation assembly = new AssemblyInformation();
+		StateObjectFactory factory = Platform.getPlatformAdmin().getFactory();
+
+		BundleDescription a = factory.createBundleDescription(1, "a", Version.emptyVersion, null, null, null, null, null, true, true, true, null, null, null, null);
+		BundleDescription b = factory.createBundleDescription(2, "b", Version.emptyVersion, null, null, null, null, null, true, true, true, null, null, null, null);
+		assembly.addPlugin(win32, a);
+		assembly.addPlugin(linux, a);
+		assembly.addPlugin(win32, b);
+		assembly.addPlugin(linux, b);
+		assembly.addPlugin(linux, factory.createBundleDescription(3, "c", Version.emptyVersion, null, null, null, null, null, true, true, true, "(& (osgi.ws=gtk) (osgi.os=linux) (osgi.arch=x86))", null, null, null));
+		assembly.addPlugin(win32, factory.createBundleDescription(4, "d", Version.emptyVersion, null, null, null, null, null, true, true, true, "(& (osgi.ws=win32) (osgi.os=win32) (osgi.arch=x86))", null, null, null));
+
+		BuildDirector director = new BuildDirector(assembly);
+		ProductGenerator generator = new ProductGenerator();
+		generator.setDirector(director);
+		generator.setWorkingDirectory(buildFolder.getLocation().toOSString());
+		generator.setRoot(buildFolder.getLocation().toOSString() + "/");
+		generator.setProduct(product.getLocation().toOSString());
+		generator.generate();
+
+		Properties win32Config = Utils.loadProperties(buildFolder.getFile("productRootFiles/win32.win32.x86/configuration/config.ini"));
+		Properties linuxConfig = Utils.loadProperties(buildFolder.getFile("productRootFiles/linux.gtk.x86/configuration/config.ini"));
+
+		String bundlesList = win32Config.getProperty("osgi.bundles");
+		assertTrue(bundlesList.indexOf('a') > -1);
+		assertTrue(bundlesList.indexOf('b') > -1);
+		assertTrue(bundlesList.indexOf('d') > -1);
+
+		bundlesList = linuxConfig.getProperty("osgi.bundles");
+		assertTrue(bundlesList.indexOf('a') > -1);
+		assertTrue(bundlesList.indexOf('b') > -1);
+		assertTrue(bundlesList.indexOf('c') > -1);
 	}
 }
