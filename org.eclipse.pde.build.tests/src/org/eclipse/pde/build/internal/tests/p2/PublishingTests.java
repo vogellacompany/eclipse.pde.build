@@ -937,9 +937,21 @@ public class PublishingTests extends P2TestCase {
 		customBuffer.append("</project>																				\n");
 		Utils.writeBuffer(build2.getFile("customTargets.xml"), customBuffer);
 
+		//bug 269122
+		customBuffer = new StringBuffer();
+		customBuffer.append("<project name=\"custom\" default=\"noDefault\">										\n");
+		customBuffer.append("   <import file=\"${eclipse.pdebuild.templates}/headless-build/customAssembly.xml\"/>	\n");
+		customBuffer.append("   <target name=\"post.gather.bin.parts\">												\n");
+		customBuffer.append("      <echo message=\"post bin parts!\" />												\n");
+		customBuffer.append("   </target>																			\n");
+		customBuffer.append("</project>																				\n");
+		Utils.writeBuffer(build2.getFile("customAssembly.xml"), customBuffer);
+
 		runBuild(build2);
 
-		assertLogContainsLines(build2.getFile("log.log"), new String[] {"pre Process Repos!", "post Process Repos!"});
+		IFile log = build2.getFile("log.log");
+		assertLogContainsLines(log, new String[] {"pre Process Repos!", "post Process Repos!"});
+		assertLogContainsLines(log, new String[] {"post bin parts!"});
 
 		//reusing the metadata from part 1
 		uri = URIUtil.fromString("file:" + build2.getFolder("I.TestBuild/f-TestBuild-group.group.group.zip").getLocation().toOSString());
@@ -1633,5 +1645,52 @@ public class PublishingTests extends P2TestCase {
 		iu = getIU(metadata, "org.eclipse.equinox.app");
 		line = "org.eclipse.equinox.app_" + iu.getVersion() + ".jar@4\\:start";
 		assertLogContainsLine(config, line);
+	}
+	
+	public void testBug283060() throws Exception {
+		IFolder buildFolder = newTest("283060");
+		IFolder F = Utils.createFolder(buildFolder, "features/F");
+		IFolder rcp = Utils.createFolder(buildFolder, "rcp");
+		
+		StringBuffer buffer = new StringBuffer();
+		buffer.append("<feature id=\"F\" version=\"1.0.0\">		\n");
+		buffer.append("  <requires>											\n");	
+		buffer.append("     <import plugin=\"org.eclipse.equinox.simpleconfigurator\" version=\"1.0.100\" match=\"equivalent\" />	\n");
+		buffer.append("     <import plugin=\"org.eclipse.core.jobs\" version=\"3.4.100\" match=\"equivalent\" />	\n");
+		buffer.append("     <import plugin=\"org.eclipse.equinox.common\" version=\"3.5.0\" match=\"equivalent\" />	\n");
+		buffer.append("     <import plugin=\"org.eclipse.osgi\" version=\"3.5.0\" match=\"equivalent\" />	\n");
+		buffer.append("  </requires>											\n");
+		buffer.append("</feature>											\n");
+		Utils.writeBuffer(F.getFile("feature.xml"), buffer);
+		Properties properties = new Properties();
+		properties.put("bin.includes", "feature.xml");
+		Utils.writeBuffer(F.getFile("feature.xml"), buffer);
+		
+		IFile product = rcp.getFile("rcp.product");
+		StringBuffer extra = new StringBuffer();
+		extra.append(" <configurations>																					\n");
+		extra.append("    <plugin id=\"org.eclipse.equinox.common\" autoStart=\"true\" startLevel=\"2\" />				\n");
+		extra.append("    <plugin id=\"org.eclipse.equinox.simpleconfigurator\" autoStart=\"true\" startLevel=\"1\" />	\n");
+		extra.append(" </configurations>																				\n");
+		Utils.generateProduct(product, "org.example.rcp", "1.0.0", null, new String[] {"F"}, true, extra);
+
+		properties = BuildConfiguration.getBuilderProperties(buildFolder);
+		properties.put("product", product.getLocation().toOSString());
+		properties.put("includeLaunchers", "false");
+		properties.put("configs", "win32,win32,x86");
+		properties.put("archivesFormat", "win32,win32,x86-folder");
+		properties.put("p2.gathering", "true");
+		properties.put("p2.context.repos", URIUtil.toUnencodedString(createCompositeFromBase(buildFolder.getFolder("context"))));
+		Utils.storeBuildProperties(buildFolder, properties);
+
+		runProductBuild(buildFolder);
+
+		IFile bundlesInfo = buildFolder.getFile("tmp/eclipse/configuration/org.eclipse.equinox.simpleconfigurator/bundles.info");
+		assertResourceFile(bundlesInfo);
+		assertLogContainsLine(bundlesInfo, ",2,true");
+			
+		//bug 283091
+		IMetadataRepository meta = loadMetadataRepository(buildFolder.getFolder("buildRepo").getLocationURI());
+		assertNull(getIU(meta, "org.eclipse.equinox.app", false));
 	}
 }
