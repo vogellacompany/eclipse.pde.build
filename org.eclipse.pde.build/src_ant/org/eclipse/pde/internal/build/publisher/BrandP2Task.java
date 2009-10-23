@@ -23,7 +23,6 @@ import org.eclipse.equinox.internal.p2.core.helpers.FileUtils;
 import org.eclipse.equinox.internal.p2.metadata.*;
 import org.eclipse.equinox.internal.provisional.p2.artifact.repository.*;
 import org.eclipse.equinox.internal.provisional.p2.core.ProvisionException;
-import org.eclipse.equinox.internal.provisional.p2.metadata.Version;
 import org.eclipse.equinox.internal.provisional.p2.engine.Phase;
 import org.eclipse.equinox.internal.provisional.p2.engine.PhaseSet;
 import org.eclipse.equinox.internal.provisional.p2.engine.phases.Collect;
@@ -32,7 +31,6 @@ import org.eclipse.equinox.internal.provisional.p2.metadata.*;
 import org.eclipse.equinox.internal.provisional.p2.metadata.MetadataFactory.InstallableUnitDescription;
 import org.eclipse.equinox.internal.provisional.p2.metadata.repository.IMetadataRepository;
 import org.eclipse.equinox.internal.provisional.p2.metadata.repository.IMetadataRepositoryManager;
-import org.eclipse.equinox.p2.internal.repository.tools.Activator;
 import org.eclipse.equinox.p2.internal.repository.tools.Repo2Runnable;
 import org.eclipse.equinox.p2.internal.repository.tools.tasks.IUDescription;
 import org.eclipse.equinox.p2.internal.repository.tools.tasks.Repo2RunnableTask;
@@ -71,8 +69,15 @@ public class BrandP2Task extends Repo2RunnableTask {
 		if (launcherProvider == null || launcherProvider.startsWith("${")) //$NON-NLS-1$
 			launcherProvider = IPDEBuildConstants.FEATURE_EQUINOX_EXECUTABLE;
 
-		IMetadataRepository metadataRepo = loadMetadataRepository();
-		IArtifactRepository artifactRepo = loadArtifactRepository();
+		IMetadataRepositoryManager metadataManager = (IMetadataRepositoryManager) BundleHelper.getDefault().acquireService(IMetadataRepositoryManager.class.getName());
+		if (metadataManager == null)
+			throw new BuildException(TaskMessages.error_metadataRepoManagerService);
+		IArtifactRepositoryManager artifactManager = (IArtifactRepositoryManager) BundleHelper.getDefault().acquireService(IArtifactRepositoryManager.class.getName());
+		if (artifactManager == null)
+			throw new BuildException(TaskMessages.error_artifactRepoManagerService);
+
+		IMetadataRepository metadataRepo = loadMetadataRepository(metadataManager);
+		IArtifactRepository artifactRepo = loadArtifactRepository(artifactManager);
 
 		try {
 			super.setDestination(getRootFolder());
@@ -87,7 +92,7 @@ public class BrandP2Task extends Repo2RunnableTask {
 			getProject().log(e.getMessage(), Project.MSG_WARN);
 		} finally {
 			try {
-				cleanupRepositories();
+				cleanupRepositories(metadataManager, artifactManager);
 			} catch (ProvisionException e) {
 				getProject().log(e.getMessage(), Project.MSG_WARN);
 			}
@@ -95,9 +100,7 @@ public class BrandP2Task extends Repo2RunnableTask {
 		}
 	}
 
-	private void cleanupRepositories() throws ProvisionException {
-		IMetadataRepositoryManager metadataManager = Activator.getMetadataRepositoryManager();
-		IArtifactRepositoryManager artifactManager = Activator.getArtifactRepositoryManager();
+	private void cleanupRepositories(IMetadataRepositoryManager metadataManager, IArtifactRepositoryManager artifactManager) throws ProvisionException {
 		URI destination = new Path(getRootFolder()).toFile().toURI();
 
 		if (metadataManager != null) {
@@ -113,13 +116,9 @@ public class BrandP2Task extends Repo2RunnableTask {
 		}
 	}
 
-	private IArtifactRepository loadArtifactRepository() throws BuildException {
+	private IArtifactRepository loadArtifactRepository(IArtifactRepositoryManager manager) throws BuildException {
 		if (artifactURI == null)
 			throw new BuildException(TaskMessages.error_noArtifactRepo);
-
-		IArtifactRepositoryManager manager = (IArtifactRepositoryManager) BundleHelper.getDefault().acquireService(IArtifactRepositoryManager.class.getName());
-		if (manager == null)
-			throw new BuildException(TaskMessages.error_artifactRepoManagerService);
 
 		removeArtifactRepo = !manager.contains(artifactURI);
 
@@ -136,13 +135,9 @@ public class BrandP2Task extends Repo2RunnableTask {
 		return repo;
 	}
 
-	private IMetadataRepository loadMetadataRepository() throws BuildException {
+	private IMetadataRepository loadMetadataRepository(IMetadataRepositoryManager manager) throws BuildException {
 		if (metadataURI == null)
 			throw new BuildException(TaskMessages.error_noMetadataRepo);
-
-		IMetadataRepositoryManager manager = (IMetadataRepositoryManager) BundleHelper.getDefault().acquireService(IMetadataRepositoryManager.class.getName());
-		if (manager == null)
-			throw new BuildException(TaskMessages.error_metadataRepoManagerService);
 
 		removeMetadataRepo = !manager.contains(metadataURI);
 
