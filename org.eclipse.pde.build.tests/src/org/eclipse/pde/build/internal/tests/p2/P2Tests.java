@@ -14,9 +14,7 @@ import java.net.URL;
 import java.util.*;
 import java.util.jar.Attributes;
 import java.util.zip.ZipOutputStream;
-
 import junit.framework.AssertionFailedError;
-
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.runtime.*;
@@ -92,19 +90,33 @@ public class P2Tests extends P2TestCase {
 		assertTouchpoint(iu, "configure", "addProgramArg(programArg:--launcher.library);addProgramArg(programArg:@artifact);");
 		ius.add(iu);
 
-		iu = getIU(repository, "test.product.launcher." + p2Config);
-		assertProvides(iu, "toolingtest.product", "test.product.launcher");
-		assertRequires(iu, "org.eclipse.equinox.p2.iu", "org.eclipse.equinox.launcher." + launcherConfig);
+		iu = getIU(repository, "test.product.rootfiles." + p2Config);
+		assertProvides(iu, "toolingtest.product", "test.product.rootfiles");
+		//		assertRequires(iu, "org.eclipse.equinox.p2.iu", "org.eclipse.equinox.launcher." + launcherConfig);
 
 		//And the main product IU
 		iu = getIU(repository, "test.product");
-		assertRequires(iu, "toolingtest.product", "test.product.launcher");
-		assertRequires(iu, "toolingtest.product", "test.product.ini");
-		assertRequires(iu, "toolingtest.product", "test.product.config");
-		assertRequires(iu, ius, true);
+		//		assertRequires(iu, "toolingtest.product", "test.product.launcher");
+		//		assertRequires(iu, "toolingtest.product", "test.product.ini");
+		//		assertRequires(iu, "toolingtest.product", "test.product.config");
+		//		assertRequires(iu, ius, true);
 
-		iu = getIU(repository, "test.product.launcher." + p2Config + ".test" + (Platform.getOS().equals("win32") ? ".exe" : ""));
+		iu = getIU(repository, "toolingtest.product.rootfiles." + p2Config);
 		assertTouchpoint(iu, "configure", "setLauncherName(name:test");
+
+		IFolder installFolder = buildFolder.getFolder("install");
+		properties.put("p2.director.installPath", installFolder.getLocation().toOSString());
+		properties.put("p2.repo", "file:" + buildFolder.getFolder("repo").getLocation().toOSString());
+		properties.put("p2.director.iu", "test.product");
+		properties.put("os", Platform.getOS());
+		properties.put("ws", Platform.getWS());
+		properties.put("arch", Platform.getOSArch());
+		properties.put("equinoxLauncherJar", FileLocator.getBundleFile(Platform.getBundle("org.eclipse.equinox.launcher")).getAbsolutePath());
+		URL resource = FileLocator.find(Platform.getBundle("org.eclipse.pde.build"), new Path("/scripts/genericTargets.xml"), null);
+		String buildXMLPath = FileLocator.toFileURL(resource).getPath();
+		runAntScript(buildXMLPath, new String[] {"runDirector"}, buildFolder.getLocation().toOSString(), properties);
+
+		assertResourceFile(installFolder, "test.ini");
 	}
 
 	public void testBug237096() throws Exception {
@@ -136,18 +148,22 @@ public class P2Tests extends P2TestCase {
 		IMetadataRepository repository = loadMetadataRepository(repoLocation);
 		assertNotNull(repository);
 
+		IInstallableUnit iu = getIU(repository, "FRoot");
+		IInstallableUnit rootIU = getIU(repository, "toolingFRoot.rootfiles");
 		ArrayList ius = new ArrayList();
 		ius.add(getIU(repository, "org.eclipse.osgi"));
 		ius.add(getIU(repository, "org.eclipse.core.runtime"));
-		ius.add(getIU(repository, "org.eclipse.launcher.ANY.ANY.ANY"));
-		ius.add(getIU(repository, "toolingorg.eclipse.launcher.ANY.ANY.ANY"));
-
-		IInstallableUnit iu = getIU(repository, "FRoot");
+		ius.add(rootIU);
 		assertRequires(iu, ius, true);
+
+		ius.clear();
+		ius.add(getIU(repository, "FRoot.rootfiles.ANY.ANY.ANY"));
+		ius.add(getIU(repository, "toolingFRoot.rootfiles.ANY.ANY.ANY"));
+		assertRequires(rootIU, ius, true);
 	}
 
 	public void testBug242346() throws Exception {
-		IFolder buildFolder = newTest("237096");
+		IFolder buildFolder = newTest("242346");
 		IFile productFile = buildFolder.getFile("rcp.product");
 		IFolder repo = Utils.createFolder(buildFolder, "repo");
 
@@ -177,16 +193,23 @@ public class P2Tests extends P2TestCase {
 		assertNotNull(repository);
 
 		IInstallableUnit iu = getIU(repository, "toolingrcp.product.config.win32.win32.x86");
-		//testing relative paths, just check that the value starts with org.eclipse.equinox..., don't bother worrying about dir separator
-		assertTouchpoint(iu, "configure", "setProgramProperty(propName:org.eclipse.equinox.simpleconfigurator.configUrl, propValue:file:org.eclipse.equinox.simpleconfigurator");
+		ArrayList requiredIUs = new ArrayList();
+		IInstallableUnit rootFileCU = getIU(repository, "toolingrcp.product.rootfiles.win32.win32.x86");
+		requiredIUs.add(rootFileCU);
+		requiredIUs.add(getIU(repository, "rcp.product.rootfiles.win32.win32.x86"));
+
+		assertTouchpoint(rootFileCU, "configure", "setLauncherName");
+		iu = getIU(repository, "toolingrcp.product.rootfiles");
+		assertRequires(iu, requiredIUs, true);
+		requiredIUs.clear();
+		requiredIUs.add(iu);
 
 		iu = getIU(repository, "rcp.product");
+		assertRequires(iu, requiredIUs, true);
 		assertEquals(iu.getVersion().toString(), "1.0.0.v1234");
 
-		iu = getIU(repository, "toolingrcp.product.launcher.win32.win32.x86");
-		assertEquals("1.0.0.v1234", iu.getVersion().toString());
-
-		properties.put("p2.director.installPath", buildFolder.getFolder("install").getLocation().toOSString());
+		IFolder installFolder = buildFolder.getFolder("install");
+		properties.put("p2.director.installPath", installFolder.getLocation().toOSString());
 		properties.put("p2.repo", "file:" + buildFolder.getFolder("repo").getLocation().toOSString());
 		properties.put("p2.director.iu", "rcp.product");
 		properties.put("os", "win32");
@@ -196,6 +219,9 @@ public class P2Tests extends P2TestCase {
 		URL resource = FileLocator.find(Platform.getBundle("org.eclipse.pde.build"), new Path("/scripts/genericTargets.xml"), null);
 		String buildXMLPath = FileLocator.toFileURL(resource).getPath();
 		runAntScript(buildXMLPath, new String[] {"runDirector"}, buildFolder.getLocation().toOSString(), properties);
+
+		assertResourceFile(installFolder, "eclipse.exe");
+		assertLogContainsLine(installFolder.getFile("configuration/config.ini"), "org.eclipse.equinox.simpleconfigurator.configUrl=file\\:org.eclipse.equinox.simpleconfigurator");
 	}
 
 	public void testBug222962() throws Exception {
@@ -631,7 +657,7 @@ public class P2Tests extends P2TestCase {
 		assertEquals(artifact.getName(), "testRepoName"); //bug 274094
 		assertLogContainsLine(buildFolder.getFile("log.log"), "Mirroring completed with warnings and/or errors.");
 		assertLogContainsLines(buildFolder.getFile("compare.log"), new String[] {"canonical: osgi.bundle,b,1.0.0", "Difference found for B.class"});
-		boolean failed = true; 
+		boolean failed = true;
 		try {
 			assertLogContainsLine(buildFolder.getFile("compare.log"), "build.properties");
 			failed = false;

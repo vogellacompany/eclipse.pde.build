@@ -1,0 +1,1502 @@
+### Eclipse Workspace Patch 1.0
+#P org.eclipse.equinox.frameworkadmin
+Index: src/org/eclipse/equinox/internal/provisional/frameworkadmin/ConfigData.java
+===================================================================
+RCS file: /cvsroot/rt/org.eclipse.equinox/p2/bundles/org.eclipse.equinox.frameworkadmin/src/org/eclipse/equinox/internal/provisional/frameworkadmin/ConfigData.java,v
+retrieving revision 1.8
+diff -u -r1.8 ConfigData.java
+--- src/org/eclipse/equinox/internal/provisional/frameworkadmin/ConfigData.java	14 Oct 2009 20:10:26 -0000	1.8
++++ src/org/eclipse/equinox/internal/provisional/frameworkadmin/ConfigData.java	30 Oct 2009 17:48:31 -0000
+@@ -22,23 +22,6 @@
+  * @see Manipulator
+  */
+ public class ConfigData {
+-
+-	private static Properties appendProperties(Properties to, Properties from) {
+-		if (from != null) {
+-			if (to == null)
+-				to = new Properties();
+-			//			printoutProperties(System.out, "to", to);
+-			//			printoutProperties(System.out, "from", from);
+-
+-			for (Enumeration enumeration = from.keys(); enumeration.hasMoreElements();) {
+-				String key = (String) enumeration.nextElement();
+-				to.setProperty(key, from.getProperty(key));
+-			}
+-		}
+-		//		printoutProperties(System.out, "to", to);
+-		return to;
+-	}
+-
+ 	final private String fwName;
+ 	final private String fwVersion;
+ 	final private String launcherName;
+@@ -80,7 +63,7 @@
+ 
+ 	public Properties getProperties() {
+ 		Properties ret = new Properties();
+-		appendProperties(ret, properties);
++		ret.putAll(properties);
+ 		return ret;
+ 	}
+ 
+@@ -142,7 +125,7 @@
+ 
+ 	public void setProperties(Properties props) {
+ 		properties.clear();
+-		appendProperties(properties, props);
++		properties.putAll(props);
+ 	}
+ 
+ 	public void setInitialBundleStartLevel(int startLevel) {
+#P org.eclipse.equinox.frameworkadmin.equinox
+Index: src/org/eclipse/equinox/internal/frameworkadmin/equinox/EquinoxFwConfigFileParser.java
+===================================================================
+RCS file: /cvsroot/rt/org.eclipse.equinox/p2/bundles/org.eclipse.equinox.frameworkadmin.equinox/src/org/eclipse/equinox/internal/frameworkadmin/equinox/EquinoxFwConfigFileParser.java,v
+retrieving revision 1.21
+diff -u -r1.21 EquinoxFwConfigFileParser.java
+--- src/org/eclipse/equinox/internal/frameworkadmin/equinox/EquinoxFwConfigFileParser.java	3 Sep 2009 15:25:33 -0000	1.21
++++ src/org/eclipse/equinox/internal/frameworkadmin/equinox/EquinoxFwConfigFileParser.java	30 Oct 2009 17:48:32 -0000
+@@ -23,6 +23,7 @@
+ import org.osgi.service.log.LogService;
+ 
+ public class EquinoxFwConfigFileParser {
++	private static final Set KNOWN_PROPERTIES = new HashSet(Arrays.asList(new String[] {EquinoxConstants.PROP_BUNDLES, EquinoxConstants.PROP_FW_EXTENSIONS, EquinoxConstants.PROP_INITIAL_STARTLEVEL, EquinoxConstants.PROP_BUNDLES_STARTLEVEL}));
+ 	private static final String CONFIG_DIR = "@config.dir/"; //$NON-NLS-1$
+ 	private static final String KEY_ECLIPSE_PROV_DATA_AREA = "eclipse.p2.data.area"; //$NON-NLS-1$
+ 	private static final String KEY_ORG_ECLIPSE_EQUINOX_SIMPLECONFIGURATOR_CONFIGURL = "org.eclipse.equinox.simpleconfigurator.configUrl"; //$NON-NLS-1$
+@@ -226,19 +227,11 @@
+ 		readBundlesList(manipulator, ParserUtils.getOSGiInstallArea(Arrays.asList(launcherData.getProgramArgs()), props, launcherData).toURI(), props);
+ 		readInitialStartLeve(configData, props);
+ 		readDefaultStartLevel(configData, props);
+-		//		if (key.equals(EquinoxConstants.PROP_LAUNCHER_NAME))
+-		//			if (launcherData.getLauncher() == null)
+-		//				launcherName = value;
+-		//		if (key.equals(EquinoxConstants.PROP_LAUNCHER_PATH))
+-		//			if (launcherData.getLauncher() == null)
+-		//				launcherPath = value;
+-		String[] KNOWN_PROPERTIES = {EquinoxConstants.PROP_BUNDLES, EquinoxConstants.PROP_FW_EXTENSIONS, EquinoxConstants.PROP_INITIAL_STARTLEVEL, EquinoxConstants.PROP_BUNDLES_STARTLEVEL};
+-		top: for (Enumeration enumeration = props.keys(); enumeration.hasMoreElements();) {
++
++		for (Enumeration enumeration = props.keys(); enumeration.hasMoreElements();) {
+ 			String key = (String) enumeration.nextElement();
+-			for (int i = 0; i < KNOWN_PROPERTIES.length; i++) {
+-				if (KNOWN_PROPERTIES[i].equals(key))
+-					continue top;
+-			}
++			if (KNOWN_PROPERTIES.contains(key))
++				continue;
+ 			String value = props.getProperty(key);
+ 			configData.setProperty(key, value);
+ 		}
+@@ -279,11 +272,11 @@
+ 			if (fwJarString != null) {
+ 				fwJar = URIUtil.toFile(absoluteFwJar);
+ 				if (fwJar == null)
+-					throw new IllegalStateException("Can't determinate the osgi.framework location");
++					throw new IllegalStateException(Messages.exception_noFrameworkLocation);
+ 				//Here we overwrite the value read from eclipse.ini, because the value of osgi.framework always takes precedence.
+ 				launcherData.setFwJar(fwJar);
+ 			} else {
+-				throw new IllegalStateException("Can't determinate the osgi.framework location");
++				throw new IllegalStateException(Messages.exception_noFrameworkLocation);
+ 			}
+ 		}
+ 		if (launcherData.getFwJar() != null)
+@@ -458,7 +451,7 @@
+ 			writeInitialStartLevel(configData, configProps);
+ 			writeDefaultStartLevel(configData, configProps);
+ 		} catch (URISyntaxException e) {
+-			throw new FrameworkAdminRuntimeException(e, "saving config.ini");
++			throw new FrameworkAdminRuntimeException(e, Messages.exception_errorSavingConfigIni);
+ 		}
+ 
+ 		Properties original = configData.getProperties();
+Index: src/org/eclipse/equinox/internal/frameworkadmin/equinox/Messages.java
+===================================================================
+RCS file: /cvsroot/rt/org.eclipse.equinox/p2/bundles/org.eclipse.equinox.frameworkadmin.equinox/src/org/eclipse/equinox/internal/frameworkadmin/equinox/Messages.java,v
+retrieving revision 1.7
+diff -u -r1.7 Messages.java
+--- src/org/eclipse/equinox/internal/frameworkadmin/equinox/Messages.java	14 Oct 2009 19:14:46 -0000	1.7
++++ src/org/eclipse/equinox/internal/frameworkadmin/equinox/Messages.java	30 Oct 2009 17:48:32 -0000
+@@ -24,6 +24,8 @@
+ 	public static String exception_bundleManifest;
+ 	public static String exception_createAbsoluteURI;
+ 	public static String exception_nullConfigArea;
++	public static String exception_noFrameworkLocation;
++	public static String exception_errorSavingConfigIni;
+ 
+ 	public static String log_configFile;
+ 	public static String log_configProps;
+Index: src/org/eclipse/equinox/internal/frameworkadmin/equinox/messages.properties
+===================================================================
+RCS file: /cvsroot/rt/org.eclipse.equinox/p2/bundles/org.eclipse.equinox.frameworkadmin.equinox/src/org/eclipse/equinox/internal/frameworkadmin/equinox/messages.properties,v
+retrieving revision 1.7
+diff -u -r1.7 messages.properties
+--- src/org/eclipse/equinox/internal/frameworkadmin/equinox/messages.properties	14 Oct 2009 19:14:46 -0000	1.7
++++ src/org/eclipse/equinox/internal/frameworkadmin/equinox/messages.properties	30 Oct 2009 17:48:32 -0000
+@@ -19,6 +19,8 @@
+ exception_bundleManifest= Unable to get bundle manifest for: {0}
+ exception_createAbsoluteURI=Failed to create absolute URI from \"{0}\" and \"{1}\".
+ exception_nullConfigArea=The configuration area is not set.
++exception_noFrameworkLocation = Unable to determinate the osgi.framework location.
++exception_errorSavingConfigIni = Error saving config.ini.
+ 
+ log_configFile= Configuration file ({0}) has been read successfully.
+ log_configProps= Configuration properties is empty.
+#P org.eclipse.equinox.p2.metadata
+Index: src/org/eclipse/equinox/internal/provisional/p2/metadata/MetadataFactory.java
+===================================================================
+RCS file: /cvsroot/rt/org.eclipse.equinox/p2/bundles/org.eclipse.equinox.p2.metadata/src/org/eclipse/equinox/internal/provisional/p2/metadata/MetadataFactory.java,v
+retrieving revision 1.26
+diff -u -r1.26 MetadataFactory.java
+--- src/org/eclipse/equinox/internal/provisional/p2/metadata/MetadataFactory.java	8 Oct 2009 13:32:19 -0000	1.26
++++ src/org/eclipse/equinox/internal/provisional/p2/metadata/MetadataFactory.java	30 Oct 2009 17:48:32 -0000
+@@ -372,6 +372,48 @@
+ 		return new TouchpointData(result);
+ 	}
+ 
++	/**
++	 * Merge the given touchpoint instructions with a pre-existing touchpoint data
++	 * @param initial - the initial ITouchpointData
++	 * @param incomingInstructions - Map of ITouchpointInstructions to merge into the initial touchpoint data
++	 * @return the merged ITouchpointData
++	 */
++	public static ITouchpointData mergeTouchpointData(ITouchpointData initial, Map incomingInstructions) {
++		if (incomingInstructions == null || incomingInstructions.size() == 0)
++			return initial;
++
++		Map resultInstructions = new HashMap(initial.getInstructions());
++		for (Iterator iterator = incomingInstructions.keySet().iterator(); iterator.hasNext();) {
++			String key = (String) iterator.next();
++			Object incoming = incomingInstructions.get(key);
++			ITouchpointInstruction instruction = (incoming instanceof String) ? createTouchpointInstruction((String) incoming, null) : (ITouchpointInstruction) incoming;
++			ITouchpointInstruction existingInstruction = (ITouchpointInstruction) resultInstructions.get(key);
++
++			if (existingInstruction != null) {
++				String body = existingInstruction.getBody();
++				if (body == null || body.length() == 0)
++					body = instruction.getBody();
++				else if (instruction.getBody() != null) {
++					if (!body.endsWith(";")) //$NON-NLS-1$
++						body += ';';
++					body += instruction.getBody();
++				}
++
++				String importAttribute = existingInstruction.getImportAttribute();
++				if (importAttribute == null || importAttribute.length() == 0)
++					importAttribute = instruction.getImportAttribute();
++				else if (instruction.getImportAttribute() != null) {
++					if (!importAttribute.endsWith(",")) //$NON-NLS-1$
++						importAttribute += ',';
++					importAttribute += instruction.getBody();
++				}
++				instruction = createTouchpointInstruction(body, importAttribute);
++			}
++			resultInstructions.put(key, instruction);
++		}
++		return createTouchpointData(resultInstructions);
++	}
++
+ 	public static ITouchpointInstruction createTouchpointInstruction(String body, String importAttribute) {
+ 		return new TouchpointInstruction(body, importAttribute);
+ 	}
+#P org.eclipse.equinox.p2.publisher
+Index: src/org/eclipse/equinox/p2/publisher/AbstractPublisherAction.java
+===================================================================
+RCS file: /cvsroot/rt/org.eclipse.equinox/p2/bundles/org.eclipse.equinox.p2.publisher/src/org/eclipse/equinox/p2/publisher/AbstractPublisherAction.java,v
+retrieving revision 1.35.2.1
+diff -u -r1.35.2.1 AbstractPublisherAction.java
+--- src/org/eclipse/equinox/p2/publisher/AbstractPublisherAction.java	29 Oct 2009 22:53:00 -0000	1.35.2.1
++++ src/org/eclipse/equinox/p2/publisher/AbstractPublisherAction.java	30 Oct 2009 17:48:33 -0000
+@@ -10,11 +10,6 @@
+  ******************************************************************************/
+ package org.eclipse.equinox.p2.publisher;
+ 
+-import org.eclipse.equinox.internal.provisional.p2.metadata.IVersionedId;
+-
+-import org.eclipse.equinox.internal.provisional.p2.metadata.Version;
+-import org.eclipse.equinox.internal.provisional.p2.metadata.VersionRange;
+-
+ import java.io.*;
+ import java.util.*;
+ import org.eclipse.core.runtime.*;
+@@ -24,7 +19,7 @@
+ import org.eclipse.equinox.internal.p2.publisher.*;
+ import org.eclipse.equinox.internal.provisional.p2.artifact.repository.*;
+ import org.eclipse.equinox.internal.provisional.p2.artifact.repository.processing.ProcessingStepDescriptor;
+-import org.eclipse.equinox.internal.provisional.p2.core.*;
++import org.eclipse.equinox.internal.provisional.p2.core.ProvisionException;
+ import org.eclipse.equinox.internal.provisional.p2.metadata.*;
+ import org.eclipse.equinox.internal.provisional.p2.metadata.MetadataFactory.InstallableUnitDescription;
+ import org.eclipse.equinox.internal.provisional.p2.metadata.query.*;
+@@ -372,7 +367,11 @@
+ 	 * @param info The publisher info
+ 	 */
+ 	protected static void processTouchpointAdvice(InstallableUnitDescription iu, Map currentInstructions, IPublisherInfo info) {
+-		Collection advice = info.getAdvice(null, false, iu.getId(), iu.getVersion(), ITouchpointAdvice.class);
++		processTouchpointAdvice(iu, currentInstructions, info, null);
++	}
++
++	protected static void processTouchpointAdvice(InstallableUnitDescription iu, Map currentInstructions, IPublisherInfo info, String configSpec) {
++		Collection advice = info.getAdvice(configSpec, false, iu.getId(), iu.getVersion(), ITouchpointAdvice.class);
+ 		if (currentInstructions == null) {
+ 			if (advice.isEmpty())
+ 				return;
+Index: src/org/eclipse/equinox/p2/publisher/PublisherInfo.java
+===================================================================
+RCS file: /cvsroot/rt/org.eclipse.equinox/p2/bundles/org.eclipse.equinox.p2.publisher/src/org/eclipse/equinox/p2/publisher/PublisherInfo.java,v
+retrieving revision 1.12
+diff -u -r1.12 PublisherInfo.java
+--- src/org/eclipse/equinox/p2/publisher/PublisherInfo.java	14 Oct 2009 21:33:20 -0000	1.12
++++ src/org/eclipse/equinox/p2/publisher/PublisherInfo.java	30 Oct 2009 17:48:33 -0000
+@@ -29,6 +29,10 @@
+ 		adviceList.add(advice);
+ 	}
+ 
++	public List getAdvice() {
++		return adviceList;
++	}
++
+ 	public Collection getAdvice(String configSpec, boolean includeDefault, String id, Version version, Class type) {
+ 		ArrayList result = new ArrayList();
+ 		for (Iterator i = adviceList.iterator(); i.hasNext();) {
+Index: src/org/eclipse/equinox/p2/publisher/actions/RootFilesAction.java
+===================================================================
+RCS file: /cvsroot/rt/org.eclipse.equinox/p2/bundles/org.eclipse.equinox.p2.publisher/src/org/eclipse/equinox/p2/publisher/actions/RootFilesAction.java,v
+retrieving revision 1.16
+diff -u -r1.16 RootFilesAction.java
+--- src/org/eclipse/equinox/p2/publisher/actions/RootFilesAction.java	19 Oct 2009 20:37:59 -0000	1.16
++++ src/org/eclipse/equinox/p2/publisher/actions/RootFilesAction.java	30 Oct 2009 17:48:33 -0000
+@@ -21,11 +21,11 @@
+ import org.eclipse.equinox.p2.publisher.*;
+ import org.eclipse.equinox.spi.p2.publisher.PublisherHelper;
+ 
+-// TODO need to merge this functionality with the FeaturesAction work on root files
+ public class RootFilesAction extends AbstractPublisherAction {
+ 	private String idBase;
+ 	private Version version;
+ 	private String flavor;
++	private boolean createParent = true;
+ 
+ 	/**
+ 	 * Returns the id of the top level IU published by this action for the given id and flavor.
+@@ -43,6 +43,10 @@
+ 		this.flavor = flavor;
+ 	}
+ 
++	public void setCreateParent(boolean createParent) {
++		this.createParent = createParent;
++	}
++
+ 	public IStatus perform(IPublisherInfo publisherInfo, IPublisherResult results, IProgressMonitor monitor) {
+ 		setPublisherInfo(publisherInfo);
+ 		IPublisherResult innerResult = new PublisherResult();
+@@ -56,7 +60,8 @@
+ 		}
+ 		// merge the IUs  into the final result as non-roots and create a parent IU that captures them all
+ 		results.merge(innerResult, IPublisherResult.MERGE_ALL_NON_ROOT);
+-		publishTopLevelRootFilesIU(innerResult.getIUs(null, IPublisherResult.ROOT), results);
++		if (createParent)
++			publishTopLevelRootFilesIU(innerResult.getIUs(null, IPublisherResult.ROOT), results);
+ 		if (monitor.isCanceled())
+ 			return Status.CANCEL_STATUS;
+ 		return Status.OK_STATUS;
+@@ -110,7 +115,7 @@
+ 		touchpointData.put("install", configurationData); //$NON-NLS-1$
+ 		String unConfigurationData = "cleanupzip(source:@artifact, target:${installFolder});"; //$NON-NLS-1$
+ 		touchpointData.put("uninstall", unConfigurationData); //$NON-NLS-1$
+-		cu.addTouchpointData(MetadataFactory.createTouchpointData(touchpointData));
++		processTouchpointAdvice(cu, touchpointData, info, configSpec);
+ 		IInstallableUnit unit = MetadataFactory.createInstallableUnit(cu);
+ 		result.addIU(unit, IPublisherResult.ROOT);
+ 
+Index: src/org/eclipse/equinox/p2/publisher/eclipse/AdviceFileAdvice.java
+===================================================================
+RCS file: /cvsroot/rt/org.eclipse.equinox/p2/bundles/org.eclipse.equinox.p2.publisher/src/org/eclipse/equinox/p2/publisher/eclipse/AdviceFileAdvice.java,v
+retrieving revision 1.27
+diff -u -r1.27 AdviceFileAdvice.java
+--- src/org/eclipse/equinox/p2/publisher/eclipse/AdviceFileAdvice.java	8 Oct 2009 13:32:08 -0000	1.27
++++ src/org/eclipse/equinox/p2/publisher/eclipse/AdviceFileAdvice.java	30 Oct 2009 17:48:33 -0000
+@@ -10,8 +10,6 @@
+  *******************************************************************************/
+ package org.eclipse.equinox.p2.publisher.eclipse;
+ 
+-import org.eclipse.equinox.internal.provisional.p2.metadata.Version;
+-
+ import java.io.*;
+ import java.util.*;
+ import java.util.zip.ZipEntry;
+@@ -152,38 +150,7 @@
+ 	 * @see org.eclipse.equinox.p2.publisher.eclipse.ITouchpointAdvice#getTouchpointData()
+ 	 */
+ 	public ITouchpointData getTouchpointData(ITouchpointData existing) {
+-		if (touchpointInstructions == null)
+-			return existing;
+-
+-		Map resultInstructions = new HashMap(existing.getInstructions());
+-		for (Iterator iterator = touchpointInstructions.keySet().iterator(); iterator.hasNext();) {
+-			String key = (String) iterator.next();
+-			ITouchpointInstruction instruction = (ITouchpointInstruction) touchpointInstructions.get(key);
+-			ITouchpointInstruction existingInstruction = (ITouchpointInstruction) resultInstructions.get(key);
+-
+-			if (existingInstruction != null) {
+-				String body = existingInstruction.getBody();
+-				if (body == null || body.length() == 0)
+-					body = instruction.getBody();
+-				else if (instruction.getBody() != null) {
+-					if (!body.endsWith(";")) //$NON-NLS-1$
+-						body += ';';
+-					body += instruction.getBody();
+-				}
+-
+-				String importAttribute = existingInstruction.getImportAttribute();
+-				if (importAttribute == null || importAttribute.length() == 0)
+-					importAttribute = instruction.getImportAttribute();
+-				else if (instruction.getImportAttribute() != null) {
+-					if (!importAttribute.endsWith(",")) //$NON-NLS-1$
+-						importAttribute += ',';
+-					importAttribute += instruction.getBody();
+-				}
+-				instruction = MetadataFactory.createTouchpointInstruction(body, importAttribute);
+-			}
+-			resultInstructions.put(key, instruction);
+-		}
+-		return MetadataFactory.createTouchpointData(resultInstructions);
++		return MetadataFactory.mergeTouchpointData(existing, touchpointInstructions);
+ 	}
+ 
+ 	public IProvidedCapability[] getProvidedCapabilities(InstallableUnitDescription iu) {
+Index: src/org/eclipse/equinox/p2/publisher/eclipse/ConfigCUsAction.java
+===================================================================
+RCS file: /cvsroot/rt/org.eclipse.equinox/p2/bundles/org.eclipse.equinox.p2.publisher/src/org/eclipse/equinox/p2/publisher/eclipse/ConfigCUsAction.java,v
+retrieving revision 1.22
+diff -u -r1.22 ConfigCUsAction.java
+--- src/org/eclipse/equinox/p2/publisher/eclipse/ConfigCUsAction.java	14 Oct 2009 21:33:20 -0000	1.22
++++ src/org/eclipse/equinox/p2/publisher/eclipse/ConfigCUsAction.java	30 Oct 2009 17:48:33 -0000
+@@ -32,6 +32,7 @@
+ public class ConfigCUsAction extends AbstractPublisherAction {
+ 
+ 	protected static final String ORG_ECLIPSE_UPDATE_CONFIGURATOR = "org.eclipse.update.configurator"; //$NON-NLS-1$
++	protected static final String DEFAULT_START_LEVEL = "osgi.bundles.defaultStartLevel"; //$NON-NLS-1$
+ 	private static Collection PROPERTIES_TO_SKIP;
+ 	private static HashSet PROGRAM_ARGS_TO_SKIP;
+ 	protected Version version;
+@@ -122,9 +123,25 @@
+ 		ArrayList result = new ArrayList();
+ 		for (Iterator j = configAdvice.iterator(); j.hasNext();) {
+ 			IConfigAdvice advice = (IConfigAdvice) j.next();
++
++			int defaultStart = BundleInfo.NO_LEVEL;
++			Properties adviceProperties = advice.getProperties();
++			if (adviceProperties.containsKey(DEFAULT_START_LEVEL)) {
++				try {
++					defaultStart = Integer.parseInt((String) adviceProperties.get(DEFAULT_START_LEVEL));
++				} catch (NumberFormatException e) {
++					//don't know default
++				}
++			}
++
+ 			BundleInfo[] bundles = advice.getBundles();
+ 			for (int i = 0; i < bundles.length; i++) {
+ 				BundleInfo bundleInfo = bundles[i];
++
++				if (bundleInfo.getStartLevel() != BundleInfo.NO_LEVEL && bundleInfo.getStartLevel() == defaultStart) {
++					bundleInfo.setStartLevel(BundleInfo.NO_LEVEL);
++				}
++
+ 				// prime the result with the current info.  This will be replaced if there is more info...
+ 				if ((bundleInfo.getSymbolicName() != null && bundleInfo.getVersion() != null) || bundleInfo.getLocation() == null)
+ 					result.add(bundles[i]);
+#P org.eclipse.pde.build
+Index: .externalToolBuilders/org.eclipse.pde.build localbuild.xml [Builder].launch
+===================================================================
+RCS file: /cvsroot/eclipse/pde/build/org.eclipse.pde.build/.externalToolBuilders/org.eclipse.pde.build localbuild.xml [Builder].launch,v
+retrieving revision 1.2
+diff -u -r1.2 org.eclipse.pde.build localbuild.xml [Builder].launch
+--- .externalToolBuilders/org.eclipse.pde.build localbuild.xml [Builder].launch	12 Mar 2008 18:53:25 -0000	1.2
++++ .externalToolBuilders/org.eclipse.pde.build localbuild.xml [Builder].launch	30 Oct 2009 17:48:33 -0000
+@@ -1,30 +1,29 @@
+-<?xml version="1.0" encoding="UTF-8"?>
+-<launchConfiguration type="org.eclipse.ant.AntBuilderLaunchConfigurationType">
++<?xml version="1.0" encoding="UTF-8"?><launchConfiguration type="org.eclipse.ant.AntBuilderLaunchConfigurationType">
+ <stringAttribute key="org.eclipse.ant.ui.ATTR_ANT_AFTER_CLEAN_TARGETS" value="workspaceBinaries,"/>
+ <stringAttribute key="org.eclipse.ant.ui.ATTR_ANT_MANUAL_TARGETS" value="workspaceBinaries,"/>
+ <booleanAttribute key="org.eclipse.ant.ui.ATTR_TARGETS_UPDATED" value="true"/>
+ <booleanAttribute key="org.eclipse.ant.ui.DEFAULT_VM_INSTALL" value="false"/>
+ <stringAttribute key="org.eclipse.debug.core.ATTR_REFRESH_SCOPE" value="${working_set:&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&#13;&#10;&lt;launchConfigurationWorkingSet editPageId=&quot;org.eclipse.ui.resourceWorkingSetPage&quot; factoryID=&quot;org.eclipse.ui.internal.WorkingSetFactory&quot; label=&quot;working set&quot; name=&quot;working set&quot;&gt;&#13;&#10;&lt;item factoryID=&quot;org.eclipse.ui.internal.model.ResourceFactory&quot; path=&quot;/org.eclipse.pde.build/lib&quot; type=&quot;2&quot;/&gt;&#13;&#10;&lt;/launchConfigurationWorkingSet&gt;}"/>
+ <listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
+-<listEntry value="/org.eclipse.pde.build/localbuild.xml"/>
++<listEntry value="/org.eclipse.pde.build"/>
+ </listAttribute>
+ <listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
+-<listEntry value="1"/>
++<listEntry value="4"/>
+ </listAttribute>
+ <booleanAttribute key="org.eclipse.debug.ui.ATTR_LAUNCH_IN_BACKGROUND" value="false"/>
+ <stringAttribute key="org.eclipse.jdt.launching.CLASSPATH_PROVIDER" value="org.eclipse.ant.ui.AntClasspathProvider"/>
+ <stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="org.eclipse.pde.build"/>
+ <stringAttribute key="org.eclipse.jdt.launching.SOURCE_PATH_PROVIDER" value="org.eclipse.ant.ui.AntClasspathProvider"/>
+ <mapAttribute key="org.eclipse.ui.externaltools.ATTR_ANT_PROPERTIES">
+-<mapEntry key="eclipse.pdebuild.templates" value="/C:/Dev/Platform/eclipse/plugins/org.eclipse.pde.build_3.4.0.v20080303/templates/"/>
+-<mapEntry key="buildDirectory" value="${build_project}/trash"/>
+-<mapEntry key="baseLocation" value="${target_home}"/>
+-<mapEntry key="eclipse.pdebuild.scripts" value="/C:/Dev/Platform/eclipse/plugins/org.eclipse.pde.build_3.4.0.v20080303/scripts/"/>
+ <mapEntry key="thisPlugin" value="${resource_loc:/org.eclipse.pde.build}"/>
++<mapEntry key="baseLocation" value="${target_home}"/>
+ <mapEntry key="eclipse.pdebuild.home" value="/C:/Dev/Platform/eclipse/plugins/org.eclipse.pde.build_3.4.0.v20080303/./"/>
++<mapEntry key="eclipse.pdebuild.scripts" value="/C:/Dev/Platform/eclipse/plugins/org.eclipse.pde.build_3.4.0.v20080303/scripts/"/>
++<mapEntry key="buildDirectory" value="${build_project}/trash"/>
++<mapEntry key="eclipse.pdebuild.templates" value="/C:/Dev/Platform/eclipse/plugins/org.eclipse.pde.build_3.4.0.v20080303/templates/"/>
+ </mapAttribute>
+ <stringAttribute key="org.eclipse.ui.externaltools.ATTR_LOCATION" value="${workspace_loc:/org.eclipse.pde.build/localbuild.xml}"/>
+ <stringAttribute key="org.eclipse.ui.externaltools.ATTR_RUN_BUILD_KINDS" value="full,incremental,"/>
+ <booleanAttribute key="org.eclipse.ui.externaltools.ATTR_TRIGGERS_CONFIGURED" value="true"/>
+ <stringAttribute key="process_factory_id" value="org.eclipse.ant.ui.remoteAntProcessFactory"/>
+-</launchConfiguration>
++</launchConfiguration>
+\ No newline at end of file
+Index: eclipse-whats-new-template.html
+===================================================================
+RCS file: eclipse-whats-new-template.html
+diff -N eclipse-whats-new-template.html
+--- /dev/null	1 Jan 1970 00:00:00 -0000
++++ eclipse-whats-new-template.html	1 Jan 1970 00:00:00 -0000
+@@ -0,0 +1,33 @@
++<?xml version="1.0" encoding="iso-8859-1"?>
++<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
++        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
++<html xmlns="http://www.w3.org/1999/xhtml">
++<head>
++<meta http-equiv="Content-Language" content="en-us" />
++<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
++<title>Eclipse &quot;New and Noteworthy&quot; Template</title>
++</head>
++<body>
++<h1>Eclipse &quot;New and Noteworthy&quot; Template</h1>
++<table border="0" width="80%" cellpadding="10" cellspacing="0">
++  <tr>
++    <td colspan="2"><hr />
++      <h2>Eclipse component</h2>
++      <hr /></td>
++  </tr>
++  <tr id="itemname">
++    <td width="30%" valign="top" align="left"><b>Enhanced compiler error options for PDE build </b></td>
++    <td width="70%" valign="top"><p>PDE/Build can now take advantage of new support from the JDT compiler to 
++    	specify that certain warnings should instead be reported as errors.</p>
++    	<p>Set the property <tt>javacErrors.&lt;library&gt;</tt> in your build.properties.  Similar to the 
++    	<tt>javacWarnings.&lt;library&gt;</tt> property, specify the <a href="http://help.eclipse.org/galileo/index.jsp?topic=/org.eclipse.jdt.doc.isv/guide/jdt_api_compile.htm">warnings</a> that should be reported as errors:
++    	</p>
++    	<pre>
++    	javacErrors.. = forbidden,discouraged,
++    	javacErrors.library.jar = deprecation,nullDereference
++    	</pre>
++	</td>
++  </tr>
++</table>
++</body>
++</html>
+Index: plugin.xml
+===================================================================
+RCS file: /cvsroot/eclipse/pde/build/org.eclipse.pde.build/plugin.xml,v
+retrieving revision 1.67
+diff -u -r1.67 plugin.xml
+--- plugin.xml	21 Feb 2009 00:08:42 -0000	1.67
++++ plugin.xml	30 Oct 2009 17:48:33 -0000
+@@ -80,7 +80,12 @@
+             library="lib/pdebuild-ant.jar"
+             name="eclipse.publish.featuresAndBundles">
+       </antTask>
+-      
++	<antTask
++		class="org.eclipse.pde.internal.build.generator.GeneratorTask"
++		library="lib/pdebuild-ant.jar"
++		name="p2.new.generator">
++	</antTask>
++    
+    </extension>
+ <!-- Extra Classpath -->
+    <extension
+Index: src/org/eclipse/pde/internal/build/AssembleConfigScriptGenerator.java
+===================================================================
+RCS file: /cvsroot/eclipse/pde/build/org.eclipse.pde.build/src/org/eclipse/pde/internal/build/AssembleConfigScriptGenerator.java,v
+retrieving revision 1.137
+diff -u -r1.137 AssembleConfigScriptGenerator.java
+--- src/org/eclipse/pde/internal/build/AssembleConfigScriptGenerator.java	22 Jun 2009 21:17:43 -0000	1.137
++++ src/org/eclipse/pde/internal/build/AssembleConfigScriptGenerator.java	30 Oct 2009 17:48:33 -0000
+@@ -755,7 +755,7 @@
+ 			}
+ 			if (!BuildDirector.p2Gathering) {
+ 				script.printTab();
+-				script.print("<p2.generator "); //$NON-NLS-1$
++				script.print("<p2.new.generator "); //$NON-NLS-1$
+ 				script.printAttribute("source", Utils.getPropertyFormat(PROPERTY_ECLIPSE_BASE), true); //$NON-NLS-1$
+ 				script.printAttribute("append", Utils.getPropertyFormat(PROPERTY_P2_APPEND), true); //$NON-NLS-1$
+ 				script.printAttribute("flavor", Utils.getPropertyFormat(PROPERTY_P2_FLAVOR), true); //$NON-NLS-1$
+@@ -782,7 +782,7 @@
+ 					script.printProperty(PROPERTY_P2_PRODUCT_MOD, productFile.getLocation());
+ 				}
+ 				script.printTab();
+-				script.print("<p2.generator "); //$NON-NLS-1$
++				script.print("<p2.new.generator "); //$NON-NLS-1$
+ 				script.printAttribute("config", rootFolder, true); //$NON-NLS-1$
+ 				script.printAttribute("append", Utils.getPropertyFormat(PROPERTY_P2_APPEND), true); //$NON-NLS-1$ 
+ 				script.printAttribute("flavor", Utils.getPropertyFormat(PROPERTY_P2_FLAVOR), true); //$NON-NLS-1$
+@@ -801,6 +801,9 @@
+ 				if (productFile != null) {
+ 					script.printAttribute("exe", rootFolder + '/' + Utils.getPropertyFormat(PROPERTY_LAUNCHER_NAME), true); //$NON-NLS-1$
+ 					script.printAttribute("productFile", Utils.getPropertyFormat(PROPERTY_P2_PRODUCT_MOD), true); //$NON-NLS-1$
++				} else {
++					script.printAttribute("root", Utils.getPropertyFormat(PROPERTY_P2_ROOT_NAME), true); //$NON-NLS-1$
++					script.printAttribute("rootVersion", Utils.getPropertyFormat(PROPERTY_P2_ROOT_VERSION), true); //$NON-NLS-1$
+ 				}
+ 				script.println("/>"); //$NON-NLS-1$
+ 			}
+Index: src/org/eclipse/pde/internal/build/AssembleScriptGenerator.java
+===================================================================
+RCS file: /cvsroot/eclipse/pde/build/org.eclipse.pde.build/src/org/eclipse/pde/internal/build/AssembleScriptGenerator.java,v
+retrieving revision 1.47
+diff -u -r1.47 AssembleScriptGenerator.java
+--- src/org/eclipse/pde/internal/build/AssembleScriptGenerator.java	22 Jun 2009 21:17:43 -0000	1.47
++++ src/org/eclipse/pde/internal/build/AssembleScriptGenerator.java	30 Oct 2009 17:48:33 -0000
+@@ -211,7 +211,7 @@
+ 				script.printProperty(PROPERTY_P2_PRODUCT_MOD, product.getLocation());
+ 			}
+ 			script.printTab();
+-			script.print("<p2.generator "); //$NON-NLS-1$
++			script.print("<p2.new.generator "); //$NON-NLS-1$
+ 			script.printAttribute("append", Utils.getPropertyFormat(PROPERTY_P2_APPEND), true); //$NON-NLS-1$
+ 			script.printAttribute("flavor", Utils.getPropertyFormat(PROPERTY_P2_FLAVOR), true); //$NON-NLS-1$
+ 			script.printAttribute("metadataRepository", Utils.getPropertyFormat(PROPERTY_P2_METADATA_REPO), true); //$NON-NLS-1$ 
+Index: src/org/eclipse/pde/internal/build/packager/PackageScriptGenerator.java
+===================================================================
+RCS file: /cvsroot/eclipse/pde/build/org.eclipse.pde.build/src/org/eclipse/pde/internal/build/packager/PackageScriptGenerator.java,v
+retrieving revision 1.33
+diff -u -r1.33 PackageScriptGenerator.java
+--- src/org/eclipse/pde/internal/build/packager/PackageScriptGenerator.java	22 Jun 2009 21:17:43 -0000	1.33
++++ src/org/eclipse/pde/internal/build/packager/PackageScriptGenerator.java	30 Oct 2009 17:48:33 -0000
+@@ -115,7 +115,8 @@
+ 	}
+ 
+ 	private static void generateP2FinalCall(AntScript script, String productFileLocation, String versionAdvice) {
+-		script.print("<p2.generator "); //$NON-NLS-1$
++		script.printTab();
++		script.print("<p2.new.generator "); //$NON-NLS-1$
+ 		script.printAttribute("append", Utils.getPropertyFormat(PROPERTY_P2_APPEND), true); //$NON-NLS-1$ 
+ 		script.printAttribute("flavor", Utils.getPropertyFormat(PROPERTY_P2_FLAVOR), true); //$NON-NLS-1$
+ 		script.printAttribute("compress", Utils.getPropertyFormat(PROPERTY_P2_COMPRESS), true); //$NON-NLS-1$
+Index: src/org/eclipse/pde/internal/build/publisher/compatibility/AssembledConfigAdvice.java
+===================================================================
+RCS file: src/org/eclipse/pde/internal/build/publisher/compatibility/AssembledConfigAdvice.java
+diff -N src/org/eclipse/pde/internal/build/publisher/compatibility/AssembledConfigAdvice.java
+--- /dev/null	1 Jan 1970 00:00:00 -0000
++++ src/org/eclipse/pde/internal/build/publisher/compatibility/AssembledConfigAdvice.java	1 Jan 1970 00:00:00 -0000
+@@ -0,0 +1,75 @@
++package org.eclipse.pde.internal.build.publisher.compatibility;
++
++import java.io.File;
++import java.util.Properties;
++import org.eclipse.equinox.internal.p2.publisher.eclipse.DataLoader;
++import org.eclipse.equinox.internal.provisional.frameworkadmin.*;
++import org.eclipse.equinox.internal.provisional.p2.metadata.Version;
++import org.eclipse.equinox.p2.publisher.eclipse.IConfigAdvice;
++import org.eclipse.equinox.p2.publisher.eclipse.IExecutableAdvice;
++import org.eclipse.pde.internal.build.IPDEBuildConstants;
++
++public class AssembledConfigAdvice implements IConfigAdvice, IExecutableAdvice {
++	private String configSpec = null;
++	private String launcherName = null;
++	private LauncherData launcherData = null;
++	private ConfigData configData = null;
++
++	public AssembledConfigAdvice(String configSpec, File configRoot, String launcherName) {
++		this.configSpec = configSpec;
++		this.launcherName = launcherName;
++		initializeData(configRoot);
++	}
++
++	public BundleInfo[] getBundles() {
++		return configData.getBundles();
++	}
++
++	public Properties getProperties() {
++		Properties properties = configData.getProperties();
++		int startLevel = configData.getInitialBundleStartLevel();
++		if (startLevel != BundleInfo.NO_LEVEL)
++			properties.put("osgi.bundles.defaultStartLevel", String.valueOf(startLevel)); //$NON-NLS-1$
++		return properties;
++	}
++
++	public boolean isApplicable(String spec, boolean includeDefault, String id, Version version) {
++		return configSpec.equals(spec);
++	}
++
++	private File getLauncher(File root) {
++		if (launcherName == null)
++			launcherName = "eclipse"; //$NON-NLS-1$
++		if (configSpec.indexOf("win32") > 0) //$NON-NLS-1$
++			return new File(root, launcherName + ".exe"); //$NON-NLS-1$
++		return new File(root, launcherName);
++	}
++
++	private void initializeData(File configRoot) {
++		DataLoader loader = new DataLoader(new File(configRoot, "configuration/config.ini"), getLauncher(configRoot)); //$NON-NLS-1$
++		configData = loader.getConfigData();
++		normalizeBundleVersions(configData);
++		launcherData = loader.getLauncherData();
++	}
++
++	private void normalizeBundleVersions(ConfigData data) {
++		BundleInfo[] bundles = data.getBundles();
++		for (int i = 0; i < bundles.length; i++) {
++			// If the bundle doesn't have a version set it to 0.0.0
++			if (bundles[i].getVersion() == null)
++				bundles[i].setVersion(IPDEBuildConstants.GENERIC_VERSION_NUMBER);
++		}
++	}
++
++	public String getExecutableName() {
++		return (launcherName != null) ? launcherName : "eclipse"; //$NON-NLS-1$
++	}
++
++	public String[] getProgramArguments() {
++		return (launcherData != null) ? launcherData.getProgramArgs() : new String[0];
++	}
++
++	public String[] getVMArguments() {
++		return (launcherData != null) ? launcherData.getJvmArgs() : new String[0];
++	}
++}
+Index: src/org/eclipse/pde/internal/build/publisher/compatibility/GeneratorApplication.java
+===================================================================
+RCS file: src/org/eclipse/pde/internal/build/publisher/compatibility/GeneratorApplication.java
+diff -N src/org/eclipse/pde/internal/build/publisher/compatibility/GeneratorApplication.java
+--- /dev/null	1 Jan 1970 00:00:00 -0000
++++ src/org/eclipse/pde/internal/build/publisher/compatibility/GeneratorApplication.java	1 Jan 1970 00:00:00 -0000
+@@ -0,0 +1,158 @@
++package org.eclipse.pde.internal.build.publisher.compatibility;
++
++import java.io.File;
++import java.net.URI;
++import java.util.ArrayList;
++import java.util.List;
++import org.eclipse.equinox.internal.p2.publisher.eclipse.ProductFile;
++import org.eclipse.equinox.internal.p2.updatesite.SiteXMLAction;
++import org.eclipse.equinox.internal.provisional.p2.metadata.IInstallableUnit;
++import org.eclipse.equinox.internal.provisional.p2.metadata.Version;
++import org.eclipse.equinox.p2.publisher.*;
++import org.eclipse.equinox.p2.publisher.actions.*;
++import org.eclipse.equinox.p2.publisher.eclipse.*;
++import org.eclipse.pde.internal.build.IPDEBuildConstants;
++
++public class GeneratorApplication extends AbstractPublisherApplication {
++	static final public int OPERATION_SOURCE = 1;
++	static final public int OPERATION_INPLACE = 2;
++	static final public int OPERATION_CONFIG = 3;
++	static final public int OPERATION_UPDATE = 4;
++
++	private int operation = 0;
++	private IPublisherResult result = null;
++	private URI site = null;
++	private String flavor;
++	private ProductFile product;
++	private String rootVersion;
++	private String versionAdvice;
++	private String rootId;
++
++	protected IPublisherAction[] createActions() {
++
++		File sourceFile = source != null ? new File(source) : null;
++
++		List actions = new ArrayList();
++		switch (operation) {
++			case 0 :
++				if (product != null) {
++					actions.add(new RootFileParentAction(product, flavor));
++					actions.add(new EquinoxLauncherCUAction(flavor, info.getConfigurations()));
++					actions.add(new ProductAction(source, product, flavor, null));
++				} else if (rootId != null) {
++					info.addAdvice(new RootIUResultFilterAdvice(null));
++					actions.add(new RootFileParentAction(rootId, rootVersion, flavor));
++					actions.add(new RootIUAction(rootId, Version.parseVersion(rootVersion), null));
++				}
++				break;
++			case OPERATION_SOURCE :
++				actions.add(new FeaturesAction(new File[] {new File(sourceFile, "features")})); //$NON-NLS-1$
++				actions.add(new BundlesAction(new File[] {new File(sourceFile, "plugins")})); //$NON-NLS-1$
++				if (site != null)
++					actions.add(new SiteXMLAction(site, null));
++				break;
++			case OPERATION_CONFIG :
++				String[] configs = info.getConfigurations();
++				if (configs.length == 1) {
++					info.addAdvice(new AssembledConfigAdvice(configs[0], sourceFile, product != null ? product.getLauncherName() : null));
++					info.addAdvice(new RootFileTouchpointAdvice(product, sourceFile, new File[] {sourceFile}, null, configs[0]));
++					actions.add(createRootFileAction(configs[0]));
++				}
++				break;
++		}
++
++		if (versionAdvice != null)
++			info.addAdvice(createVersionAdvice());
++
++		return (IPublisherAction[]) actions.toArray(new IPublisherAction[actions.size()]);
++	}
++
++	protected IVersionAdvice createVersionAdvice() {
++		File adviceFile = new File(versionAdvice);
++		boolean features = adviceFile.getName().indexOf("feature") > 0; //$NON-NLS-1$
++		VersionAdvice advice = new VersionAdvice();
++		advice.load(IInstallableUnit.NAMESPACE_IU_ID, versionAdvice, features ? ".feature.group" : ""); //$NON-NLS-1$ //$NON-NLS-2$
++		return advice;
++	}
++
++	protected IPublisherAction createRootFileAction(String configSpec) {
++		String id = product != null ? product.getId() : rootId;
++		Version version = Version.parseVersion(getProductVersion());
++
++		RootFilesAction action = new RootFilesAction(info, id, version, flavor);
++		action.setCreateParent(false);
++		return action;
++	}
++
++	private String getProductVersion() {
++		String version = "1.0.0"; //$NON-NLS-1$
++		if (product != null && !product.getVersion().equals(IPDEBuildConstants.GENERIC_VERSION_NUMBER)) {
++			version = product.getVersion();
++		} else if (rootVersion != null && !rootVersion.equals(IPDEBuildConstants.GENERIC_VERSION_NUMBER)) {
++			version = rootVersion;
++		}
++		return version;
++	}
++
++	protected Publisher createPublisher(PublisherInfo publisherInfo) {
++		return new Publisher(publisherInfo, result);
++	}
++
++	public void setAppend(boolean value) {
++		super.append = value;
++	}
++
++	public void setArtifactRepositoryName(String name) {
++		super.artifactRepoName = name;
++	}
++
++	public void setCompress(boolean value) {
++		super.compress = value;
++	}
++
++	public void setMetadataRepositoryName(String name) {
++		super.metadataRepoName = name;
++	}
++
++	public void setOperation(int operation) {
++		this.operation = operation;
++	}
++
++	public void setSource(String location) {
++		this.source = location;
++	}
++
++	public void setSite(URI location) {
++		this.site = location;
++	}
++
++	public void setIncrementalResult(IPublisherResult result) {
++		this.result = result;
++	}
++
++	public void setFlavor(String flavor) {
++		this.flavor = flavor;
++	}
++
++	public void setRootVersion(String rootVersion) {
++		this.rootVersion = rootVersion;
++	}
++
++	public void setRoodId(String root) {
++		this.rootId = root;
++	}
++
++	public void setProductFile(String file) {
++		if (file != null && new File(file).exists()) {
++			try {
++				product = new ProductFile(file);
++			} catch (Exception e) {
++				// problem
++			}
++		}
++	}
++
++	public void setVersionAdvice(String advice) {
++		this.versionAdvice = advice;
++	}
++}
+\ No newline at end of file
+Index: src/org/eclipse/pde/internal/build/publisher/compatibility/IncrementalGenerator.java
+===================================================================
+RCS file: src/org/eclipse/pde/internal/build/publisher/compatibility/IncrementalGenerator.java
+diff -N src/org/eclipse/pde/internal/build/publisher/compatibility/IncrementalGenerator.java
+--- /dev/null	1 Jan 1970 00:00:00 -0000
++++ src/org/eclipse/pde/internal/build/publisher/compatibility/IncrementalGenerator.java	1 Jan 1970 00:00:00 -0000
+@@ -0,0 +1,70 @@
++/*******************************************************************************
++ * Copyright (c) 2008 IBM Corporation and others.
++ * All rights reserved. This program and the accompanying materials
++ * are made available under the terms of the Eclipse Public License v1.0
++ * which accompanies this distribution, and is available at
++ * http://www.eclipse.org/legal/epl-v10.html
++ *
++ * Contributors:
++ *     IBM Corporation - initial API and implementation
++ *******************************************************************************/
++
++package org.eclipse.pde.internal.build.publisher.compatibility;
++
++import java.util.*;
++import org.eclipse.equinox.p2.publisher.*;
++
++/**
++ * A class to enable carrying GeneratorResults across multiple invocations of the Generator.
++ * Done here in the bundle instead of in GeneratorTask because of the way org.eclipse.ant.core.AntRunner uses class loaders.
++ * @since 1.0
++ */
++
++public class IncrementalGenerator {
++	private static String MODE_INCREMENTAL = "incremental"; //$NON-NLS-1$
++	private String mode = null;
++	static private PublisherResult result = null;
++	static private ArrayList configs = null;
++	static private ArrayList advice = null;
++
++	public void setMode(String mode) {
++		this.mode = mode;
++	}
++
++	public void run(GeneratorApplication generator, PublisherInfo provider) throws Exception {
++		if (MODE_INCREMENTAL.equals(mode)) {
++			initialize();
++			generator.setIncrementalResult(result);
++		} else if ("final".equals(mode) && result != null) { //$NON-NLS-1$
++			generator.setIncrementalResult(result);
++			if (configs != null)
++				provider.setConfigurations((String[]) configs.toArray(new String[configs.size()]));
++			if (advice != null) {
++				for (Iterator iterator = advice.iterator(); iterator.hasNext();) {
++					provider.addAdvice((IPublisherAdvice) iterator.next());
++				}
++			}
++		}
++
++		generator.run(provider);
++
++		if (MODE_INCREMENTAL.equals(mode)) {
++			configs.addAll(Arrays.asList(provider.getConfigurations()));
++			advice.addAll(provider.getAdvice());
++		} else {
++			result = null;
++			configs = null;
++			advice = null;
++		}
++	}
++
++	private void initialize() {
++		if (result == null)
++			result = new PublisherResult();
++		if (configs == null)
++			configs = new ArrayList();
++		if (advice == null)
++			advice = new ArrayList();
++	}
++
++}
+Index: src/org/eclipse/pde/internal/build/publisher/compatibility/RootFileParentAction.java
+===================================================================
+RCS file: src/org/eclipse/pde/internal/build/publisher/compatibility/RootFileParentAction.java
+diff -N src/org/eclipse/pde/internal/build/publisher/compatibility/RootFileParentAction.java
+--- /dev/null	1 Jan 1970 00:00:00 -0000
++++ src/org/eclipse/pde/internal/build/publisher/compatibility/RootFileParentAction.java	1 Jan 1970 00:00:00 -0000
+@@ -0,0 +1,57 @@
++package org.eclipse.pde.internal.build.publisher.compatibility;
++
++import org.eclipse.core.runtime.*;
++import org.eclipse.equinox.internal.p2.publisher.eclipse.ProductFile;
++import org.eclipse.equinox.internal.provisional.p2.metadata.*;
++import org.eclipse.equinox.internal.provisional.p2.metadata.MetadataFactory.InstallableUnitDescription;
++import org.eclipse.equinox.internal.provisional.p2.metadata.query.Collector;
++import org.eclipse.equinox.internal.provisional.p2.metadata.query.MatchQuery;
++import org.eclipse.equinox.p2.publisher.*;
++import org.eclipse.equinox.p2.publisher.actions.RootFilesAction;
++import org.eclipse.pde.internal.build.IPDEBuildConstants;
++
++public class RootFileParentAction extends AbstractPublisherAction {
++
++	private final String flavor;
++	private final String version;
++	protected final String baseId;
++
++	public RootFileParentAction(ProductFile product, String flavor) {
++		this.flavor = flavor;
++		this.baseId = product.getId();
++		this.version = getVersion(product.getVersion());
++	}
++
++	public RootFileParentAction(String rootId, String rootVersion, String flavor) {
++		this.flavor = flavor;
++		this.baseId = rootId != null ? rootId : "org.eclipse"; //$NON-NLS-1$
++		this.version = getVersion(rootVersion);
++	}
++
++	public IStatus perform(IPublisherInfo publisherInfo, IPublisherResult results, IProgressMonitor monitor) {
++		final String idPrefix = baseId + ".rootfiles"; //$NON-NLS-1$
++		final String flavorPrefix = flavor + baseId + ".rootfiles"; //$NON-NLS-1$
++		MatchQuery query = new MatchQuery() {
++			public boolean isMatch(Object candidate) {
++				if (candidate instanceof IInstallableUnit) {
++					String id = ((IInstallableUnit) candidate).getId();
++					return id.startsWith(idPrefix) || id.startsWith(flavorPrefix);
++				}
++				return false;
++			}
++		};
++
++		Collector collector = query.perform(results.getIUs(null, IPublisherResult.NON_ROOT).iterator(), new Collector());
++		InstallableUnitDescription descriptor = createParentIU(collector.toCollection(), RootFilesAction.computeIUId(baseId, flavor), Version.parseVersion(version));
++		descriptor.setSingleton(true);
++		IInstallableUnit rootIU = MetadataFactory.createInstallableUnit(descriptor);
++		results.addIU(rootIU, IPublisherResult.ROOT);
++		return Status.OK_STATUS;
++	}
++
++	private String getVersion(String rootVersion) {
++		if (rootVersion != null && !rootVersion.equals(IPDEBuildConstants.GENERIC_VERSION_NUMBER))
++			return rootVersion;
++		return "1.0.0"; //$NON-NLS-1$
++	}
++}
+Index: src/org/eclipse/pde/internal/build/publisher/compatibility/RootFileTouchpointAdvice.java
+===================================================================
+RCS file: src/org/eclipse/pde/internal/build/publisher/compatibility/RootFileTouchpointAdvice.java
+diff -N src/org/eclipse/pde/internal/build/publisher/compatibility/RootFileTouchpointAdvice.java
+--- /dev/null	1 Jan 1970 00:00:00 -0000
++++ src/org/eclipse/pde/internal/build/publisher/compatibility/RootFileTouchpointAdvice.java	1 Jan 1970 00:00:00 -0000
+@@ -0,0 +1,61 @@
++package org.eclipse.pde.internal.build.publisher.compatibility;
++
++import java.io.File;
++import java.util.HashMap;
++import java.util.Map;
++import org.eclipse.core.runtime.Path;
++import org.eclipse.equinox.internal.p2.publisher.eclipse.ProductFile;
++import org.eclipse.equinox.internal.provisional.p2.metadata.ITouchpointData;
++import org.eclipse.equinox.internal.provisional.p2.metadata.MetadataFactory;
++import org.eclipse.equinox.p2.publisher.AbstractPublisherAction;
++import org.eclipse.equinox.p2.publisher.actions.ITouchpointAdvice;
++import org.eclipse.equinox.p2.publisher.actions.RootFilesAdvice;
++import org.eclipse.osgi.service.environment.Constants;
++
++public class RootFileTouchpointAdvice extends RootFilesAdvice implements ITouchpointAdvice {
++
++	private final ProductFile product;
++
++	public RootFileTouchpointAdvice(ProductFile product, File root, File[] includedFiles, File[] excludedFiles, String configSpec) {
++		super(root, includedFiles, excludedFiles, configSpec);
++		this.product = product;
++	}
++
++	public ITouchpointData getTouchpointData(ITouchpointData existingData) {
++		String[] config = AbstractPublisherAction.parseConfigSpec(getConfigSpec());
++		String os = config[1];
++
++		String launcherName = product != null ? product.getLauncherName() : null;
++		if (launcherName == null)
++			launcherName = "eclipse"; //$NON-NLS-1$
++
++		File root = getRoot();
++		File launcherFile = new File(root, launcherName);
++		if (Constants.OS_MACOSX.equals(os)) {
++			launcherFile = new File(root, launcherName + ".app/Contents/MacOS/" + launcherName); //$NON-NLS-1$
++			if (!launcherFile.exists()) {
++				String capitalized = launcherName.substring(0, 1).toUpperCase() + launcherName.substring(1, launcherName.length());
++				launcherFile = new File(root, capitalized + ".app/Contents/MacOS/" + launcherName); //$NON-NLS-1$
++			}
++		} else if (Constants.OS_WIN32.equals(os) && !launcherFile.exists()) {
++			launcherFile = new File(root, launcherName + ".exe"); //$NON-NLS-1$				
++		}
++
++		String configInstruction = null;
++		if (launcherFile.exists()) {
++			configInstruction = "setLauncherName(name:" + launcherName + ");"; //$NON-NLS-1$ //$NON-NLS-2$
++			if (Constants.OS_MACOSX.equals(os)) {
++				Path path = new Path(launcherFile.getAbsolutePath());
++				File appFolder = path.removeLastSegments(3).toFile();
++				configInstruction += "chmod(targetDir:${installFolder}/" + appFolder.getName() + "/Contents/MacOS/, targetFile:" + launcherFile.getName() + ", permissions:755);"; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
++			} else if (!Constants.OS_WIN32.equals(os)) {
++				configInstruction += "chmod(targetDir:${installFolder}, targetFile:" + launcherFile.getName() + ", permissions:755);"; //$NON-NLS-1$ //$NON-NLS-2$				
++			}
++
++			Map newInstructions = new HashMap();
++			newInstructions.put("configure", MetadataFactory.createTouchpointInstruction(configInstruction, "org.eclipse.equinox.p2.touchpoint.eclipse.setLauncherName")); //$NON-NLS-1$ //$NON-NLS-2$ 
++			return MetadataFactory.mergeTouchpointData(existingData, newInstructions);
++		}
++		return existingData;
++	}
++}
+Index: src_ant/org/eclipse/pde/internal/build/generator/GeneratorTask.java
+===================================================================
+RCS file: src_ant/org/eclipse/pde/internal/build/generator/GeneratorTask.java
+diff -N src_ant/org/eclipse/pde/internal/build/generator/GeneratorTask.java
+--- /dev/null	1 Jan 1970 00:00:00 -0000
++++ src_ant/org/eclipse/pde/internal/build/generator/GeneratorTask.java	1 Jan 1970 00:00:00 -0000
+@@ -0,0 +1,236 @@
++/*******************************************************************************
++ *  Copyright (c) 2007, 2009 IBM Corporation and others.
++ *  All rights reserved. This program and the accompanying materials
++ *  are made available under the terms of the Eclipse Public License v1.0
++ *  which accompanies this distribution, and is available at
++ *  http://www.eclipse.org/legal/epl-v10.html
++ * 
++ *  Contributors:
++ *     IBM Corporation - initial API and implementation
++ *******************************************************************************/
++package org.eclipse.pde.internal.build.generator;
++
++import java.net.URISyntaxException;
++import org.apache.tools.ant.BuildException;
++import org.apache.tools.ant.Task;
++import org.eclipse.core.runtime.URIUtil;
++import org.eclipse.equinox.internal.p2.jarprocessor.Utils;
++import org.eclipse.equinox.p2.publisher.IPublisherInfo;
++import org.eclipse.equinox.p2.publisher.PublisherInfo;
++import org.eclipse.osgi.util.NLS;
++import org.eclipse.pde.internal.build.publisher.compatibility.GeneratorApplication;
++import org.eclipse.pde.internal.build.publisher.compatibility.IncrementalGenerator;
++import org.eclipse.pde.internal.build.tasks.TaskMessages;
++
++/**
++ * An Ant task to call the p2 Metadata Generator application.
++ * 
++ * @since 1.0
++ */
++public class GeneratorTask extends Task {
++	private static final String ANT_PREFIX = "${"; //$NON-NLS-1$
++
++	protected PublisherInfo info = null;
++	private GeneratorApplication generator = null;
++	private String mode;
++
++	/* (non-Javadoc)
++	 * @see org.apache.tools.ant.Task#execute()
++	 */
++	public void execute() throws BuildException {
++		try {
++			IncrementalGenerator incremental = new IncrementalGenerator();
++			incremental.setMode(mode);
++			incremental.run(generator, info);
++
++			if (!"incremental".equals(mode)) { //$NON-NLS-1$
++				info = null;
++				generator = null;
++			}
++		} catch (Exception e) {
++			throw new BuildException(TaskMessages.error_callingGenerator, e);
++		}
++	}
++
++	protected PublisherInfo getInfo() {
++		if (info == null) {
++			info = new PublisherInfo();
++		}
++		return info;
++	}
++
++	protected GeneratorApplication getGenerator() {
++		if (generator == null)
++			generator = new GeneratorApplication();
++		return generator;
++	}
++
++	public void setAppend(String value) {
++		getGenerator().setAppend(Boolean.valueOf(value).booleanValue());
++	}
++
++	public void setArtifactRepository(String location) {
++		if (location != null && !location.startsWith(ANT_PREFIX))
++			try {
++				getGenerator().setArtifactLocation(URIUtil.fromString(location));
++			} catch (URISyntaxException e) {
++				throw new IllegalArgumentException(NLS.bind(TaskMessages.error_artifactRepoNotURI, location));
++			}
++	}
++
++	public void setArtifactRepositoryName(String name) {
++		getGenerator().setArtifactRepositoryName(name);
++	}
++
++	public void setBase(String value) {
++		if (generator == null)
++			generator = new GeneratorApplication();
++		//		generator.setBase(value);
++	}
++
++	public void setBundles(String value) {
++		if (generator == null)
++			generator = new GeneratorApplication();
++		//		generator.setBundles(value);
++	}
++
++	public void setCompress(String value) {
++		getGenerator().setCompress(Boolean.valueOf(value).booleanValue());
++	}
++
++	public void setConfig(String value) {
++		getGenerator().setOperation(GeneratorApplication.OPERATION_CONFIG);
++		getGenerator().setSource(value);
++	}
++
++	public void setInplace(String value) {
++		getGenerator().setOperation(GeneratorApplication.OPERATION_INPLACE);
++		getGenerator().setSource(value);
++	}
++
++	public void setSource(String location) {
++		getGenerator().setOperation(GeneratorApplication.OPERATION_SOURCE);
++		getGenerator().setSource(location);
++	}
++
++	public void setUpdateSite(String value) {
++		getGenerator().setOperation(GeneratorApplication.OPERATION_UPDATE);
++		getGenerator().setSource(value);
++	}
++
++	public void setExe(String value) {
++		if (info == null)
++			info = new PublisherInfo();
++		//		info.setExecutableLocation(value);
++	}
++
++	public void setFeatures(String value) {
++		if (generator == null)
++			generator = new GeneratorApplication();
++		//		generator.setFeatures(value);
++	}
++
++	public void setFlavor(String flavor) {
++		if (flavor != null && !flavor.startsWith(ANT_PREFIX))
++			getGenerator().setFlavor(flavor);
++	}
++
++	public void setLauncherConfig(String launcherConfig) {
++		if (launcherConfig != null && !launcherConfig.startsWith(ANT_PREFIX)) {
++			//config comes in as os_ws_arch, publisher wants ws.os.arch
++			String[] array = Utils.toStringArray(launcherConfig, "_"); //$NON-NLS-1$
++			if (array.length >= 3) {
++				StringBuffer config = new StringBuffer(array[1]);
++				config.append('.');
++				config.append(array[0]);
++				config.append('.');
++				config.append(array[2]);
++				if (array.length > 3) { //arch's like x86_64
++					config.append('_');
++					config.append(array[3]);
++				}
++
++				getInfo().setConfigurations(new String[] {config.toString()});
++			}
++		}
++	}
++
++	public void setMetadataRepository(String location) {
++		if (location != null && !location.startsWith(ANT_PREFIX))
++			try {
++				getGenerator().setMetadataLocation(URIUtil.fromString(location));
++			} catch (URISyntaxException e) {
++				throw new IllegalArgumentException(NLS.bind(TaskMessages.error_metadataRepoNotURI, location));
++			}
++	}
++
++	public void setMetadataRepositoryName(String name) {
++		if (name != null && !name.startsWith(ANT_PREFIX))
++			getGenerator().setMetadataRepositoryName(name);
++	}
++
++	public void setNoDefaultIUs(String value) {
++		if (info == null)
++			info = new PublisherInfo();
++		//		info.setAddDefaultIUs(!Boolean.valueOf(value).booleanValue());
++	}
++
++	public void setP2OS(String value) {
++		if (info == null)
++			info = new PublisherInfo();
++		//		info.setOS(value);
++	}
++
++	public void setProductFile(String file) {
++		if (file != null && !file.startsWith(ANT_PREFIX)) {
++			getGenerator().setProductFile(file);
++		}
++	}
++
++	public void setPublishArtifactRepository(boolean value) {
++		int options = getInfo().getArtifactOptions();
++		if (value)
++			info.setArtifactOptions(options | IPublisherInfo.A_INDEX);
++		else
++			info.setArtifactOptions(options & ~IPublisherInfo.A_INDEX);
++	}
++
++	public void setPublishArtifacts(boolean value) {
++		int options = getInfo().getArtifactOptions();
++		if (value)
++			info.setArtifactOptions(options | IPublisherInfo.A_PUBLISH);
++		else
++			info.setArtifactOptions(options & ~IPublisherInfo.A_PUBLISH);
++	}
++
++	public void setRoot(String root) {
++		if (root == null || root.startsWith("${")) //$NON-NLS-1$
++			return;
++		getGenerator().setRoodId(root);
++	}
++
++	public void setRootVersion(String rootVersion) {
++		if (rootVersion == null || rootVersion.startsWith(ANT_PREFIX))
++			return;
++		getGenerator().setRootVersion(rootVersion);
++	}
++
++	public void setMode(String mode) {
++		this.mode = mode;
++	}
++
++	public void setVersionAdvice(String advice) {
++		if (advice != null && !advice.startsWith(ANT_PREFIX))
++			getGenerator().setVersionAdvice(advice);
++	}
++
++	public void setSite(String site) {
++		if (site == null || site.startsWith(ANT_PREFIX))
++			return;
++		try {
++			getGenerator().setSite(URIUtil.fromString(site));
++		} catch (URISyntaxException e) {
++			throw new IllegalArgumentException(NLS.bind(TaskMessages.error_locationNotURI, site));
++		}
++	}
++}
+Index: src_ant/org/eclipse/pde/internal/build/tasks/TaskMessages.java
+===================================================================
+RCS file: /cvsroot/eclipse/pde/build/org.eclipse.pde.build/src_ant/org/eclipse/pde/internal/build/tasks/TaskMessages.java,v
+retrieving revision 1.5
+diff -u -r1.5 TaskMessages.java
+--- src_ant/org/eclipse/pde/internal/build/tasks/TaskMessages.java	6 Feb 2009 22:11:37 -0000	1.5
++++ src_ant/org/eclipse/pde/internal/build/tasks/TaskMessages.java	30 Oct 2009 17:48:34 -0000
+@@ -31,6 +31,11 @@
+ 	public static String error_invalidConfig;
+ 	public static String error_branding;
+ 
++	public static String error_callingGenerator;
++	public static String error_artifactRepoNotURI;
++	public static String error_metadataRepoNotURI;
++	public static String error_locationNotURI;
++
+ 	static {
+ 		// load message values from bundle file
+ 		NLS.initializeMessages(BUNDLE_NAME, TaskMessages.class);
+Index: src_ant/org/eclipse/pde/internal/build/tasks/messages.properties
+===================================================================
+RCS file: /cvsroot/eclipse/pde/build/org.eclipse.pde.build/src_ant/org/eclipse/pde/internal/build/tasks/messages.properties,v
+retrieving revision 1.4
+diff -u -r1.4 messages.properties
+--- src_ant/org/eclipse/pde/internal/build/tasks/messages.properties	6 Feb 2009 22:11:37 -0000	1.4
++++ src_ant/org/eclipse/pde/internal/build/tasks/messages.properties	30 Oct 2009 17:48:34 -0000
+@@ -24,4 +24,9 @@
+ error_unmodifiableRepository = The repository is not modifiable: {0}.
+ 
+ error_invalidConfig = {0} is not a valid configuration.
+-error_branding = An error occured while branding.
+\ No newline at end of file
++error_branding = An error occured while branding.
++error_callingGenerator = An error occurred when calling generator.
++
++error_artifactRepoNotURI= The specified artifact repository location ({0}) is not a valid URI.
++error_metadataRepoNotURI= The specified metadata repository location ({0}) is not a valid URI.
++error_locationNotURI= The specified location ({0}) is not a valid URI.
+\ No newline at end of file
+#P org.eclipse.pde.build.tests
+Index: resources/p2.SimpleProduct/plugins/test/test.product
+===================================================================
+RCS file: /cvsroot/eclipse/pde/build/org.eclipse.pde.build.tests/resources/p2.SimpleProduct/plugins/test/test.product,v
+retrieving revision 1.1
+diff -u -r1.1 test.product
+--- resources/p2.SimpleProduct/plugins/test/test.product	22 Jul 2008 21:04:07 -0000	1.1
++++ resources/p2.SimpleProduct/plugins/test/test.product	30 Oct 2009 17:48:34 -0000
+@@ -1,18 +1,18 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+-<?pde version="3.4"?>
++<?pde version="3.5"?>
+ 
+-<product name="test" id="test.product" application="test.application" version="1.0.0" useFeatures="false">
++<product name="test" id="test.product" application="test.application" version="1.0.0" useFeatures="false" includeLaunchers="true">
+ 
+    <configIni use="default">
+    </configIni>
+ 
+    <launcherArgs>
++      <programArgs>-foo</programArgs>
+       <vmArgsMac>-XstartOnFirstThread -Dorg.eclipse.swt.internal.carbon.smallFonts</vmArgsMac>
+    </launcherArgs>
+ 
+    <windowImages/>
+ 
+-
+    <launcher name="test">
+       <solaris/>
+       <win useIco="false">
+@@ -33,7 +33,8 @@
+       <plugin id="org.eclipse.equinox.preferences"/>
+       <plugin id="org.eclipse.equinox.registry"/>
+       <plugin id="org.eclipse.osgi"/>
+-      <plugin id="test"/>
++      <plugin id="test" fragment=""/>
+    </plugins>
+ 
++
+ </product>
+Index: src/org/eclipse/pde/build/internal/tests/p2/P2Tests.java
+===================================================================
+RCS file: /cvsroot/eclipse/pde/build/org.eclipse.pde.build.tests/src/org/eclipse/pde/build/internal/tests/p2/P2Tests.java,v
+retrieving revision 1.22
+diff -u -r1.22 P2Tests.java
+--- src/org/eclipse/pde/build/internal/tests/p2/P2Tests.java	13 Oct 2009 18:36:04 -0000	1.22
++++ src/org/eclipse/pde/build/internal/tests/p2/P2Tests.java	30 Oct 2009 17:48:34 -0000
+@@ -14,9 +14,7 @@
+ import java.util.*;
+ import java.util.jar.Attributes;
+ import java.util.zip.ZipOutputStream;
+-
+ import junit.framework.AssertionFailedError;
+-
+ import org.eclipse.core.resources.IFile;
+ import org.eclipse.core.resources.IFolder;
+ import org.eclipse.core.runtime.*;
+@@ -92,19 +90,33 @@
+ 		assertTouchpoint(iu, "configure", "addProgramArg(programArg:--launcher.library);addProgramArg(programArg:@artifact);");
+ 		ius.add(iu);
+ 
+-		iu = getIU(repository, "test.product.launcher." + p2Config);
+-		assertProvides(iu, "toolingtest.product", "test.product.launcher");
+-		assertRequires(iu, "org.eclipse.equinox.p2.iu", "org.eclipse.equinox.launcher." + launcherConfig);
++		iu = getIU(repository, "test.product.rootfiles." + p2Config);
++		assertProvides(iu, "toolingtest.product", "test.product.rootfiles");
++		//		assertRequires(iu, "org.eclipse.equinox.p2.iu", "org.eclipse.equinox.launcher." + launcherConfig);
+ 
+ 		//And the main product IU
+ 		iu = getIU(repository, "test.product");
+-		assertRequires(iu, "toolingtest.product", "test.product.launcher");
+-		assertRequires(iu, "toolingtest.product", "test.product.ini");
+-		assertRequires(iu, "toolingtest.product", "test.product.config");
+-		assertRequires(iu, ius, true);
++		//		assertRequires(iu, "toolingtest.product", "test.product.launcher");
++		//		assertRequires(iu, "toolingtest.product", "test.product.ini");
++		//		assertRequires(iu, "toolingtest.product", "test.product.config");
++		//		assertRequires(iu, ius, true);
+ 
+-		iu = getIU(repository, "test.product.launcher." + p2Config + ".test" + (Platform.getOS().equals("win32") ? ".exe" : ""));
++		iu = getIU(repository, "toolingtest.product.rootfiles." + p2Config);
+ 		assertTouchpoint(iu, "configure", "setLauncherName(name:test");
++
++		IFolder installFolder = buildFolder.getFolder("install");
++		properties.put("p2.director.installPath", installFolder.getLocation().toOSString());
++		properties.put("p2.repo", "file:" + buildFolder.getFolder("repo").getLocation().toOSString());
++		properties.put("p2.director.iu", "test.product");
++		properties.put("os", Platform.getOS());
++		properties.put("ws", Platform.getWS());
++		properties.put("arch", Platform.getOSArch());
++		properties.put("equinoxLauncherJar", FileLocator.getBundleFile(Platform.getBundle("org.eclipse.equinox.launcher")).getAbsolutePath());
++		URL resource = FileLocator.find(Platform.getBundle("org.eclipse.pde.build"), new Path("/scripts/genericTargets.xml"), null);
++		String buildXMLPath = FileLocator.toFileURL(resource).getPath();
++		runAntScript(buildXMLPath, new String[] {"runDirector"}, buildFolder.getLocation().toOSString(), properties);
++
++		assertResourceFile(installFolder, "test.ini");
+ 	}
+ 
+ 	public void testBug237096() throws Exception {
+@@ -136,18 +148,22 @@
+ 		IMetadataRepository repository = loadMetadataRepository(repoLocation);
+ 		assertNotNull(repository);
+ 
++		IInstallableUnit iu = getIU(repository, "FRoot");
++		IInstallableUnit rootIU = getIU(repository, "toolingFRoot.rootfiles");
+ 		ArrayList ius = new ArrayList();
+ 		ius.add(getIU(repository, "org.eclipse.osgi"));
+ 		ius.add(getIU(repository, "org.eclipse.core.runtime"));
+-		ius.add(getIU(repository, "org.eclipse.launcher.ANY.ANY.ANY"));
+-		ius.add(getIU(repository, "toolingorg.eclipse.launcher.ANY.ANY.ANY"));
+-
+-		IInstallableUnit iu = getIU(repository, "FRoot");
++		ius.add(rootIU);
+ 		assertRequires(iu, ius, true);
++
++		ius.clear();
++		ius.add(getIU(repository, "FRoot.rootfiles.ANY.ANY.ANY"));
++		ius.add(getIU(repository, "toolingFRoot.rootfiles.ANY.ANY.ANY"));
++		assertRequires(rootIU, ius, true);
+ 	}
+ 
+ 	public void testBug242346() throws Exception {
+-		IFolder buildFolder = newTest("237096");
++		IFolder buildFolder = newTest("242346");
+ 		IFile productFile = buildFolder.getFile("rcp.product");
+ 		IFolder repo = Utils.createFolder(buildFolder, "repo");
+ 
+@@ -177,16 +193,23 @@
+ 		assertNotNull(repository);
+ 
+ 		IInstallableUnit iu = getIU(repository, "toolingrcp.product.config.win32.win32.x86");
+-		//testing relative paths, just check that the value starts with org.eclipse.equinox..., don't bother worrying about dir separator
+-		assertTouchpoint(iu, "configure", "setProgramProperty(propName:org.eclipse.equinox.simpleconfigurator.configUrl, propValue:file:org.eclipse.equinox.simpleconfigurator");
++		ArrayList requiredIUs = new ArrayList();
++		IInstallableUnit rootFileCU = getIU(repository, "toolingrcp.product.rootfiles.win32.win32.x86");
++		requiredIUs.add(rootFileCU);
++		requiredIUs.add(getIU(repository, "rcp.product.rootfiles.win32.win32.x86"));
++
++		assertTouchpoint(rootFileCU, "configure", "setLauncherName");
++		iu = getIU(repository, "toolingrcp.product.rootfiles");
++		assertRequires(iu, requiredIUs, true);
++		requiredIUs.clear();
++		requiredIUs.add(iu);
+ 
+ 		iu = getIU(repository, "rcp.product");
++		assertRequires(iu, requiredIUs, true);
+ 		assertEquals(iu.getVersion().toString(), "1.0.0.v1234");
+ 
+-		iu = getIU(repository, "toolingrcp.product.launcher.win32.win32.x86");
+-		assertEquals("1.0.0.v1234", iu.getVersion().toString());
+-
+-		properties.put("p2.director.installPath", buildFolder.getFolder("install").getLocation().toOSString());
++		IFolder installFolder = buildFolder.getFolder("install");
++		properties.put("p2.director.installPath", installFolder.getLocation().toOSString());
+ 		properties.put("p2.repo", "file:" + buildFolder.getFolder("repo").getLocation().toOSString());
+ 		properties.put("p2.director.iu", "rcp.product");
+ 		properties.put("os", "win32");
+@@ -196,6 +219,9 @@
+ 		URL resource = FileLocator.find(Platform.getBundle("org.eclipse.pde.build"), new Path("/scripts/genericTargets.xml"), null);
+ 		String buildXMLPath = FileLocator.toFileURL(resource).getPath();
+ 		runAntScript(buildXMLPath, new String[] {"runDirector"}, buildFolder.getLocation().toOSString(), properties);
++
++		assertResourceFile(installFolder, "eclipse.exe");
++		assertLogContainsLine(installFolder.getFile("configuration/config.ini"), "org.eclipse.equinox.simpleconfigurator.configUrl=file\\:org.eclipse.equinox.simpleconfigurator");
+ 	}
+ 
+ 	public void testBug222962() throws Exception {
+@@ -631,7 +657,7 @@
+ 		assertEquals(artifact.getName(), "testRepoName"); //bug 274094
+ 		assertLogContainsLine(buildFolder.getFile("log.log"), "Mirroring completed with warnings and/or errors.");
+ 		assertLogContainsLines(buildFolder.getFile("compare.log"), new String[] {"canonical: osgi.bundle,b,1.0.0", "Difference found for B.class"});
+-		boolean failed = true; 
++		boolean failed = true;
+ 		try {
+ 			assertLogContainsLine(buildFolder.getFile("compare.log"), "build.properties");
+ 			failed = false;
