@@ -26,4 +26,5 @@ Import-Package: org.eclipse.equinox.internal.p2.artifact.repository,
  org.eclipse.equinox.internal.provisional.p2.metadata.query,
  org.eclipse.equinox.internal.provisional.p2.metadata.repository,
  org.eclipse.equinox.internal.provisional.p2.repository,
- org.eclipse.equinox.p2.internal.repository.tools
+ org.eclipse.equinox.p2.internal.repository.tools,
+ org.eclipse.equinox.p2.metadata.query
