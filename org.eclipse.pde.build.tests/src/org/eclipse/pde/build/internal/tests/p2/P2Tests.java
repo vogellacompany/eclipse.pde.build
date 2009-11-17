@@ -19,10 +19,10 @@ import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.runtime.*;
 import org.eclipse.equinox.internal.p2.core.helpers.FileUtils;
-import org.eclipse.equinox.internal.provisional.p2.artifact.repository.IArtifactDescriptor;
-import org.eclipse.equinox.internal.provisional.p2.artifact.repository.IArtifactRepository;
+import org.eclipse.equinox.internal.provisional.p2.artifact.repository.*;
 import org.eclipse.equinox.internal.provisional.p2.metadata.IArtifactKey;
 import org.eclipse.equinox.internal.provisional.p2.metadata.IInstallableUnit;
+import org.eclipse.equinox.internal.provisional.p2.metadata.query.Collector;
 import org.eclipse.equinox.internal.provisional.p2.metadata.repository.IMetadataRepository;
 import org.eclipse.pde.build.internal.tests.Utils;
 import org.eclipse.pde.build.tests.BuildConfiguration;
@@ -512,11 +512,12 @@ public class P2Tests extends P2TestCase {
 		Map repoProps = repository.getProperties();
 		assertEquals(repoProps.get("publishPackFilesAsSiblings"), "true");
 		final String PACKED_FORMAT = "packed"; //$NON-NLS-1$
-		IArtifactKey[] keys = repository.getArtifactKeys();
-		for (int i = 0; i < keys.length; i++) {
-			IArtifactDescriptor[] descriptors = repository.getArtifactDescriptors(keys[i]);
+		Collector keys = repository.query(ArtifactKeyQuery.ALL_KEYS, new Collector(), null);
+		for (Iterator iterator = keys.iterator(); iterator.hasNext();) {
+			IArtifactKey key = (IArtifactKey) iterator.next();
+			IArtifactDescriptor[] descriptors = repository.getArtifactDescriptors(key);
 
-			if (keys[i].getClassifier().equals("osgi.bundle") && keys[i].getId().equals("org.eclipse.cvs")) {
+			if (key.getClassifier().equals("osgi.bundle") && key.getId().equals("org.eclipse.cvs")) {
 				assertEquals(descriptors.length, 1);
 				continue;
 			} else
