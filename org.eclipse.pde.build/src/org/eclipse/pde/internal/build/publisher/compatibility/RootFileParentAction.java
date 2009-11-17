@@ -41,6 +41,7 @@ public class RootFileParentAction extends AbstractPublisherAction {
 	public IStatus perform(IPublisherInfo publisherInfo, IPublisherResult results, IProgressMonitor monitor) {
 		final String idPrefix = baseId + ".rootfiles"; //$NON-NLS-1$
 		final String flavorPrefix = flavor + baseId + ".rootfiles"; //$NON-NLS-1$
+		//TODO this could be turned into a "name query", a query that checks on some parameters
 		MatchQuery query = new MatchQuery() {
 			public boolean isMatch(Object candidate) {
 				if (candidate instanceof IInstallableUnit) {
