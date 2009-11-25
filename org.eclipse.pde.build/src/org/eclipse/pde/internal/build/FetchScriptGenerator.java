@@ -178,6 +178,7 @@ public class FetchScriptGenerator extends AbstractScriptGenerator {
 			generator.setDirectory(directory);
 			generator.setDirectoryFile(directoryFile);
 			generator.setBuildSiteFactory(siteFactory);
+			generator.setScriptRunner(scriptRunner);
 			generator.repositoryPluginTags = repositoryPluginTags;
 			generator.generate();
 		}
