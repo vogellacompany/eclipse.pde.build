@@ -813,7 +813,7 @@ public class PublishingTests extends P2TestCase {
 		IInstallableUnit productIu = getIU(finalRepo, "headless.product");
 		assertFalse(productIu.getVersion().toString().equals("1.0.0.qualifier")); //bug 246060, should be a timestamp
 		//check up to the date on the timestamp, don't worry about hours/mins
-		assertTrue(productIu.getVersion().getQualifier().startsWith(QualifierReplacer.getDateQualifier().substring(0, 8)));
+		assertTrue(Version.toOSGiVersion(productIu.getVersion()).getQualifier().startsWith(QualifierReplacer.getDateQualifier().substring(0, 8)));
 		assertTouchpoint(productIu, "configure", "addRepository(type:0,location:file${#58}//foo/bar);");
 
 		IInstallableUnit iu = getIU(finalRepo, "toolingorg.eclipse.equinox.common");
@@ -1794,7 +1794,7 @@ public class PublishingTests extends P2TestCase {
 		IRequiredCapability[] required = iu.getRequiredCapabilities();
 		for (int i = 0; i < required.length; i++) {
 			if (required[i].getName().equals("a")) {
-				VersionRange range = required[i].getRange();
+				org.eclipse.osgi.service.resolver.VersionRange range = VersionRange.toOSGiVersionRange(required[i].getRange());
 				assertTrue(range.getMinimum().getQualifier().startsWith("20"));
 				assertTrue(range.getMinimum().getMajor() == 1 || range.getMinimum().getMajor() == 2);
 			}
