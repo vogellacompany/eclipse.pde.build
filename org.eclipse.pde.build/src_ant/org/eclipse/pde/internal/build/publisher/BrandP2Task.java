@@ -59,6 +59,10 @@ public class BrandP2Task extends Repo2RunnableTask {
 			protected PhaseSet getPhaseSet() {
 				return new PhaseSet(new Phase[] {new Collect(100), new Install(100)}) { /* nothing to override */};
 			}
+
+			protected PhaseSet getNativePhase() {
+				return null;
+			}
 		};
 	}
 
