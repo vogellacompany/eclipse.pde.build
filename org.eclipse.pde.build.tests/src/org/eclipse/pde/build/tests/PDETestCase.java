@@ -13,9 +13,7 @@ import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.util.*;
-
 import junit.framework.TestCase;
-
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.helper.AntXMLContext;
 import org.apache.tools.ant.helper.ProjectHelper2;

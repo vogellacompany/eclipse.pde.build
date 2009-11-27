@@ -24,7 +24,7 @@ import org.eclipse.equinox.internal.p2.core.helpers.FileUtils;
 import org.eclipse.equinox.internal.provisional.p2.metadata.*;
 import org.eclipse.equinox.internal.provisional.p2.metadata.query.Collector;
 import org.eclipse.equinox.internal.provisional.p2.metadata.query.InstallableUnitQuery;
-import org.eclipse.equinox.internal.provisional.p2.metadata.repository.IMetadataRepository;
+import org.eclipse.equinox.p2.repository.metadata.IMetadataRepository;
 import org.eclipse.osgi.util.ManifestElement;
 import org.eclipse.pde.build.internal.tests.Utils;
 import org.eclipse.pde.build.tests.Activator;
@@ -1712,7 +1712,7 @@ public class PublishingTests extends P2TestCase {
 		buffer.append("<feature id=\"F\" version=\"1.0.0\">		\n");
 		buffer.append("  <requires>											\n");
 		buffer.append("     <import plugin=\"org.eclipse.equinox.simpleconfigurator\" version=\"1.0.100\" match=\"equivalent\" />	\n");
-		buffer.append("     <import plugin=\"org.eclipse.core.jobs\" version=\"3.4.100\" match=\"equivalent\" />	\n");
+		buffer.append("     <import plugin=\"org.eclipse.core.jobs\" version=\"3.5.0\" match=\"equivalent\" />	\n");
 		buffer.append("     <import plugin=\"org.eclipse.equinox.common\" version=\"3.5.0\" match=\"equivalent\" />	\n");
 		buffer.append("     <import plugin=\"org.eclipse.osgi\" version=\"3.6.0\" match=\"equivalent\" />	\n");
 		buffer.append("  </requires>											\n");
