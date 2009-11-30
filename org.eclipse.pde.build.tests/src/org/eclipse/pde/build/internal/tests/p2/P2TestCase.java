@@ -8,6 +8,8 @@
  *******************************************************************************/
 package org.eclipse.pde.build.internal.tests.p2;
 
+import org.eclipse.equinox.p2.metadata.IArtifactKey;
+
 import java.io.File;
 import java.net.URI;
 import java.util.*;

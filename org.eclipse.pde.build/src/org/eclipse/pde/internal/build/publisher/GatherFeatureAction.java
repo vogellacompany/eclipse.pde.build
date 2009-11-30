@@ -8,6 +8,8 @@
  ******************************************************************************/
 package org.eclipse.pde.internal.build.publisher;
 
+import org.eclipse.equinox.p2.metadata.IArtifactKey;
+
 import java.io.File;
 import org.eclipse.equinox.internal.p2.publisher.eclipse.FeatureParser;
 import org.eclipse.equinox.internal.provisional.p2.metadata.*;

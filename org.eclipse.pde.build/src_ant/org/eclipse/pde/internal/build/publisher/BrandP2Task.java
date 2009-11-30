@@ -9,6 +9,8 @@
 
 package org.eclipse.pde.internal.build.publisher;
 
+import org.eclipse.equinox.p2.metadata.IArtifactKey;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;

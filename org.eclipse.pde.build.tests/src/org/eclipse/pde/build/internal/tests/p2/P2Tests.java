@@ -9,6 +9,8 @@
 
 package org.eclipse.pde.build.internal.tests.p2;
 
+import org.eclipse.equinox.p2.metadata.IArtifactKey;
+
 import java.io.*;
 import java.net.URL;
 import java.util.*;
@@ -19,7 +21,6 @@ import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.runtime.*;
 import org.eclipse.equinox.internal.p2.core.helpers.FileUtils;
-import org.eclipse.equinox.internal.provisional.p2.metadata.IArtifactKey;
 import org.eclipse.equinox.internal.provisional.p2.metadata.IInstallableUnit;
 import org.eclipse.equinox.internal.provisional.p2.metadata.query.Collector;
 import org.eclipse.equinox.p2.repository.artifact.*;
