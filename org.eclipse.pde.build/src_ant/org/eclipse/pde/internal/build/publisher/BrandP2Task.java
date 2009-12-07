@@ -9,8 +9,6 @@
 
 package org.eclipse.pde.internal.build.publisher;
 
-import org.eclipse.equinox.p2.metadata.IInstallableUnit;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -34,6 +32,7 @@ import org.eclipse.equinox.p2.internal.repository.tools.Repo2Runnable;
 import org.eclipse.equinox.p2.internal.repository.tools.tasks.IUDescription;
 import org.eclipse.equinox.p2.internal.repository.tools.tasks.Repo2RunnableTask;
 import org.eclipse.equinox.p2.metadata.IArtifactKey;
+import org.eclipse.equinox.p2.metadata.IInstallableUnit;
 import org.eclipse.equinox.p2.repository.artifact.IArtifactRepository;
 import org.eclipse.equinox.p2.repository.artifact.IArtifactRepositoryManager;
 import org.eclipse.equinox.p2.repository.artifact.spi.ArtifactDescriptor;
@@ -211,7 +210,7 @@ public class BrandP2Task extends Repo2RunnableTask {
 		newIUDescription.setVersion(version);
 		newIUDescription.setCapabilities(new IProvidedCapability[] {PublisherHelper.createSelfCapability(id, version)});
 		newIUDescription.setTouchpointType(originalIU.getTouchpointType());
-		newIUDescription.setFilter(originalIU.getFilter() == null ? null : originalIU.getFilter().getFilter());
+		newIUDescription.setFilter(originalIU.getFilter() == null ? null : ((LDAPQuery) originalIU.getFilter()).getFilter());
 
 		ITouchpointData[] data = brandTouchpointData(originalIU.getTouchpointData());
 		for (int i = 0; i < data.length; i++) {
