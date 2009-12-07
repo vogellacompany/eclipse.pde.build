@@ -9,6 +9,10 @@
 
 package org.eclipse.pde.build.internal.tests.p2;
 
+import org.eclipse.equinox.p2.metadata.IInstallableUnit;
+
+import org.eclipse.equinox.internal.p2.metadata.IRequiredCapability;
+
 import java.io.File;
 import java.io.FilenameFilter;
 import java.net.URI;
@@ -24,6 +28,7 @@ import org.eclipse.equinox.internal.p2.core.helpers.FileUtils;
 import org.eclipse.equinox.internal.provisional.p2.metadata.*;
 import org.eclipse.equinox.internal.provisional.p2.metadata.query.Collector;
 import org.eclipse.equinox.internal.provisional.p2.metadata.query.InstallableUnitQuery;
+import org.eclipse.equinox.p2.metadata.IRequirement;
 import org.eclipse.equinox.p2.repository.metadata.IMetadataRepository;
 import org.eclipse.osgi.util.ManifestElement;
 import org.eclipse.pde.build.internal.tests.Utils;
@@ -1582,12 +1587,12 @@ public class PublishingTests extends P2TestCase {
 		assertEquals(iu.getVersion().toString(), "1.0.0");
 
 		IInstallableUnit common = getIU(repo, EQUINOX_COMMON);
-		IRequiredCapability[] required = iu.getRequiredCapabilities();
+		IRequirement[] required = iu.getRequiredCapabilities();
 		assertEquals(required.length, 2);
-		if (required[0].getName().equals(EQUINOX_COMMON))
-			assertEquals(required[0].getRange(), new VersionRange(common.getVersion(), true, Version.MAX_VERSION, true));
+		if (((IRequiredCapability) required[0]).getName().equals(EQUINOX_COMMON))
+			assertEquals(((IRequiredCapability) required[0]).getRange(), new VersionRange(common.getVersion(), true, Version.MAX_VERSION, true));
 		else
-			assertEquals(required[1].getRange(), new VersionRange(common.getVersion(), true, Version.MAX_VERSION, true));
+			assertEquals(((IRequiredCapability) required[1]).getRange(), new VersionRange(common.getVersion(), true, Version.MAX_VERSION, true));
 	}
 
 	public void testPublish_P2InfConfigProperty() throws Exception {
@@ -1798,10 +1803,11 @@ public class PublishingTests extends P2TestCase {
 
 		IMetadataRepository repo = loadMetadataRepository(buildFolder.getFolder("buildRepo").getLocationURI());
 		IInstallableUnit iu = getIU(repo, "foo");
-		IRequiredCapability[] required = iu.getRequiredCapabilities();
+		IRequirement[] required = iu.getRequiredCapabilities();
 		for (int i = 0; i < required.length; i++) {
-			if (required[i].getName().equals("a")) {
-				VersionRange range = required[i].getRange();
+			IRequiredCapability reqCap = (IRequiredCapability) required[i];
+			if (reqCap.getName().equals("a")) {
+				VersionRange range = reqCap.getRange();
 				assertTrue(Version.toOSGiVersion(range.getMinimum()).getQualifier().startsWith("20"));
 				assertTrue(Version.toOSGiVersion(range.getMinimum()).getMajor() == 1 || Version.toOSGiVersion(range.getMinimum()).getMajor() == 2);
 			}
