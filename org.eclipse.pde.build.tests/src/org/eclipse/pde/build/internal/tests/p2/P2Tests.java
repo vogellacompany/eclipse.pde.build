@@ -9,10 +9,6 @@
 
 package org.eclipse.pde.build.internal.tests.p2;
 
-import org.eclipse.equinox.p2.metadata.IInstallableUnit;
-
-import org.eclipse.equinox.p2.metadata.IArtifactKey;
-
 import java.io.*;
 import java.net.URL;
 import java.util.*;
@@ -24,6 +20,8 @@ import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.runtime.*;
 import org.eclipse.equinox.internal.p2.core.helpers.FileUtils;
 import org.eclipse.equinox.internal.provisional.p2.metadata.query.Collector;
+import org.eclipse.equinox.p2.metadata.IArtifactKey;
+import org.eclipse.equinox.p2.metadata.IInstallableUnit;
 import org.eclipse.equinox.p2.repository.artifact.*;
 import org.eclipse.equinox.p2.repository.metadata.IMetadataRepository;
 import org.eclipse.pde.build.internal.tests.Utils;
@@ -514,7 +512,7 @@ public class P2Tests extends P2TestCase {
 		Map repoProps = repository.getProperties();
 		assertEquals(repoProps.get("publishPackFilesAsSiblings"), "true");
 		final String PACKED_FORMAT = "packed"; //$NON-NLS-1$
-		Collector keys = repository.query(ArtifactKeyQuery.ALL_KEYS, new Collector(), null);
+		Collector keys = repository.query(ArtifactKeyQuery.ALL_KEYS, null);
 		for (Iterator iterator = keys.iterator(); iterator.hasNext();) {
 			IArtifactKey key = (IArtifactKey) iterator.next();
 			IArtifactDescriptor[] descriptors = repository.getArtifactDescriptors(key);

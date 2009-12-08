@@ -8,8 +8,6 @@
  *******************************************************************************/
 package org.eclipse.pde.build.internal.tests.p2;
 
-import org.eclipse.equinox.p2.metadata.IInstallableUnit;
-
 import java.io.File;
 import java.net.URI;
 import java.util.*;
@@ -24,8 +22,7 @@ import org.eclipse.equinox.internal.provisional.p2.metadata.*;
 import org.eclipse.equinox.internal.provisional.p2.metadata.query.Collector;
 import org.eclipse.equinox.internal.provisional.p2.metadata.query.InstallableUnitQuery;
 import org.eclipse.equinox.p2.internal.repository.tools.RepositoryUtilities;
-import org.eclipse.equinox.p2.metadata.IArtifactKey;
-import org.eclipse.equinox.p2.metadata.IRequirement;
+import org.eclipse.equinox.p2.metadata.*;
 import org.eclipse.equinox.p2.repository.artifact.*;
 import org.eclipse.equinox.p2.repository.metadata.IMetadataRepository;
 import org.eclipse.equinox.p2.repository.metadata.IMetadataRepositoryManager;
@@ -156,7 +153,7 @@ public class P2TestCase extends PDETestCase {
 	}
 
 	public IInstallableUnit getIU(IMetadataRepository repository, String name, boolean assertNotNull) {
-		Collector collector = repository.query(new InstallableUnitQuery(name), new Collector(), null);
+		Collector collector = repository.query(new InstallableUnitQuery(name), null);
 
 		IInstallableUnit unit = null;
 		if (collector.size() > 0)
