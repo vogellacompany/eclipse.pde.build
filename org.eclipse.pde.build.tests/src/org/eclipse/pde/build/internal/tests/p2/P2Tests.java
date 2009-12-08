@@ -656,7 +656,7 @@ public class P2Tests extends P2TestCase {
 
 		IArtifactRepository artifact = loadArtifactRepository(finalLocation);
 		assertEquals(artifact.getName(), "testRepoName"); //bug 274094
-		assertLogContainsLine(buildFolder.getFile("log.log"), "Mirroring completed with warnings and/or errors.");
+		assertLogContainsLine(buildFolder.getFile("log.log"), "Messages while mirroring artifact descriptors");
 		assertLogContainsLines(buildFolder.getFile("compare.log"), new String[] {"canonical: osgi.bundle,b,1.0.0", "Difference found for B.class"});
 		boolean failed = true;
 		try {
