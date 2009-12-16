@@ -19,10 +19,10 @@ import org.eclipse.equinox.internal.p2.artifact.repository.CompositeArtifactRepo
 import org.eclipse.equinox.internal.p2.metadata.IRequiredCapability;
 import org.eclipse.equinox.internal.p2.metadata.repository.CompositeMetadataRepository;
 import org.eclipse.equinox.internal.provisional.p2.metadata.*;
-import org.eclipse.equinox.internal.provisional.p2.metadata.query.Collector;
 import org.eclipse.equinox.internal.provisional.p2.metadata.query.InstallableUnitQuery;
 import org.eclipse.equinox.p2.internal.repository.tools.RepositoryUtilities;
 import org.eclipse.equinox.p2.metadata.*;
+import org.eclipse.equinox.p2.metadata.query.IQueryResult;
 import org.eclipse.equinox.p2.repository.artifact.*;
 import org.eclipse.equinox.p2.repository.metadata.IMetadataRepository;
 import org.eclipse.equinox.p2.repository.metadata.IMetadataRepositoryManager;
@@ -153,13 +153,13 @@ public class P2TestCase extends PDETestCase {
 	}
 
 	public IInstallableUnit getIU(IMetadataRepository repository, String name, boolean assertNotNull) {
-		Collector collector = repository.query(new InstallableUnitQuery(name), null);
+		IQueryResult queryResult = repository.query(new InstallableUnitQuery(name), null);
 
 		IInstallableUnit unit = null;
-		if (collector.size() > 0)
-			unit = (IInstallableUnit) collector.iterator().next();
+		if (queryResult.size() > 0)
+			unit = (IInstallableUnit) queryResult.iterator().next();
 		if (assertNotNull) {
-			assertEquals(collector.size(), 1);
+			assertEquals(queryResult.size(), 1);
 			assertNotNull(unit);
 		}
 		return unit;
