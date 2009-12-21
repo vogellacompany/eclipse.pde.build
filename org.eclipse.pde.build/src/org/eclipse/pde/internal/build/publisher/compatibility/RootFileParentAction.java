@@ -10,14 +10,14 @@
  *******************************************************************************/
 package org.eclipse.pde.internal.build.publisher.compatibility;
 
-import org.eclipse.equinox.p2.metadata.IInstallableUnit;
-
 import org.eclipse.core.runtime.*;
 import org.eclipse.equinox.internal.p2.publisher.eclipse.ProductFile;
-import org.eclipse.equinox.internal.provisional.p2.metadata.*;
+import org.eclipse.equinox.internal.provisional.p2.metadata.MetadataFactory;
+import org.eclipse.equinox.internal.provisional.p2.metadata.Version;
 import org.eclipse.equinox.internal.provisional.p2.metadata.MetadataFactory.InstallableUnitDescription;
-import org.eclipse.equinox.internal.provisional.p2.metadata.query.Collector;
 import org.eclipse.equinox.internal.provisional.p2.metadata.query.MatchQuery;
+import org.eclipse.equinox.p2.metadata.IInstallableUnit;
+import org.eclipse.equinox.p2.metadata.query.IQueryResult;
 import org.eclipse.equinox.p2.publisher.*;
 import org.eclipse.equinox.p2.publisher.actions.RootFilesAction;
 import org.eclipse.pde.internal.build.IPDEBuildConstants;
@@ -54,8 +54,8 @@ public class RootFileParentAction extends AbstractPublisherAction {
 			}
 		};
 
-		Collector collector = query.perform(results.getIUs(null, IPublisherResult.NON_ROOT).iterator(), new Collector());
-		InstallableUnitDescription descriptor = createParentIU(collector.toCollection(), RootFilesAction.computeIUId(baseId, flavor), Version.parseVersion(version));
+		IQueryResult collector = query.perform(results.getIUs(null, IPublisherResult.NON_ROOT).iterator());
+		InstallableUnitDescription descriptor = createParentIU(collector.unmodifiableSet(), RootFilesAction.computeIUId(baseId, flavor), Version.parseVersion(version));
 		descriptor.setSingleton(true);
 		IInstallableUnit rootIU = MetadataFactory.createInstallableUnit(descriptor);
 		results.addIU(rootIU, IPublisherResult.ROOT);
