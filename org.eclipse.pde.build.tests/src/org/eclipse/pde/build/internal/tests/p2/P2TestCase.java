@@ -156,10 +156,10 @@ public class P2TestCase extends PDETestCase {
 		IQueryResult queryResult = repository.query(new InstallableUnitQuery(name), null);
 
 		IInstallableUnit unit = null;
-		if (queryResult.size() > 0)
+		if (!queryResult.isEmpty())
 			unit = (IInstallableUnit) queryResult.iterator().next();
 		if (assertNotNull) {
-			assertEquals(queryResult.size(), 1);
+			assertEquals(queryResult.unmodifiableSet().size(), 1);
 			assertNotNull(unit);
 		}
 		return unit;

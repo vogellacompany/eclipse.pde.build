@@ -1322,7 +1322,7 @@ public class PublishingTests extends P2TestCase {
 		URI repoURI = URIUtil.fromString("file:" + buildFolder.getFolder("buildRepo").getLocation().toOSString());
 		IMetadataRepository metadata = loadMetadataRepository(repoURI);
 		IQueryResult queryResult = metadata.query(new InstallableUnitQuery("a"), null);
-		assertTrue(queryResult.size() == 0);
+		assertTrue(queryResult.isEmpty());
 		getIU(metadata, "b");
 	}
 
