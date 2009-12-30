@@ -212,9 +212,9 @@ public class BrandP2Task extends Repo2RunnableTask {
 		newIUDescription.setTouchpointType(originalIU.getTouchpointType());
 		newIUDescription.setFilter(originalIU.getFilter() == null ? null : ((LDAPQuery) originalIU.getFilter()).getFilter());
 
-		ITouchpointData[] data = brandTouchpointData(originalIU.getTouchpointData());
-		for (int i = 0; i < data.length; i++) {
-			newIUDescription.addTouchpointData(data[i]);
+		List data = brandTouchpointData(originalIU.getTouchpointData());
+		for (int i = 0; i < data.size(); i++) {
+			newIUDescription.addTouchpointData((ITouchpointData) data.get(i));
 		}
 
 		IArtifactKey key = new ArtifactKey(PublisherHelper.BINARY_ARTIFACT_CLASSIFIER, newIUDescription.getId(), newIUDescription.getVersion());
@@ -250,7 +250,7 @@ public class BrandP2Task extends Repo2RunnableTask {
 	private static final String INSTALL = "install"; //$NON-NLS-1$
 	private static final String CONFIGURE = "configure"; //$NON-NLS-1$
 
-	private ITouchpointData[] brandTouchpointData(ITouchpointData[] data) {
+	private List/*<ITouchpointData>*/brandTouchpointData(List/*<ITouchpointData>*/data) {
 		boolean haveChmod = false;
 
 		String brandedLauncher = null;
@@ -261,12 +261,13 @@ public class BrandP2Task extends Repo2RunnableTask {
 		else
 			brandedLauncher = launcherName;
 
-		for (int i = 0; i < data.length; i++) {
-			Map instructions = new HashMap(data[i].getInstructions());
+		for (int i = 0; i < data.size(); i++) {
+			ITouchpointData td = (ITouchpointData) data.get(i);
+			Map instructions = new HashMap(td.getInstructions());
 
 			String[] phases = new String[] {INSTALL, CONFIGURE};
 			for (int phase = 0; phase < phases.length; phase++) {
-				ITouchpointInstruction instruction = data[i].getInstruction(phases[phase]);
+				ITouchpointInstruction instruction = td.getInstruction(phases[phase]);
 				if (instruction == null)
 					continue;
 
@@ -310,7 +311,7 @@ public class BrandP2Task extends Repo2RunnableTask {
 				}
 			}
 
-			data[i] = new TouchpointData(instructions);
+			data.set(i, new TouchpointData(instructions));
 		}
 
 		//add a chmod if there wasn't one before
@@ -319,10 +320,10 @@ public class BrandP2Task extends Repo2RunnableTask {
 			TouchpointInstruction newInstruction = new TouchpointInstruction(body, null);
 			Map instructions = new HashMap();
 			instructions.put(INSTALL, newInstruction);
-			ArrayList newData = new ArrayList(data.length + 1);
-			newData.addAll(Arrays.asList(data));
+			ArrayList newData = new ArrayList(data.size() + 1);
+			newData.addAll(data);
 			newData.add(new TouchpointData(instructions));
-			data = (ITouchpointData[]) newData.toArray(new ITouchpointData[newData.size()]);
+			data = newData;
 		}
 		return data;
 	}

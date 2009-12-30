@@ -11,7 +11,8 @@
 package org.eclipse.pde.internal.build.publisher.compatibility;
 
 import java.io.File;
-import java.util.Properties;
+import java.util.*;
+import org.eclipse.equinox.internal.p2.core.helpers.CollectionUtils;
 import org.eclipse.equinox.internal.p2.publisher.eclipse.DataLoader;
 import org.eclipse.equinox.internal.provisional.frameworkadmin.*;
 import org.eclipse.equinox.internal.provisional.p2.metadata.Version;
@@ -35,12 +36,14 @@ public class AssembledConfigAdvice implements IConfigAdvice, IExecutableAdvice {
 		return configData.getBundles();
 	}
 
-	public Properties getProperties() {
-		Properties properties = configData.getProperties();
+	public Map getProperties() {
+		Properties configProps = configData.getProperties();
+		Map props = new HashMap(configProps.size() + 1);
+		CollectionUtils.putAll(configProps, props);
 		int startLevel = configData.getInitialBundleStartLevel();
 		if (startLevel != BundleInfo.NO_LEVEL)
-			properties.put("osgi.bundles.defaultStartLevel", String.valueOf(startLevel)); //$NON-NLS-1$
-		return properties;
+			props.put("osgi.bundles.defaultStartLevel", String.valueOf(startLevel)); //$NON-NLS-1$
+		return props;
 	}
 
 	public boolean isApplicable(String spec, boolean includeDefault, String id, Version version) {

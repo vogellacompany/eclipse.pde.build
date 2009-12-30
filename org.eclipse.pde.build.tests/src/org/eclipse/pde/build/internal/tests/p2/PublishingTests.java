@@ -26,7 +26,6 @@ import org.eclipse.equinox.internal.provisional.p2.metadata.Version;
 import org.eclipse.equinox.internal.provisional.p2.metadata.VersionRange;
 import org.eclipse.equinox.internal.provisional.p2.metadata.query.InstallableUnitQuery;
 import org.eclipse.equinox.p2.metadata.IInstallableUnit;
-import org.eclipse.equinox.p2.metadata.IRequirement;
 import org.eclipse.equinox.p2.metadata.query.IQueryResult;
 import org.eclipse.equinox.p2.repository.metadata.IMetadataRepository;
 import org.eclipse.osgi.util.ManifestElement;
@@ -1586,12 +1585,12 @@ public class PublishingTests extends P2TestCase {
 		assertEquals(iu.getVersion().toString(), "1.0.0");
 
 		IInstallableUnit common = getIU(repo, EQUINOX_COMMON);
-		IRequirement[] required = iu.getRequiredCapabilities();
-		assertEquals(required.length, 2);
-		if (((IRequiredCapability) required[0]).getName().equals(EQUINOX_COMMON))
-			assertEquals(((IRequiredCapability) required[0]).getRange(), new VersionRange(common.getVersion(), true, Version.MAX_VERSION, true));
+		List/*<IRequirement>*/required = iu.getRequiredCapabilities();
+		assertEquals(required.size(), 2);
+		if (((IRequiredCapability) required.get(0)).getName().equals(EQUINOX_COMMON))
+			assertEquals(((IRequiredCapability) required.get(0)).getRange(), new VersionRange(common.getVersion(), true, Version.MAX_VERSION, true));
 		else
-			assertEquals(((IRequiredCapability) required[1]).getRange(), new VersionRange(common.getVersion(), true, Version.MAX_VERSION, true));
+			assertEquals(((IRequiredCapability) required.get(1)).getRange(), new VersionRange(common.getVersion(), true, Version.MAX_VERSION, true));
 	}
 
 	public void testPublish_P2InfConfigProperty() throws Exception {
@@ -1802,9 +1801,9 @@ public class PublishingTests extends P2TestCase {
 
 		IMetadataRepository repo = loadMetadataRepository(buildFolder.getFolder("buildRepo").getLocationURI());
 		IInstallableUnit iu = getIU(repo, "foo");
-		IRequirement[] required = iu.getRequiredCapabilities();
-		for (int i = 0; i < required.length; i++) {
-			IRequiredCapability reqCap = (IRequiredCapability) required[i];
+		List/*<IRequirement>*/required = iu.getRequiredCapabilities();
+		for (int i = 0; i < required.size(); i++) {
+			IRequiredCapability reqCap = (IRequiredCapability) required.get(i);
 			if (reqCap.getName().equals("a")) {
 				VersionRange range = reqCap.getRange();
 				assertTrue(Version.toOSGiVersion(range.getMinimum()).getQualifier().startsWith("20"));
