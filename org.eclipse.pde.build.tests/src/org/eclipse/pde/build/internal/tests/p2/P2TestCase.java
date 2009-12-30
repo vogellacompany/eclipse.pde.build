@@ -198,9 +198,9 @@ public class P2TestCase extends PDETestCase {
 	}
 
 	public void assertRequires(IInstallableUnit iu, String namespace, String name) {
-		List/*<IRequirement>*/reqs = iu.getRequiredCapabilities();
-		for (int i = 0; i < reqs.size(); i++) {
-			IRequiredCapability reqCap = (IRequiredCapability) reqs.get(i);
+		Collection/*<IRequirement>*/reqs = iu.getRequiredCapabilities();
+		for (Iterator iterator = reqs.iterator(); iterator.hasNext();) {
+			IRequiredCapability reqCap = (IRequiredCapability) iterator.next();
 			if (reqCap.getNamespace().equals(namespace) && reqCap.getName().equals(name))
 				return;
 
@@ -212,9 +212,9 @@ public class P2TestCase extends PDETestCase {
 		outer: for (Iterator iterator = requiredIUs.iterator(); iterator.hasNext();) {
 			IInstallableUnit reqIU = (IInstallableUnit) iterator.next();
 
-			List/*<IRequirement>*/reqs = iu.getRequiredCapabilities();
-			for (int i = 0; i < reqs.size(); i++) {
-				IRequiredCapability reqCap = (IRequiredCapability) reqs.get(i);
+			Collection/*<IRequirement>*/reqs = iu.getRequiredCapabilities();
+			for (Iterator iterator2 = reqs.iterator(); iterator2.hasNext();) {
+				IRequiredCapability reqCap = (IRequiredCapability) iterator2.next();
 				if (reqCap.getNamespace().equals(IU_NAMESPACE) && reqCap.getName().equals(reqIU.getId()) && reqCap.getRange().isIncluded(reqIU.getVersion())) {
 					iterator.remove();
 					continue outer;

@@ -1585,12 +1585,15 @@ public class PublishingTests extends P2TestCase {
 		assertEquals(iu.getVersion().toString(), "1.0.0");
 
 		IInstallableUnit common = getIU(repo, EQUINOX_COMMON);
-		List/*<IRequirement>*/required = iu.getRequiredCapabilities();
+		Collection/*<IRequirement>*/required = iu.getRequiredCapabilities();
 		assertEquals(required.size(), 2);
-		if (((IRequiredCapability) required.get(0)).getName().equals(EQUINOX_COMMON))
-			assertEquals(((IRequiredCapability) required.get(0)).getRange(), new VersionRange(common.getVersion(), true, Version.MAX_VERSION, true));
+		Iterator it = required.iterator();
+		IRequiredCapability req0 = (IRequiredCapability) it.next();
+		IRequiredCapability req1 = (IRequiredCapability) it.next();
+		if (req0.getName().equals(EQUINOX_COMMON))
+			assertEquals(req0.getRange(), new VersionRange(common.getVersion(), true, Version.MAX_VERSION, true));
 		else
-			assertEquals(((IRequiredCapability) required.get(1)).getRange(), new VersionRange(common.getVersion(), true, Version.MAX_VERSION, true));
+			assertEquals(req1.getRange(), new VersionRange(common.getVersion(), true, Version.MAX_VERSION, true));
 	}
 
 	public void testPublish_P2InfConfigProperty() throws Exception {
@@ -1801,9 +1804,9 @@ public class PublishingTests extends P2TestCase {
 
 		IMetadataRepository repo = loadMetadataRepository(buildFolder.getFolder("buildRepo").getLocationURI());
 		IInstallableUnit iu = getIU(repo, "foo");
-		List/*<IRequirement>*/required = iu.getRequiredCapabilities();
-		for (int i = 0; i < required.size(); i++) {
-			IRequiredCapability reqCap = (IRequiredCapability) required.get(i);
+		Collection/*<IRequirement>*/required = iu.getRequiredCapabilities();
+		for (Iterator iterator = required.iterator(); iterator.hasNext();) {
+			IRequiredCapability reqCap = (IRequiredCapability) iterator.next();
 			if (reqCap.getName().equals("a")) {
 				VersionRange range = reqCap.getRange();
 				assertTrue(Version.toOSGiVersion(range.getMinimum()).getQualifier().startsWith("20"));

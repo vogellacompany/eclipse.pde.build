@@ -9,7 +9,7 @@
 package org.eclipse.pde.internal.build.publisher;
 
 import java.io.File;
-import java.util.List;
+import java.util.Collection;
 import org.eclipse.equinox.internal.p2.publisher.eclipse.FeatureParser;
 import org.eclipse.equinox.internal.provisional.p2.metadata.Version;
 import org.eclipse.equinox.p2.metadata.IArtifactKey;
@@ -98,12 +98,12 @@ public class GatherFeatureAction extends FeaturesAction {
 			return;
 
 		// add all the artifacts associated with the feature
-		List artifacts = featureIU.getArtifacts();
+		Collection artifacts = featureIU.getArtifacts();
 		if (artifacts.size() > 1) {
 			//boo!
 		}
 
-		ArtifactDescriptor ad = (ArtifactDescriptor) PublisherHelper.createArtifactDescriptor(publisherInfo.getArtifactRepository(), (IArtifactKey) artifacts.get(0), null);
+		ArtifactDescriptor ad = (ArtifactDescriptor) PublisherHelper.createArtifactDescriptor(publisherInfo.getArtifactRepository(), (IArtifactKey) artifacts.iterator().next(), null);
 		processArtifactPropertiesAdvice(featureIU, ad, publisherInfo);
 		ad.setProperty(IArtifactDescriptor.DOWNLOAD_CONTENTTYPE, IArtifactDescriptor.TYPE_ZIP);
 
