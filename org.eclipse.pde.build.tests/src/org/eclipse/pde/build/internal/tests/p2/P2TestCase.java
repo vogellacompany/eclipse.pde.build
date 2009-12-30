@@ -187,9 +187,9 @@ public class P2TestCase extends PDETestCase {
 	}
 
 	public void assertProvides(IInstallableUnit iu, String namespace, String name) {
-		List/*<IProvidedCapability>*/caps = iu.getProvidedCapabilities();
-		for (int i = 0; i < caps.size(); i++) {
-			IProvidedCapability cap = (IProvidedCapability) caps.get(i);
+		Collection/*<IProvidedCapability>*/caps = iu.getProvidedCapabilities();
+		for (Iterator iterator = caps.iterator(); iterator.hasNext();) {
+			IProvidedCapability cap = (IProvidedCapability) iterator.next();
 			if (cap.getNamespace().equals(namespace) && cap.getName().equals(name))
 				return;
 
