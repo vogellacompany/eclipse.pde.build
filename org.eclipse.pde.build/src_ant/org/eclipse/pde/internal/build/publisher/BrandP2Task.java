@@ -251,6 +251,9 @@ public class BrandP2Task extends Repo2RunnableTask {
 	private static final String CONFIGURE = "configure"; //$NON-NLS-1$
 
 	private List/*<ITouchpointData>*/brandTouchpointData(List/*<ITouchpointData>*/data) {
+		ArrayList results = new ArrayList(data.size() + 1);
+		results.addAll(data);
+
 		boolean haveChmod = false;
 
 		String brandedLauncher = null;
@@ -261,8 +264,8 @@ public class BrandP2Task extends Repo2RunnableTask {
 		else
 			brandedLauncher = launcherName;
 
-		for (int i = 0; i < data.size(); i++) {
-			ITouchpointData td = (ITouchpointData) data.get(i);
+		for (int i = 0; i < results.size(); i++) {
+			ITouchpointData td = (ITouchpointData) results.get(i);
 			Map instructions = new HashMap(td.getInstructions());
 
 			String[] phases = new String[] {INSTALL, CONFIGURE};
@@ -311,7 +314,7 @@ public class BrandP2Task extends Repo2RunnableTask {
 				}
 			}
 
-			data.set(i, new TouchpointData(instructions));
+			results.set(i, new TouchpointData(instructions));
 		}
 
 		//add a chmod if there wasn't one before
@@ -320,12 +323,9 @@ public class BrandP2Task extends Repo2RunnableTask {
 			TouchpointInstruction newInstruction = new TouchpointInstruction(body, null);
 			Map instructions = new HashMap();
 			instructions.put(INSTALL, newInstruction);
-			ArrayList newData = new ArrayList(data.size() + 1);
-			newData.addAll(data);
-			newData.add(new TouchpointData(instructions));
-			data = newData;
+			results.add(new TouchpointData(instructions));
 		}
-		return data;
+		return results;
 	}
 
 	private String toString(String[] elements, String separator) {
