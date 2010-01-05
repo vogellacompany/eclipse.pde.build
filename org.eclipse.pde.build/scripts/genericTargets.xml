@@ -231,15 +231,10 @@ set here?
 		destination="${p2.director.installPath}" 
 		bundlepool="${p2.director.bundlepool}"
 		agentLocation="${p2.director.dataArea}"
-		outputProperty="p2.director.java.output">
-	
+		outputProperty="p2.director.java.output"
+		logFile="${p2.director.log}">
 		<iu id="${p2.director.iu}" version="${p2.director.version}" />
 	</p2.director>
-	<antcall target="logDirectorCall"/>
-</target>
-	
-<target name="logDirectorCall" if="p2.director.log" >
-	<echo message="${p2.director.java.output}" file="${p2.director.log}" append="true" />
 </target>
 	
 </project>

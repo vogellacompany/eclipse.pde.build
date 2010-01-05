@@ -1471,7 +1471,7 @@ public class PublishingTests extends P2TestCase {
 		try {
 			runProductBuild(buildFolder);
 		} catch (Exception e) {
-			assertTrue(e.getMessage().indexOf("A Problem occured while running the director") > -1);
+			assertTrue(e.getMessage().indexOf("A problem occured while invoking the director") > -1);
 		}
 
 		assertLogContainsLines(buildFolder.getFile("director.log"), new String[] {"Installation failed.", "Missing requirement: rcp.product 1.0.0.I10232 (uid.product 1.0.0.I10232) requires 'foo bar [1.0.0]' but it could not be found"});
