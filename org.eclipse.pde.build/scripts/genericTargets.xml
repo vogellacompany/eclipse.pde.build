@@ -220,18 +220,6 @@ set here?
 	<property name="p2.director.profile" value="profile" />
 	<property name="p2.director.version" value="" />
 	
-	<!-- on windows we need to quote os,ws,arch so that '*' does not get expanded 
-	<condition property="p2.quoted.os" value="&quot;${os}&quot;" else="${os}">
-		<and><equals arg1="*" arg2="${os}"/><os family="windows" /></and>
-	</condition>
-	<condition property="p2.quoted.ws" value="&quot;${ws}&quot;" else="${ws}">
-		<and><equals arg1="*" arg2="${ws}"/><os family="windows" /></and>
-	</condition>
-	<condition property="p2.quoted.arch" value="&quot;${arch}&quot;" else="${arch}">
-		<and><equals arg1="*" arg2="${arch}"/><os family="windows" /></and>
-	</condition>
-	-->
-	
 	<p2.director 
 		os="${os}" ws="${ws}" arch="${arch}" 
 		flavor="${p2.flavor}" 
@@ -243,7 +231,7 @@ set here?
 		destination="${p2.director.installPath}" 
 		bundlepool="${p2.director.bundlepool}"
 		agentLocation="${p2.director.dataArea}"
-		outputProperty="p2.director.output">
+		outputProperty="p2.director.java.output">
 	
 		<iu id="${p2.director.iu}" version="${p2.director.version}" />
 	</p2.director>
@@ -251,7 +239,7 @@ set here?
 </target>
 	
 <target name="logDirectorCall" if="p2.director.log" >
-	<echo message="${p2.director.output}" file="${p2.director.log}" append="true" />
+	<echo message="${p2.director.java.output}" file="${p2.director.log}" append="true" />
 </target>
 	
 </project>
