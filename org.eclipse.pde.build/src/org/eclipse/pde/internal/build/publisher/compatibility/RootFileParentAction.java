@@ -15,11 +15,11 @@ import org.eclipse.equinox.internal.p2.publisher.eclipse.ProductFile;
 import org.eclipse.equinox.internal.provisional.p2.metadata.MetadataFactory;
 import org.eclipse.equinox.internal.provisional.p2.metadata.Version;
 import org.eclipse.equinox.internal.provisional.p2.metadata.MetadataFactory.InstallableUnitDescription;
-import org.eclipse.equinox.internal.provisional.p2.metadata.query.MatchQuery;
 import org.eclipse.equinox.p2.metadata.IInstallableUnit;
-import org.eclipse.equinox.p2.metadata.query.IQueryResult;
 import org.eclipse.equinox.p2.publisher.*;
 import org.eclipse.equinox.p2.publisher.actions.RootFilesAction;
+import org.eclipse.equinox.p2.query.IQueryResult;
+import org.eclipse.equinox.p2.query.MatchQuery;
 import org.eclipse.pde.internal.build.IPDEBuildConstants;
 
 public class RootFileParentAction extends AbstractPublisherAction {

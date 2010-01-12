@@ -21,7 +21,7 @@ import org.eclipse.core.runtime.*;
 import org.eclipse.equinox.internal.p2.core.helpers.FileUtils;
 import org.eclipse.equinox.p2.metadata.IArtifactKey;
 import org.eclipse.equinox.p2.metadata.IInstallableUnit;
-import org.eclipse.equinox.p2.metadata.query.IQueryResult;
+import org.eclipse.equinox.p2.query.IQueryResult;
 import org.eclipse.equinox.p2.repository.artifact.*;
 import org.eclipse.equinox.p2.repository.metadata.IMetadataRepository;
 import org.eclipse.pde.build.internal.tests.Utils;

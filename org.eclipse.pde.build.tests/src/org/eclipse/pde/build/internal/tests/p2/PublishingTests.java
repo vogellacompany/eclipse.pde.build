@@ -9,6 +9,8 @@
 
 package org.eclipse.pde.build.internal.tests.p2;
 
+import org.eclipse.equinox.p2.metadata.query.InstallableUnitQuery;
+
 import java.io.File;
 import java.io.FilenameFilter;
 import java.net.URI;
@@ -24,9 +26,8 @@ import org.eclipse.equinox.internal.p2.core.helpers.FileUtils;
 import org.eclipse.equinox.internal.p2.metadata.IRequiredCapability;
 import org.eclipse.equinox.internal.provisional.p2.metadata.Version;
 import org.eclipse.equinox.internal.provisional.p2.metadata.VersionRange;
-import org.eclipse.equinox.internal.provisional.p2.metadata.query.InstallableUnitQuery;
 import org.eclipse.equinox.p2.metadata.IInstallableUnit;
-import org.eclipse.equinox.p2.metadata.query.IQueryResult;
+import org.eclipse.equinox.p2.query.IQueryResult;
 import org.eclipse.equinox.p2.repository.metadata.IMetadataRepository;
 import org.eclipse.osgi.util.ManifestElement;
 import org.eclipse.pde.build.internal.tests.Utils;
