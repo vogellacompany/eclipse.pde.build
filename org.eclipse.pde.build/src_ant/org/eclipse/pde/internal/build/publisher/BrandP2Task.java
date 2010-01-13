@@ -209,7 +209,7 @@ public class BrandP2Task extends Repo2RunnableTask {
 		newIUDescription.setVersion(version);
 		newIUDescription.setCapabilities(new IProvidedCapability[] {PublisherHelper.createSelfCapability(id, version)});
 		newIUDescription.setTouchpointType(originalIU.getTouchpointType());
-		newIUDescription.setFilter(originalIU.getFilter() == null ? null : ((LDAPQuery) originalIU.getFilter()).getFilter());
+		newIUDescription.setFilter(originalIU.getFilter());
 
 		List data = brandTouchpointData(originalIU.getTouchpointData());
 		for (int i = 0; i < data.size(); i++) {
