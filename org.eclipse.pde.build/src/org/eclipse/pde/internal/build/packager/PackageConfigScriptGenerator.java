@@ -184,9 +184,12 @@ public class PackageConfigScriptGenerator extends AssembleConfigScriptGenerator 
 		script.println();
 	}
 
-	protected FileSet[] generatePermissions(boolean zip) {
-		//In the packager there is nothing to do since, the features we are packaging are pre-built and do not have a build.properties
-		return new FileSet[0];
+	protected FileSet[] generatePermissions(String root, boolean zip) {
+		if (packagingProperties != null && packagingProperties.size() > 0) {
+			//In the packager there is nothing to do since, the features we are packaging are pre-built and do not have a build.properties
+			return new FileSet[0];
+		}
+		return super.generatePermissions(root, zip);
 	}
 
 	protected void generateGZipTarget(boolean assembling) {
