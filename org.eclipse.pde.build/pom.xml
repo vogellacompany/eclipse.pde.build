@@ -14,7 +14,7 @@
   <parent>
     <artifactId>eclipse.pde.build</artifactId>
     <groupId>eclipse.pde.build</groupId>
-    <version>4.7.1-SNAPSHOT</version>
+    <version>4.7.2-SNAPSHOT</version>
   </parent>
   <groupId>org.eclipse.pde</groupId>
   <artifactId>org.eclipse.pde.build</artifactId>
